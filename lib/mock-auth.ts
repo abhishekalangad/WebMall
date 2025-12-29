@@ -9,13 +9,13 @@ interface MockUser {
 const mockUsers: MockUser[] = [
   {
     id: '1',
-    email: 'admin@webmall.lk',
+    email: 'admin@webmall.com',
     name: 'Admin User',
     role: 'admin'
   },
   {
     id: '2', 
-    email: 'customer@webmall.lk',
+    email: 'customer@webmall.com',
     name: 'Customer User',
     role: 'customer'
   }
@@ -23,12 +23,15 @@ const mockUsers: MockUser[] = [
 
 // Store passwords separately (in real app, these would be hashed)
 const mockPasswords: Record<string, string> = {
-  'admin@webmall.lk': 'password123',
-  'customer@webmall.lk': 'password123'
+  'admin@webmall.com': 'admin123',
+  'customer@webmall.com': 'password123'
 }
 
 export function mockSignIn(email: string, password: string): Promise<MockUser> {
   console.log('Mock auth: Starting sign in for', email)
+  console.log('Mock auth: Available users:', mockUsers.map(u => u.email))
+  console.log('Mock auth: Available passwords:', Object.keys(mockPasswords))
+  
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       console.log('Mock auth: Processing sign in...')
@@ -36,17 +39,19 @@ export function mockSignIn(email: string, password: string): Promise<MockUser> {
       const storedPassword = mockPasswords[email]
       
       console.log('Mock auth: User found:', user)
+      console.log('Mock auth: Stored password for', email, ':', storedPassword)
+      console.log('Mock auth: Provided password:', password)
       console.log('Mock auth: Password check:', password === storedPassword)
       
       if (!user) {
         console.log('Mock auth: User not found')
-        reject(new Error('User not found'))
+        reject(new Error('Invalid login credentials'))
         return
       }
       
       if (!storedPassword || password !== storedPassword) {
         console.log('Mock auth: Invalid password')
-        reject(new Error('Invalid password'))
+        reject(new Error('Invalid login credentials'))
         return
       }
 
@@ -55,7 +60,7 @@ export function mockSignIn(email: string, password: string): Promise<MockUser> {
       localStorage.setItem('user', JSON.stringify(user))
       console.log('Mock auth: Sign in successful')
       resolve(user)
-    }, 500) // Small delay to simulate network
+    }, 100) // Reduced delay for faster testing
   })
 }
 

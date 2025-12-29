@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { AuthUser, getCurrentUser } from '@/lib/auth'
+import { AuthUser, getCurrentUser, isSupabaseConfigured } from '@/lib/auth'
 import { mockGetCurrentUser } from '@/lib/mock-auth'
 import { User } from '@supabase/supabase-js'
 
@@ -12,6 +12,7 @@ interface AuthContextType {
   loading: boolean
   signOut: () => Promise<void>
   refreshUser: () => Promise<void>
+  accessToken: () => Promise<string | undefined>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -22,19 +23,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  // Check if Supabase is properly configured
-  const isSupabaseConfigured = () => {
-    return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && 
-             process.env.NEXT_PUBLIC_SUPABASE_URL.includes('supabase.co'))
-  }
 
   const refreshUser = async () => {
     if (isRefreshing) {
       return
     }
-    
+
     setIsRefreshing(true)
-    
+
     try {
       if (!isSupabaseConfigured()) {
         // Use mock auth
@@ -49,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Use Supabase auth
       const { data: { session } } = await supabase.auth.getSession()
       setSupabaseUser(session?.user ?? null)
-      
+
       if (session?.user) {
         const currentUser = await getCurrentUser()
         setUser(currentUser)
@@ -98,6 +94,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         signOut: handleSignOut,
         refreshUser,
+        accessToken: async () => {
+          if (!isSupabaseConfigured()) {
+            if (!user) return undefined
+            return user.role === 'admin' ? 'mock-admin-token' : 'mock-customer-token'
+          }
+          const { data: { session } } = await supabase.auth.getSession()
+          return session?.access_token
+        }
       }}
     >
       {children}

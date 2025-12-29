@@ -35,6 +35,54 @@ export interface MockOrder {
   items: Array<{ id: string; product: { id: string; name: string }; quantity: number; price: number; total: number }>
 }
 
+export interface MockSiteSettings {
+  id: string
+  storeName: string
+  tagline?: string
+  description?: string
+  logoUrl?: string
+  contactEmail?: string
+  contactPhone?: string
+  contactAddress?: string
+  facebookUrl?: string
+  instagramUrl?: string
+  twitterUrl?: string
+  shippingBaseRate: number
+  freeShippingThreshold: number
+  updatedAt: string
+}
+
+export interface MockCoupon {
+  id: string
+  code: string
+  discountType: 'percentage' | 'fixed'
+  discountValue: number
+  expiryDate: string
+  usageLimit: number
+  timesUsed: number
+  minimumOrder: number
+  status: 'active' | 'inactive'
+  createdAt: string
+  updatedAt: string
+}
+
+let mockSiteSettings: MockSiteSettings = {
+  id: 'default',
+  storeName: 'WebMall',
+  tagline: 'Sri Lankan Fashion Accessories',
+  description: 'Your premier destination for Sri Lankan fashion accessories.',
+  logoUrl: '',
+  contactEmail: 'webmalll.ik@gmail.com',
+  contactPhone: '+94 778973708',
+  contactAddress: 'Colombo, Sri Lanka',
+  facebookUrl: '',
+  instagramUrl: '',
+  twitterUrl: '',
+  shippingBaseRate: 500,
+  freeShippingThreshold: 10000,
+  updatedAt: new Date().toISOString()
+}
+
 let mockCategories: MockCategory[] = [
   {
     id: '1',
@@ -44,7 +92,7 @@ let mockCategories: MockCategory[] = [
     createdAt: new Date().toISOString()
   },
   {
-    id: '2', 
+    id: '2',
     name: 'Bags',
     slug: 'bags',
     description: 'Stylish bags and purses',
@@ -52,7 +100,7 @@ let mockCategories: MockCategory[] = [
   },
   {
     id: '3',
-    name: 'Accessories', 
+    name: 'Accessories',
     slug: 'accessories',
     description: 'Fashion accessories',
     createdAt: new Date().toISOString()
@@ -79,7 +127,7 @@ let mockProducts: MockProduct[] = [
   {
     id: '2',
     name: 'Leather Handbag',
-    slug: 'leather-handbag', 
+    slug: 'leather-handbag',
     description: 'Premium quality leather handbag',
     price: 18000,
     currency: 'LKR',
@@ -115,7 +163,7 @@ let mockOrders: MockOrder[] = [
     id: '2',
     user: { id: '3', name: 'Jane Smith', email: 'jane@example.com' },
     orderNumber: 'ORD-20231202-001',
-    status: 'shipped', 
+    status: 'shipped',
     totalAmount: 18000,
     currency: 'LKR',
     paymentMethod: 'cod',
@@ -153,7 +201,7 @@ export function addMockCategory(category: Omit<MockCategory, 'id' | 'createdAt'>
 export function updateMockCategory(id: string, updates: Partial<MockCategory>): MockCategory | null {
   const index = mockCategories.findIndex(c => c.id === id)
   if (index === -1) return null
-  
+
   mockCategories[index] = { ...mockCategories[index], ...updates }
   return mockCategories[index]
 }
@@ -161,7 +209,7 @@ export function updateMockCategory(id: string, updates: Partial<MockCategory>): 
 export function deleteMockCategory(id: string): boolean {
   const index = mockCategories.findIndex(c => c.id === id)
   if (index === -1) return false
-  
+
   mockCategories.splice(index, 1)
   return true
 }
@@ -180,11 +228,11 @@ export function addMockProduct(product: Omit<MockProduct, 'id' | 'createdAt' | '
 export function updateMockProduct(id: string, updates: Partial<MockProduct>): MockProduct | null {
   const index = mockProducts.findIndex(p => p.id === id)
   if (index === -1) return null
-  
-  mockProducts[index] = { 
-    ...mockProducts[index], 
-    ...updates, 
-    updatedAt: new Date().toISOString() 
+
+  mockProducts[index] = {
+    ...mockProducts[index],
+    ...updates,
+    updatedAt: new Date().toISOString()
   }
   return mockProducts[index]
 }
@@ -192,7 +240,7 @@ export function updateMockProduct(id: string, updates: Partial<MockProduct>): Mo
 export function deleteMockProduct(id: string): boolean {
   const index = mockProducts.findIndex(p => p.id === id)
   if (index === -1) return false
-  
+
   mockProducts.splice(index, 1)
   return true
 }
@@ -200,11 +248,131 @@ export function deleteMockProduct(id: string): boolean {
 export function updateMockOrderStatus(id: string, status: string): MockOrder | null {
   const index = mockOrders.findIndex(o => o.id === id)
   if (index === -1) return null
-  
-  mockOrders[index] = { 
-    ...mockOrders[index], 
-    status, 
-    updatedAt: new Date().toISOString() 
+
+  mockOrders[index] = {
+    ...mockOrders[index],
+    status,
+    updatedAt: new Date().toISOString()
   }
   return mockOrders[index]
+}
+
+export function getMockSiteSettings(): MockSiteSettings {
+  console.log('[MockData] Getting site settings:', {
+    contactEmail: mockSiteSettings.contactEmail,
+    contactPhone: mockSiteSettings.contactPhone,
+    contactAddress: mockSiteSettings.contactAddress
+  })
+  return mockSiteSettings
+}
+
+export function updateMockSiteSettings(updates: Partial<MockSiteSettings>): MockSiteSettings {
+  console.log('[MockData] Updating site settings with:', {
+    contactEmail: updates.contactEmail,
+    contactPhone: updates.contactPhone,
+    contactAddress: updates.contactAddress
+  })
+  mockSiteSettings = {
+    ...mockSiteSettings,
+    ...updates,
+    updatedAt: new Date().toISOString()
+  }
+  console.log('[MockData] Site settings after update:', {
+    contactEmail: mockSiteSettings.contactEmail,
+    contactPhone: mockSiteSettings.contactPhone,
+    contactAddress: mockSiteSettings.contactAddress
+  })
+  return mockSiteSettings
+}
+
+// Mock Coupons
+let mockCoupons: MockCoupon[] = [
+  {
+    id: '1',
+    code: 'WELCOME10',
+    discountType: 'percentage',
+    discountValue: 10,
+    expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+    usageLimit: 100,
+    timesUsed: 15,
+    minimumOrder: 1000,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    code: 'SAVE500',
+    discountType: 'fixed',
+    discountValue: 500,
+    expiryDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 days from now
+    usageLimit: 50,
+    timesUsed: 8,
+    minimumOrder: 5000,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: '3',
+    code: 'EXPIRED20',
+    discountType: 'percentage',
+    discountValue: 20,
+    expiryDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago (expired)
+    usageLimit: 10,
+    timesUsed: 10,
+    minimumOrder: 2000,
+    status: 'inactive',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+]
+
+export function getMockCoupons(): MockCoupon[] {
+  return mockCoupons
+}
+
+export function getMockCouponByCode(code: string): MockCoupon | null {
+  return mockCoupons.find(c => c.code.toUpperCase() === code.toUpperCase()) || null
+}
+
+export function addMockCoupon(coupon: Omit<MockCoupon, 'id' | 'createdAt' | 'updatedAt' | 'timesUsed'>): MockCoupon {
+  const newCoupon: MockCoupon = {
+    ...coupon,
+    id: String(mockCoupons.length + 1),
+    timesUsed: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+  mockCoupons.push(newCoupon)
+  return newCoupon
+}
+
+export function updateMockCoupon(id: string, updates: Partial<MockCoupon>): MockCoupon | null {
+  const index = mockCoupons.findIndex(c => c.id === id)
+  if (index === -1) return null
+
+  mockCoupons[index] = {
+    ...mockCoupons[index],
+    ...updates,
+    updatedAt: new Date().toISOString()
+  }
+  return mockCoupons[index]
+}
+
+export function deleteMockCoupon(id: string): boolean {
+  const index = mockCoupons.findIndex(c => c.id === id)
+  if (index === -1) return false
+
+  mockCoupons.splice(index, 1)
+  return true
+}
+
+export function incrementCouponUsage(id: string): MockCoupon | null {
+  const index = mockCoupons.findIndex(c => c.id === id)
+  if (index === -1) return null
+
+  mockCoupons[index].timesUsed += 1
+  mockCoupons[index].updatedAt = new Date().toISOString()
+  return mockCoupons[index]
 }

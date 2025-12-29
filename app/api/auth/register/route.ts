@@ -1,40 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
-import { prisma } from '@/lib/prisma'
+import { mockSignUp } from '@/lib/mock-auth'
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password, name } = await request.json()
 
-    // Create user in Supabase
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name,
+    // Use mock authentication for development
+    const user = await mockSignUp(email, password, name)
+    
+    return NextResponse.json({ 
+      data: { 
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role
         }
-      }
+      } 
     })
-    
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
-    }
-    
-    if (data.user) {
-      // Create user in our database
-      await prisma.user.create({
-        data: {
-          supabaseId: data.user.id,
-          email: data.user.email!,
-          name,
-          role: 'customer'
-        }
-      })
-    }
-    
-    return NextResponse.json({ data })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 400 })
   }
 }

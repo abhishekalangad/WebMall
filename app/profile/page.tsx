@@ -25,10 +25,21 @@ export default function ProfilePage() {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleSave = () => {
-    // Here you would typically save to your backend
-    console.log('Saving profile:', formData)
-    setIsEditing(false)
+  const handleSave = async () => {
+    try {
+      // Here you would typically save to your backend
+      // For now, we'll just update the local state
+      console.log('Saving profile:', formData)
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      setIsEditing(false)
+      // You could add a success toast here
+    } catch (error) {
+      console.error('Error saving profile:', error)
+      // You could add an error toast here
+    }
   }
 
   const handleCancel = () => {

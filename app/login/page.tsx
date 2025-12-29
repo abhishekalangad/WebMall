@@ -36,13 +36,18 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password)
+
+      // Refresh user state to get updated auth info
       await refreshUser()
-      
-      // Redirect after successful login
-      window.location.href = email.includes('admin') ? '/admin' : '/products'
+
+      // Get redirect path
+      const redirect = searchParams.get('redirect')
+
+      // Redirect based on user role (will be available after refresh)
+      router.push(redirect || '/products')
+      router.refresh()
     } catch (error: any) {
       setError(error.message || 'Login failed')
-    } finally {
       setLoading(false)
     }
   }
@@ -101,36 +106,6 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        {/* Demo Access Buttons */}
-        <div className="mt-8 pt-6 border-t">
-          <p className="text-sm text-gray-500 text-center mb-4">Quick Demo Access:</p>
-          <div className="space-y-3">
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full flex items-center gap-2"
-              onClick={() => {
-                setEmail('admin@webmall.lk')
-                setPassword('password123')
-              }}
-            >
-              <Shield className="h-4 w-4" />
-              Admin Access
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full flex items-center gap-2"
-              onClick={() => {
-                setEmail('customer@webmall.lk')
-                setPassword('password123')
-              }}
-            >
-              <User className="h-4 w-4" />
-              Customer Access
-            </Button>
-          </div>
-        </div>
 
         <div className="mt-6 text-center">
           <div className="flex justify-center space-x-4">

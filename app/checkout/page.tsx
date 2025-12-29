@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, CreditCard, MapPin, Package } from 'lucide-react'
+import { ArrowLeft, CreditCard, MapPin, Package, Tag, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,6 +16,10 @@ export default function CheckoutPage() {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [orderComplete, setOrderComplete] = useState(false)
+  const [couponCode, setCouponCode] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [couponError, setCouponError] = useState('')
 
   // Form state
   const [formData, setFormData] = useState({
@@ -35,14 +39,57 @@ export default function CheckoutPage() {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return
+
+    setCouponLoading(true)
+    setCouponError('')
+
+    try {
+      const response = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: couponCode.trim(),
+          orderTotal: totalPrice
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.valid) {
+        setAppliedCoupon(data)
+        setCouponError('')
+      } else {
+        setCouponError(data.error || 'Invalid coupon code')
+        setAppliedCoupon(null)
+      }
+    } catch (error) {
+      setCouponError('Failed to apply coupon')
+      setAppliedCoupon(null)
+    } finally {
+      setCouponLoading(false)
+    }
+  }
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null)
+    setCouponCode('')
+    setCouponError('')
+  }
+
+  const subtotal = totalPrice
+  const discount = appliedCoupon?.discountAmount || 0
+  const finalTotal = appliedCoupon?.finalTotal || totalPrice
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    
+
     try {
       // Simulate order processing
       await new Promise(resolve => setTimeout(resolve, 2000))
-      
+
       // Clear cart and show success
       clearCart()
       setOrderComplete(true)
@@ -295,12 +342,73 @@ export default function CheckoutPage() {
                   </div>
                 ))}
               </div>
-              
-              <div className="border-t pt-4">
-                <div className="flex justify-between items-center">
+
+              {/* Coupon Section */}
+              <div className="border-t pt-4 space-y-3">
+                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                  <Tag className="h-4 w-4" />
+                  Have a coupon?
+                </h3>
+                {!appliedCoupon ? (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Input
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        placeholder="Enter coupon code"
+                        className="flex-1"
+                      />
+                      <Button
+                        onClick={handleApplyCoupon}
+                        disabled={couponLoading || !couponCode.trim()}
+                        variant="outline"
+                      >
+                        {couponLoading ? 'Applying...' : 'Apply'}
+                      </Button>
+                    </div>
+                    {couponError && (
+                      <p className="text-sm text-red-600">{couponError}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-green-800">{appliedCoupon.coupon.code}</p>
+                        <p className="text-sm text-green-600">
+                          {appliedCoupon.coupon.discountType === 'percentage'
+                            ? `${appliedCoupon.coupon.discountValue}% off`
+                            : `LKR ${appliedCoupon.coupon.discountValue} off`}
+                        </p>
+                      </div>
+                      <Button
+                        onClick={handleRemoveCoupon}
+                        variant="ghost"
+                        size="sm"
+                        className="text-green-700 hover:text-green-900"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t pt-4 space-y-2">
+                <div className="flex justify-between items-center text-gray-600">
+                  <span>Subtotal:</span>
+                  <span>{subtotal.toLocaleString('en-LK')} LKR</span>
+                </div>
+                {discount > 0 && (
+                  <div className="flex justify-between items-center text-green-600">
+                    <span>Discount:</span>
+                    <span>-{discount.toLocaleString('en-LK')} LKR</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center pt-2 border-t">
                   <span className="text-lg font-semibold">Total:</span>
                   <span className="text-xl font-bold">
-                    {totalPrice.toLocaleString('en-LK')} LKR
+                    {finalTotal.toLocaleString('en-LK')} LKR
                   </span>
                 </div>
                 <Button

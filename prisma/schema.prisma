@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["public", "auth"]
 }
 
 model User {
@@ -19,6 +20,10 @@ model User {
   updatedAt    DateTime @updatedAt
   orders       Order[]
   cart         Cart?
+
+  @@index([email])
+  @@index([role])
+  @@schema("public")
 }
 
 model Category {
@@ -29,6 +34,7 @@ model Category {
   image       String?
   createdAt   DateTime  @default(now())
   products    Product[]
+  @@schema("public")
 }
 
 model Product {
@@ -48,6 +54,11 @@ model Product {
   variants    ProductVariant[]
   cartItems   CartItem[]
   orderItems  OrderItem[]
+
+  @@index([categoryId])
+  @@index([status])
+  @@index([createdAt])
+  @@schema("public")
 }
 
 model ProductVariant {
@@ -59,6 +70,7 @@ model ProductVariant {
   attributes    Json
   priceOverride Float?
   stock         Int
+  @@schema("public")
 }
 
 model ProductImage {
@@ -68,6 +80,7 @@ model ProductImage {
   url       String
   alt       String?
   position  Int     @default(0)
+  @@schema("public")
 }
 
 model Cart {
@@ -77,6 +90,7 @@ model Cart {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   items     CartItem[]
+  @@schema("public")
 }
 
 model CartItem {
@@ -89,6 +103,7 @@ model CartItem {
   createdAt DateTime @default(now())
   
   @@unique([cartId, productId])
+  @@schema("public")
 }
 
 model Order {
@@ -105,6 +120,11 @@ model Order {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   items         OrderItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@schema("public")
 }
 
 model OrderItem {
@@ -116,4 +136,39 @@ model OrderItem {
   quantity  Int
   price     Float
   total     Float
+  @@schema("public")
+}
+
+model SiteSettings {
+  id              String   @id @default("default")
+  storeName       String   @default("WebMall")
+  tagline         String?  @default("Sri Lankan Fashion Accessories")
+  description     String?  @default("Your premier destination for Sri Lankan fashion accessories.")
+  logoUrl         String?
+  contactEmail    String?  @default("webmalll.ik@gmail.com")
+  contactPhone    String?  @default("+94 778973708")
+  contactAddress  String?  @default("Colombo, Sri Lanka")
+  facebookUrl     String?
+  instagramUrl    String?
+  twitterUrl      String?
+  shippingBaseRate Float   @default(500)
+  freeShippingThreshold Float @default(10000)
+  updatedAt       DateTime @updatedAt
+
+  @@schema("public")
+}
+
+model HeroBanner {
+  id          String   @id @default(uuid())
+  title       String
+  subtitle    String?
+  imageUrl    String
+  ctaText     String?  @default("Shop Now")
+  ctaLink     String?  @default("/products")
+  position    Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@schema("public")
 }

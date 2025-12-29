@@ -1,57 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { supabase } from '@/lib/supabase'
-import { getMockOrders } from '@/lib/mock-data'
+import { verifyAuthToken } from '@/lib/auth'
 
-function isSupabaseConfigured(): boolean {
-  // Temporarily disable Supabase to use mock data only
-  return false
-  
-  // Original check (uncomment when database is ready):
-  // return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && 
-  //          process.env.NEXT_PUBLIC_SUPABASE_URL.includes('supabase.co'))
-}
-
-async function getCurrentAuthUser() {
-  if (!isSupabaseConfigured()) {
-    return { id: '1', email: 'admin@webmall.lk', role: 'admin' }
-  }
-  
+export async function GET(request: NextRequest) {
   try {
-    let response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/user`)
-    const result = await response.json()
-    return result.user
-  } catch {
-    return null
-  }
-}
+    const authHeader = request.headers.get('Authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-export async function GET() {
-  if (!isSupabaseConfigured()) {
-    return NextResponse.json(getMockOrders())
-  }
+    const token = authHeader.split(' ')[1]
+    const user = await verifyAuthToken(token)
 
-  // Customer: list own orders; Admin: list all
-  const user = await getCurrentAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  
-  const where = user.role === 'admin' ? {} : { userId: user.id }
-  const orders = await prisma.order.findMany({
-    where,
-    include: { items: true },
-    orderBy: { createdAt: 'desc' }
-  })
-  return NextResponse.json(orders)
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const where = user.role === 'admin' ? {} : { userId: user.id }
+    const orders = await prisma.order.findMany({
+      where,
+      include: { items: true },
+      orderBy: { createdAt: 'desc' }
+    })
+    return NextResponse.json(orders)
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
 }
 
 export async function POST(request: NextRequest) {
-  if (!isSupabaseConfigured()) {
-    return NextResponse.json({ error: 'Mock orders created automatically for demo' }, { status: 400 })
-  }
-
   try {
-    const user = await getCurrentAuthUser()
+    const authHeader = request.headers.get('Authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const token = authHeader.split(' ')[1]
+    const user = await verifyAuthToken(token)
+
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const body = await request.json()
     const { items, shippingAddress, notes, paymentMethod = 'cod' } = body
 

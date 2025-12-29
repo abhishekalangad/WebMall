@@ -1,40 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { supabase } from '@/lib/supabase'
+import { prisma } from '@/lib/prisma-extended'
+import { verifyAuthToken, isSupabaseConfigured } from '@/lib/auth'
 import { getMockProducts, addMockProduct } from '@/lib/mock-data'
 
-function isSupabaseConfigured(): boolean {
-  // Temporarily disable Supabase to use mock data only
-  return false
-  
-  // Original check (uncomment when database is ready):
-  // return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && 
-  //          process.env.NEXT_PUBLIC_SUPABASE_URL.includes('supabase.co'))
-}
-
-async function getCurrentAuthUser() {
-  if (!isSupabaseConfigured()) {
-    // Mock auth user - assume admin for testing
-    return { id: '1', email: 'admin@webmall.lk', role: 'admin' }
-  }
-  
+export async function GET(request: NextRequest) {
   try {
-    const response = await fetch('/api/auth/user')
-    const result = await response.json()
-    return result.user
-  } catch {
-    return null
-  }
-}
+    // Check if admin is requesting to show all products
+    const authHeader = request.headers.get('Authorization')
+    let isAdmin = false
 
-export async function GET() {
-  try {
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1]
+      const user = await verifyAuthToken(token)
+      if (user?.role === 'admin') {
+        isAdmin = true
+      }
+    }
+
+    const where = isAdmin ? {} : { status: 'active' }
+
     if (!isSupabaseConfigured()) {
-      return NextResponse.json(getMockProducts())
+      const products = getMockProducts()
+      const filtered = isAdmin ? products : products.filter(p => p.status === 'active')
+      return NextResponse.json(filtered)
     }
 
     const products = await prisma.product.findMany({
-      where: { status: 'active' },
+      where,
       include: { images: true, variants: true, category: true },
       orderBy: { createdAt: 'desc' }
     })
@@ -46,7 +38,14 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentAuthUser()
+    const authHeader = request.headers.get('Authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const token = authHeader.split(' ')[1]
+    const user = await verifyAuthToken(token)
+
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -55,22 +54,20 @@ export async function POST(request: NextRequest) {
     const { name, slug, description, price, currency = 'LKR', categoryId, status = 'active', stock = 0, images = [], variants = [] } = body
 
     if (!isSupabaseConfigured()) {
-      // Use mock data
-      const mockCategory = { id: categoryId, name: 'Mock Category' }
-      const newProduct = addMockProduct({
+      const created = addMockProduct({
         name,
         slug,
         description,
         price,
         currency,
         categoryId,
-        status,
+        status: status as 'active' | 'inactive',
         stock,
-        category: mockCategory,
-        images,
-        variants
+        images: images.map((img: any) => ({ url: img.url, alt: img.alt, position: img.position ?? 0 })),
+        variants: variants.map((v: any) => ({ id: Math.random().toString(), sku: v.sku, name: v.name, stock: v.stock })),
+        category: { id: categoryId, name: 'Category' } // Simplified
       })
-      return NextResponse.json(newProduct, { status: 201 })
+      return NextResponse.json(created, { status: 201 })
     }
 
     const created = await prisma.product.create({

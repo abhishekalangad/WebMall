@@ -42,7 +42,7 @@ interface Order {
 }
 
 export default function AdminOrdersPage() {
-  const { user, loading } = useAuth()
+  const { user, loading, accessToken } = useAuth()
   const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
   const [isOrderDetailOpen, setIsOrderDetailOpen] = useState(false)
@@ -60,7 +60,9 @@ export default function AdminOrdersPage() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('/api/orders')
+      const token = await accessToken()
+      const headers = (token ? { 'Authorization': `Bearer ${token}` } : {}) as HeadersInit
+      const response = await fetch('/api/orders', { headers })
       const data = await response.json()
       if (response.ok) {
         setOrders(data)
@@ -72,9 +74,13 @@ export default function AdminOrdersPage() {
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
+      const token = await accessToken()
       const response = await fetch(`/api/orders/${orderId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        } as HeadersInit,
         body: JSON.stringify({ status: newStatus }),
       })
 
@@ -187,24 +193,24 @@ export default function AdminOrdersPage() {
       {selectedOrder && (
         <Card className="p-6">
           <h2 className="text-2xl font-bold mb-4">Order Details</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h3 className="font-semibold mb-2">Customer Information</h3>
               <div className="space-y-1 text-sm">
                 <div><strong>Name:</strong> {selectedOrder.user.name || 'N/A'}</div>
-                  <div><strong>Email:</strong> {selectedOrder.user.email}</div>
-                  {selectedOrder.user.phone && (
-                    <div><strong>Phone:</strong> {selectedOrder.user.phone}</div>
-                  )}
+                <div><strong>Email:</strong> {selectedOrder.user.email}</div>
+                {selectedOrder.user.phone && (
+                  <div><strong>Phone:</strong> {selectedOrder.user.phone}</div>
+                )}
               </div>
             </div>
-            
+
             <div>
               <h3 className="font-semibold mb-2">Order Information</h3>
               <div className="space-y-1 text-sm">
                 <div><strong>Order Number:</strong> {selectedOrder.orderNumber}</div>
-                <div><strong>Status:</strong> 
+                <div><strong>Status:</strong>
                   <Badge className={`ml-2 ${getStatusBadgeColor(selectedOrder.status)}`}>
                     {selectedOrder.status}
                   </Badge>

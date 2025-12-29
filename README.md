@@ -1,221 +1,296 @@
-# WebMall – Sri Lankan Fashion Accessories E-Commerce MVP
+# 🛍️ WebMall – Sri Lankan Fashion Accessories E-Commerce
 
-## 📌 Overview
-WebMall is a full-stack e-commerce MVP for Sri Lankan fashion accessories, replacing social media sales with a polished mobile-first web store.
+A modern, full-stack e-commerce platform for Sri Lankan fashion accessories, built with Next.js 13, TypeScript, Prisma, and Supabase.
 
-**Tech Stack:**
-- **Frontend**: Next.js 13+ + TypeScript + TailwindCSS + shadcn/ui
-- **Backend**: Next.js API Routes + TypeScript + Prisma
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
-- **Storage**: Supabase Storage
-- **Hosting**: Vercel (recommended)
+![WebMall](public/hero/img1.png)
 
-## 🚀 Features
+## ✨ Features
 
 ### Customer Features
-- **Homepage**: Hero section with featured products and categories
-- **Product Catalog**: Browse, search, and filter products by category
-- **Product Details**: Image galleries, descriptions, and specifications
-- **Shopping Cart**: Guest cart (localStorage) + authenticated user sync
-- **Authentication**: Modal-based login/register with Supabase Auth
-- **Checkout**: Cash on Delivery (COD) payment method
-- **Order Management**: View order history and status
+- 🏠 **Beautiful Homepage** with hero section and featured products
+- 📦 **Product Catalog** with search, filters, and categories
+- 🛒 **Shopping Cart** with persistent storage and guest/user sync
+- ❤️ **Wishlist** to save favorite products
+- 🔐 **Authentication** with Supabase Auth
+- 💳 **Checkout** with Cash on Delivery (COD)
+- 📱 **Order Tracking** and history
+- 📱 **Mobile-First Design** - fully responsive
 
 ### Admin Features
-- **Product Management**: CRUD operations for products
-- **Order Management**: View and update order statuses
-- **Category Management**: Organize products by categories
-- **Image Management**: Upload and manage product images
+- 📊 **Admin Dashboard** for managing the store
+- ➕ **Product Management** - Create, edit, delete products
+- 📋 **Order Management** - View and update order statuses
+- 🏷️ **Category Management** - Organize products
+- 🖼️ **Image Management** - Upload product images
 
-### Design Features
-- **Fashion-Inspired Design**: Elegant UI with Playfair Display + Inter fonts
-- **Color Palette**: Pastel colors with gold accents (#F7D794, #E8B4CB, #A8E6CF)
-- **Mobile-First**: Responsive design optimized for all devices
-- **Smooth Animations**: Hover effects and transitions
-- **Modern Components**: Card-based layouts with subtle shadows
+### Design & UX
+- 🎨 **Fashion-Inspired Design** with elegant UI
+- 🌈 **Pastel Color Palette** with gold accents
+- ✨ **Smooth Animations** and transitions
+- 🎯 **Error Boundaries** for graceful error handling
+- 🔄 **Loading States** and skeletons
+- ♿ **Accessible** components
 
-## 🛠️ Setup Instructions
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+ installed
+- A Supabase account (free tier works great!)
 
 ### 1. Clone and Install
+
 ```bash
 git clone https://github.com/yourusername/webmall.git
 cd webmall
 npm install
 ```
 
-### 2. Supabase Setup
+### 2. Set Up Supabase
 
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Go to Project Settings → API
-3. Copy your Project URL and API keys
-4. Create `.env.local` file:
+1. Go to [supabase.com](https://supabase.com) and create a new project
+2. Wait for your project to be ready (takes ~2 minutes)
+3. Go to **Settings → API** and copy:
+   - Project URL
+   - `anon` public key
+   - `service_role` secret key
+4. Go to **Settings → Database** and copy:
+   - Connection string (URI format)
 
+### 3. Configure Environment Variables
+
+```bash
+# Copy the example file
+copy .env.local.example .env.local
+
+# Edit .env.local and fill in your Supabase credentials
+```
+
+Your `.env.local` should look like:
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-DATABASE_URL=your_supabase_postgres_connection_string
-JWT_SECRET=your_jwt_secret_key
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+DATABASE_URL=postgresql://postgres:your-password@db.your-project.supabase.co:5432/postgres
+JWT_SECRET=your-secure-random-string-min-32-chars
 ```
 
-### 3. Database Setup
+### 4. Set Up Database
 
-1. Initialize Prisma:
 ```bash
+# Generate Prisma Client
 npx prisma generate
-npx prisma db push
-```
 
-2. (Optional) Seed the database:
-```bash
+# Push schema to database
+npx prisma db push
+
+# Seed database with sample data (optional)
 npx prisma db seed
 ```
 
-### 4. Run the Development Server
+### 5. Run Development Server
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) - you should see the WebMall homepage! 🎉
 
 ## 📁 Project Structure
 
 ```
 webmall/
-├── app/                    # Next.js 13+ app directory
+├── app/                    # Next.js 13 App Router
 │   ├── api/               # API routes
-│   ├── products/          # Product pages
+│   │   ├── auth/         # Authentication endpoints
+│   │   ├── products/     # Product CRUD
+│   │   ├── orders/       # Order management
+│   │   └── categories/   # Category management
+│   ├── admin/            # Admin dashboard pages
+│   ├── products/         # Product pages
 │   ├── cart/             # Shopping cart
-│   ├── checkout/         # Checkout process
-│   ├── admin/            # Admin dashboard
-│   └── globals.css       # Global styles
+│   ├── checkout/         # Checkout flow
+│   └── login/            # Auth pages
 ├── components/            # React components
 │   ├── ui/               # shadcn/ui components
-│   ├── auth/             # Authentication components
-│   ├── layout/           # Layout components
+│   ├── auth/             # Auth components
+│   ├── layout/           # Header, Footer
 │   └── products/         # Product components
-├── contexts/             # React contexts
+├── contexts/             # React Context providers
+│   ├── AuthContext.tsx   # Authentication state
+│   ├── CartContext.tsx   # Shopping cart state
+│   └── WishlistContext.tsx # Wishlist state
 ├── lib/                  # Utility functions
-├── prisma/              # Database schema
+│   ├── prisma.ts         # Prisma client
+│   ├── supabase.ts       # Supabase client
+│   └── auth.ts           # Auth helpers
+├── prisma/              # Database
+│   ├── schema.prisma    # Database schema
+│   └── seed.ts          # Seed data
 └── public/              # Static assets
 ```
 
-## 🔧 Key Technologies
+## 🛠️ Tech Stack
 
 ### Frontend
-- **Next.js 13+**: React framework with App Router
-- **TypeScript**: Type-safe development
-- **TailwindCSS**: Utility-first CSS framework
-- **shadcn/ui**: Modern UI components
-- **Framer Motion**: Animation library
+- **Next.js 13** - React framework with App Router
+- **TypeScript** - Type-safe development
+- **TailwindCSS** - Utility-first CSS
+- **shadcn/ui** - Beautiful UI components
+- **Framer Motion** - Smooth animations
 
 ### Backend
-- **Next.js API Routes**: Serverless API endpoints
-- **Prisma**: Type-safe database ORM
-- **Supabase**: Backend-as-a-Service platform
-- **Zod**: Schema validation
+- **Next.js API Routes** - Serverless endpoints
+- **Prisma** - Type-safe database ORM
+- **Supabase** - Backend-as-a-Service
+  - PostgreSQL database
+  - Authentication
+  - Storage
+- **Zod** - Schema validation
 
-### Design System
-- **Fonts**: Playfair Display (headings) + Inter (body)
-- **Colors**: Pastel palette with gold accents
-- **Components**: Card-based layouts with rounded corners
-- **Animations**: Subtle hover effects and transitions
+## 📝 Available Scripts
 
-## 🚀 Deployment
+```bash
+# Development
+npm run dev          # Start dev server
+npm run build        # Build for production
+npm start            # Start production server
 
-### Vercel (Recommended)
+# Database
+npx prisma generate  # Generate Prisma Client
+npx prisma db push   # Push schema to database
+npx prisma db seed   # Seed database with sample data
+npx prisma studio    # Open Prisma Studio (database GUI)
+
+# Code Quality
+npm run lint         # Run ESLint
+npm run typecheck    # Check TypeScript types
+```
+
+## 🔐 Default Credentials
+
+After seeding the database, you can log in with:
+
+**Admin Account:**
+- Email: `admin@webmall.lk`
+- Password: Set up through Supabase Auth
+
+**Test Customers:**
+- Email: `customer@webmall.lk`
+- Password: Set up through Supabase Auth
+
+## 🎨 Design System
+
+### Colors
+- **Primary**: Pink to Yellow gradient (`from-pink-300 to-yellow-300`)
+- **Secondary**: Green to Blue gradient
+- **Accent**: Gold (#F7D794)
+
+### Fonts
+- **Headings**: Playfair Display (serif)
+- **Body**: Inter (sans-serif)
+
+### Components
+- Card-based layouts with rounded corners
+- Subtle shadows and hover effects
+- Smooth transitions (300ms)
+
+## 🚢 Deployment
+
+### Deploy to Vercel (Recommended)
+
 1. Push your code to GitHub
-2. Connect your repository to Vercel
+2. Go to [vercel.com](https://vercel.com) and import your repository
 3. Add environment variables in Vercel dashboard
-4. Deploy automatically on push
+4. Deploy! 🚀
 
-### Manual Deployment
-1. Build the project:
-```bash
-npm run build
+### Environment Variables for Production
+
+Make sure to add all variables from `.env.local` to your Vercel project settings.
+
+## 📊 Database Schema
+
+### Main Models
+- **User** - Customer and admin accounts
+- **Product** - Product catalog
+- **Category** - Product categories
+- **Order** - Customer orders
+- **Cart** - Shopping carts
+- **ProductImage** - Product images
+- **ProductVariant** - Product variations
+
+See `prisma/schema.prisma` for full schema.
+
+## 🔧 Configuration
+
+### Image Optimization
+
+Images are optimized by Next.js. To configure allowed domains:
+
+```javascript
+// next.config.js
+images: {
+  domains: ['images.pexels.com', 'your-domain.com'],
+}
 ```
 
-2. Start the production server:
-```bash
-npm start
-```
+### Payment Integration
 
-## 🔒 Environment Variables
+Currently supports Cash on Delivery (COD). To add payment gateways:
 
-Required environment variables for production:
+1. Install payment SDK (Stripe, PayHere, etc.)
+2. Add payment routes in `app/api/payments/`
+3. Update checkout flow in `app/checkout/page.tsx`
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_production_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_production_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_production_supabase_service_role_key
-DATABASE_URL=your_production_database_url
-JWT_SECRET=your_production_jwt_secret
-```
+## 🐛 Troubleshooting
 
-## 📝 API Endpoints
-
-### Products
-- `GET /api/products` - Get all products
-- `GET /api/products/[slug]` - Get product by slug
-- `POST /api/products` - Create product (admin)
-- `PUT /api/products/[id]` - Update product (admin)
-- `DELETE /api/products/[id]` - Delete product (admin)
-
-### Cart
-- `GET /api/cart` - Get user's cart
-- `POST /api/cart` - Add item to cart
-- `PUT /api/cart/[id]` - Update cart item
-- `DELETE /api/cart/[id]` - Remove cart item
-
-### Orders
-- `GET /api/orders` - Get user's orders
-- `POST /api/orders` - Create new order
-- `PUT /api/orders/[id]` - Update order status (admin)
-
-### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
-
-## 🧪 Testing
+### Database Connection Issues
 
 ```bash
-# Run unit tests
-npm run test
+# Check if DATABASE_URL is correct
+npx prisma db pull
 
-# Run E2E tests
-npm run test:e2e
-
-# Type checking
-npm run type-check
+# Reset database (WARNING: deletes all data)
+npx prisma migrate reset
 ```
+
+### Build Errors
+
+```bash
+# Clear Next.js cache
+rm -rf .next
+
+# Reinstall dependencies
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### Supabase Auth Issues
+
+1. Check if environment variables are set correctly
+2. Verify Supabase project is active
+3. Check Supabase Auth settings in dashboard
 
 ## 📈 Future Enhancements
 
-### Phase 2 Features
-- **Payment Integration**: PayHere, Stripe integration
-- **Wishlist**: Save favorite products
-- **Product Reviews**: Customer reviews and ratings
-- **Advanced Search**: Filters, sorting, faceted search
-- **Inventory Management**: Stock tracking and alerts
-- **Analytics**: Sales reports and customer insights
-- **Email Notifications**: Order confirmations, shipping updates
-- **Multi-language**: Sinhala and Tamil support
-
-### Performance Optimizations
-- **Image Optimization**: Next.js Image component with Supabase CDN
-- **Caching**: Redis for session and cart caching
-- **Search**: Elasticsearch or Algolia integration
-- **CDN**: Global content delivery
+- [ ] Payment gateway integration (PayHere, Stripe)
+- [ ] Product reviews and ratings
+- [ ] Advanced search with filters
+- [ ] Inventory management
+- [ ] Email notifications
+- [ ] Multi-language support (Sinhala, Tamil)
+- [ ] Wishlist sharing
+- [ ] Product recommendations
+- [ ] Analytics dashboard
+- [ ] Mobile app (React Native)
 
 ## 🤝 Contributing
 
+Contributions are welcome! Please feel free to submit a Pull Request.
+
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
 ## 📄 License
@@ -225,9 +300,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 For support and questions:
-- Email: hello@webmall.lk
-- GitHub Issues: [Create an issue](https://github.com/yourusername/webmall/issues)
+- 📧 Email: webmalll.ik@gmail.com
+- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/webmall/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/yourusername/webmall/discussions)
 
 ---
 
-**WebMall** - Empowering Sri Lankan fashion entrepreneurs with beautiful e-commerce solutions.
+**Made with ❤️ for Sri Lankan fashion entrepreneurs**
+
+🌟 Star this repo if you find it helpful!

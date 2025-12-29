@@ -45,6 +45,11 @@ export default function RegisterPage() {
       setShowVerificationModal(true)
       // Clear form
       setFormData({ name: '', email: '', password: '', confirmPassword: '' })
+      
+      // Redirect to waiting approval page after modal
+      setTimeout(() => {
+        router.push(`/waiting-approval?email=${encodeURIComponent(formData.email)}`)
+      }, 2000)
     } catch (error: any) {
       setError(error.message || 'Registration failed')
     } finally {

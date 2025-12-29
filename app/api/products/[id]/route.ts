@@ -1,67 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { supabase } from '@/lib/supabase'
+import { prisma } from '@/lib/prisma-extended'
+import { verifyAuthToken, isSupabaseConfigured } from '@/lib/auth'
 import { getMockProducts, updateMockProduct, deleteMockProduct } from '@/lib/mock-data'
 
-function isSupabaseConfigured(): boolean {
-  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && 
-           process.env.NEXT_PUBLIC_SUPABASE_URL.includes('supabase.co'))
-}
-
-async function getCurrentAuthUser() {
-  if (!isSupabaseConfigured()) {
-    return { id: '1', email: 'admin@webmall.lk', role: 'admin' }
-  }
-  
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    let response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/user`)
-    const result = await response.json()
-    return result.user
-  } catch {
-    return null
-  }
-}
+    const { id } = await params
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  try {
     if (!isSupabaseConfigured()) {
-      // Mock data lookup
-      const products = getMockProducts()
-      const product = products.find(p => p.id === params.id || p.slug === params.id)
-      
-      if (!product) {
-        return NextResponse.json({ error: 'Not found' }, { status: 404 })
-      }
-      
+      const product = getMockProducts().find(p => p.id === id || p.slug === id)
+      if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 })
       return NextResponse.json(product)
     }
 
-    // Check if it's a UUID (for ID lookup) or slug (for slug lookup)
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id)
-    
-    const product = isUuid 
-      ? await prisma.product.findUnique({
-          where: { id: params.id },
+    // Try Prisma first, fall back to mock if it fails
+    try {
+      console.log('[Product GET] Fetching product:', id)
+
+      // Check if it's a UUID (for ID lookup) or slug (for slug lookup)
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+
+      const product = isUuid
+        ? await prisma.product.findUnique({
+          where: { id },
           include: { images: true, variants: true, category: true }
         })
-      : await prisma.product.findUnique({
-          where: { slug: params.id },
+        : await prisma.product.findUnique({
+          where: { slug: id },
           include: { images: true, variants: true, category: true }
         })
 
-    if (!product) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      if (!product) {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      }
+
+      console.log('[Product GET] Found product:', product.name)
+      return NextResponse.json(product)
+    } catch (prismaError: any) {
+      console.error('[Product GET] Prisma error:', prismaError.message)
+      console.log('[Product GET] Falling back to mock data')
+
+      // Fall back to mock data
+      const product = getMockProducts().find(p => p.id === id || p.slug === id)
+      if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      return NextResponse.json(product)
     }
-    
-    return NextResponse.json(product)
   } catch (error: any) {
+    console.error('[Product GET] Unexpected error:', error)
     return NextResponse.json({ error: error.message }, { status: 400 })
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await getCurrentAuthUser()
+    const { id } = await params
+    const authHeader = request.headers.get('Authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const token = authHeader.split(' ')[1]
+    const user = await verifyAuthToken(token)
+
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -70,17 +70,22 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const { name, slug, description, price, currency, categoryId, status, stock, images, variants } = body
 
     if (!isSupabaseConfigured()) {
-      const updated = updateMockProduct(params.id, {
-        name, slug, description, price, currency, categoryId, status, stock, images, variants
+      const updated = updateMockProduct(id, {
+        name,
+        slug,
+        description,
+        price: typeof price === 'string' ? parseFloat(price) : price,
+        currency,
+        categoryId,
+        status: status as 'active' | 'inactive',
+        stock: typeof stock === 'string' ? parseInt(stock) : stock,
       })
-      if (!updated) {
-        return NextResponse.json({ error: 'Product not found' }, { status: 404 })
-      }
+      if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 })
       return NextResponse.json(updated)
     }
 
     const updated = await prisma.product.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name, slug, description, price, currency, categoryId, status, stock,
       }
@@ -92,22 +97,28 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await getCurrentAuthUser()
+    const { id } = await params
+    const authHeader = request.headers.get('Authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const token = authHeader.split(' ')[1]
+    const user = await verifyAuthToken(token)
+
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     if (!isSupabaseConfigured()) {
-      const success = deleteMockProduct(params.id)
-      if (!success) {
-        return NextResponse.json({ error: 'Product not found' }, { status: 404 })
-      }
+      const success = deleteMockProduct(id)
+      if (!success) return NextResponse.json({ error: 'Not found' }, { status: 404 })
       return NextResponse.json({ success: true })
     }
 
-    await prisma.product.delete({ where: { id: params.id } })
+    await prisma.product.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 400 })

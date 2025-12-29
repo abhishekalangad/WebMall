@@ -58,6 +58,10 @@ export function VerificationModal({ isOpen, onClose, email }: VerificationModalP
                 Continue to Login
               </Button>
             </div>
+            
+            <div className="mt-4 text-sm text-gray-500">
+              <p>⏳ You'll be redirected to the approval page in a moment...</p>
+            </div>
           </div>
         </Card>
       </div>

@@ -1,91 +1,81 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight, Sparkles, Shield, Truck, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ProductCard } from '@/components/products/ProductCard'
+import { useAuth } from '@/contexts/AuthContext'
 import { useCart } from '@/contexts/CartContext'
+import { useWishlist } from '@/contexts/WishlistContext'
+import { useSiteConfig } from '@/contexts/SiteConfigContext'
 
-// Mock data for featured products
-const featuredProducts = [
-  {
-    id: '1',
-    name: 'Pearl & Gold Earrings',
-    slug: 'pearl-gold-earrings',
-    price: 3500,
-    currency: 'LKR',
-    images: [{ url: 'https://images.pexels.com/photos/1454428/pexels-photo-1454428.jpeg', alt: 'Pearl earrings' }],
-    category: { name: 'Jewelry' }
-  },
-  {
-    id: '2',
-    name: 'Leather Crossbody Bag',
-    slug: 'leather-crossbody-bag',
-    price: 8900,
-    currency: 'LKR',
-    images: [{ url: 'https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg', alt: 'Leather bag' }],
-    category: { name: 'Bags' }
-  },
-  {
-    id: '3',
-    name: 'Crystal Bracelet Set',
-    slug: 'crystal-bracelet-set',
-    price: 2800,
-    currency: 'LKR',
-    images: [{ url: 'https://images.pexels.com/photos/1454428/pexels-photo-1454428.jpeg', alt: 'Crystal bracelet' }],
-    category: { name: 'Jewelry' }
-  },
-  {
-    id: '4',
-    name: 'Silk Phone Cover',
-    slug: 'silk-phone-cover',
-    price: 1200,
-    currency: 'LKR',
-    images: [{ url: 'https://images.pexels.com/photos/788946/pexels-photo-788946.jpeg', alt: 'Phone cover' }],
-    category: { name: 'Phone Covers' }
-  }
-]
 
-const categories = [
-  {
-    name: 'Jewelry',
-    image: 'https://images.pexels.com/photos/1454428/pexels-photo-1454428.jpeg',
-    count: '250+ items',
-    href: '/products?category=jewelry'
-  },
-  {
-    name: 'Bags',
-    image: 'https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg',
-    count: '150+ items',
-    href: '/products?category=bags'
-  },
-  {
-    name: 'Phone Covers',
-    image: 'https://images.pexels.com/photos/788946/pexels-photo-788946.jpeg',
-    count: '300+ items',
-    href: '/products?category=phone-covers'
-  },
-  {
-    name: 'Accessories',
-    image: 'https://images.pexels.com/photos/1454428/pexels-photo-1454428.jpeg',
-    count: '200+ items',
-    href: '/products?category=accessories'
-  }
-]
+
+
 
 export default function HomePage() {
-  const { addItem } = useCart()
+  const { user } = useAuth()
+  const { addItem: addToCart } = useCart()
+  const { addItem: addToWishlist } = useWishlist()
+  const { settings, banners, loading: configLoading } = useSiteConfig()
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([])
+  const [categories, setCategories] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch data on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [productsRes, categoriesRes] = await Promise.all([
+          fetch('/api/products'),
+          fetch('/api/categories')
+        ])
+
+        if (productsRes.ok) {
+          const data = await productsRes.json()
+          setFeaturedProducts(data.slice(0, 20))
+        }
+
+        if (categoriesRes.ok) {
+          const data = await categoriesRes.json()
+          setCategories(data)
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
 
   const handleAddToCart = (product: any) => {
-    addItem({
+    if (!user) {
+      // Redirect to login if not authenticated
+      window.location.href = '/login'
+      return
+    }
+    addToCart(product)
+  }
+
+  const handleAddToWishlist = (product: any) => {
+    if (!user) {
+      // Redirect to login if not authenticated
+      window.location.href = '/login'
+      return
+    }
+    addToWishlist({
       productId: product.id,
       name: product.name,
       price: product.price,
-      quantity: 1,
+      currency: product.currency,
       image: product.images[0]?.url,
-      slug: product.slug
+      slug: product.slug,
+      category: product.category.name
     })
   }
 
@@ -95,44 +85,78 @@ export default function HomePage() {
       <section className="relative bg-gradient-to-br from-pink-50 via-yellow-50 to-green-50 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-pink-100/20 to-yellow-100/20"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h1 className="text-5xl md:text-6xl font-playfair font-bold text-gray-900 mb-6 leading-tight">
-                Discover
-                <span className="bg-gradient-to-r from-pink-400 to-yellow-400 bg-clip-text text-transparent"> Beautiful </span>
-                Accessories
-              </h1>
-              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Explore our curated collection of Sri Lankan fashion accessories. 
-                From handcrafted jewelry to elegant bags, find pieces that tell your unique story.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/products">
-                  <Button size="lg" className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold px-8">
-                    Shop Now
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-                <Link href="/categories">
-                  <Button variant="outline" size="lg" className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8">
-                    Browse Categories
-                  </Button>
-                </Link>
+          {banners.length > 0 ? (
+            <div className="space-y-12">
+              {banners.map((banner, index) => (
+                <div key={banner.id} className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${index > 0 ? 'mt-24 pt-24 border-t border-gray-100' : ''}`}>
+                  <div className={index % 2 === 1 ? 'lg:order-2' : ''}>
+                    <h1 className="text-5xl md:text-6xl font-playfair font-bold text-gray-900 mb-6 leading-tight">
+                      {banner.title}
+                    </h1>
+                    {banner.subtitle && (
+                      <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+                        {banner.subtitle}
+                      </p>
+                    )}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      {banner.ctaLink && (
+                        <Link href={banner.ctaLink}>
+                          <Button size="lg" className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold px-8">
+                            {banner.ctaText || 'Shop Now'}
+                            <ArrowRight className="ml-2 h-5 w-5" />
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                  <div className={`relative ${index % 2 === 1 ? 'lg:order-1' : ''}`}>
+                    <div className="absolute -inset-4 bg-gradient-to-r from-pink-200 to-yellow-200 rounded-3xl blur-2xl opacity-30"></div>
+                    <img
+                      src={banner.imageUrl}
+                      alt={banner.title}
+                      className="relative rounded-3xl shadow-2xl object-cover w-full h-[400px] md:h-[600px]"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div>
+                <h1 className="text-5xl md:text-6xl font-playfair font-bold text-gray-900 mb-6 leading-tight">
+                  Discover
+                  <span className="bg-gradient-to-r from-pink-400 to-yellow-400 bg-clip-text text-transparent"> Beautiful </span>
+                  Accessories
+                </h1>
+                <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+                  Explore our curated collection of Sri Lankan fashion accessories.
+                  From handcrafted jewelry to elegant bags, find pieces that tell your unique story.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link href="/products">
+                    <Button size="lg" className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold px-8">
+                      Shop Now
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                  <Link href="/categories">
+                    <Button variant="outline" size="lg" className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8">
+                      Browse Categories
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+              <div className="relative">
+                <div className="absolute -inset-4 bg-gradient-to-r from-pink-200 to-yellow-200 rounded-3xl blur-2xl opacity-30"></div>
+                <img src="/hero/img1.png" alt="Beautiful accessories" width={600} height={600}
+                  className="relative rounded-3xl shadow-2xl object-cover"
+                />
               </div>
             </div>
-            <div className="relative">
-              <div className="absolute -inset-4 bg-gradient-to-r from-pink-200 to-yellow-200 rounded-3xl blur-2xl opacity-30"></div>
-              <Image
-                src="https://images.pexels.com/photos/1454428/pexels-photo-1454428.jpeg"
-                alt="Beautiful accessories"
-                width={600}
-                height={600}
-                className="relative rounded-3xl shadow-2xl object-cover"
-              />
-            </div>
-          </div>
+          )}
         </div>
       </section>
+
 
       {/* Features Section */}
       <section className="py-20 bg-white">
@@ -174,23 +198,30 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
             {categories.map((category) => (
-              <Link key={category.name} href={category.href} className="group">
+              <Link key={category.id} href={`/products?category=${category.slug}`} className="group">
                 <div className="relative aspect-square rounded-2xl overflow-hidden bg-white shadow-sm group-hover:shadow-lg transition-all duration-300">
-                  <Image
-                    src={category.image}
-                    alt={category.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+                  {category.image ? (
+                    <Image
+                      src={category.image}
+                      alt={category.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+                      <Sparkles className="h-12 w-12 text-gray-200" />
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                   <div className="absolute bottom-4 left-4 text-white">
                     <h3 className="text-xl font-semibold mb-1">{category.name}</h3>
-                    <p className="text-sm opacity-90">{category.count}</p>
+                    <p className="text-sm opacity-90">View Collection</p>
                   </div>
                 </div>
               </Link>
             ))}
           </div>
+
         </div>
       </section>
 
@@ -205,10 +236,13 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             {featuredProducts.map((product) => (
-              <ProductCard 
-                key={product.id} 
-                product={product} 
+              <ProductCard
+                key={product.id}
+                product={product}
                 onAddToCart={handleAddToCart}
+                onAddToWishlist={handleAddToWishlist}
+                showAddToCart={!!user} // Only show add to cart if user is logged in
+                showWishlist={!!user} // Only show wishlist if user is logged in
               />
             ))}
           </div>
@@ -239,7 +273,7 @@ export default function HomePage() {
                   ))}
                 </div>
                 <p className="text-gray-600 mb-4">
-                  "Amazing quality and beautiful designs! The jewelry I ordered exceeded my expectations. 
+                  "Amazing quality and beautiful designs! The jewelry I ordered exceeded my expectations.
                   Fast delivery and excellent customer service."
                 </p>
                 <div className="flex items-center">

@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { mockSignOut } from '@/lib/mock-auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const { error } = await supabase.auth.signOut()
-    
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
-    }
+    // Use mock authentication for development
+    mockSignOut()
     
     return NextResponse.json({ message: 'Logged out successfully' })
   } catch (error: any) {

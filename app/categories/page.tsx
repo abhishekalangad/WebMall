@@ -1,43 +1,32 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
-
-const categories = [
-  {
-    name: 'Jewelry',
-    image: 'https://images.pexels.com/photos/1454428/pexels-photo-1454428.jpeg',
-    description: 'Beautiful traditional and modern jewelry pieces',
-    count: '250+ items',
-    href: '/products?category=jewelry'
-  },
-  {
-    name: 'Bags',
-    image: 'https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg',
-    description: 'Elegant bags and purses for every occasion',
-    count: '150+ items',
-    href: '/products?category=bags'
-  },
-  {
-    name: 'Phone Covers',
-    image: 'https://images.pexels.com/photos/788946/pexels-photo-788946.jpeg',
-    description: 'Stylish and protective phone covers',
-    count: '300+ items',
-    href: '/products?category=phone-covers'
-  },
-  {
-    name: 'Accessories',
-    image: 'https://images.pexels.com/photos/1454428/pexels-photo-1454428.jpeg',
-    description: 'Essential accessories to complete your look',
-    count: '200+ items',
-    href: '/products?category=accessories'
-  }
-]
+import { ArrowLeft, Loader2, FolderOpen } from 'lucide-react'
 
 export default function CategoriesPage() {
+  const [categories, setCategories] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categories')
+        if (response.ok) {
+          const data = await response.json()
+          setCategories(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchCategories()
+  }, [])
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -56,8 +45,8 @@ export default function CategoriesPage() {
               Browse Categories
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Explore our diverse collection of Sri Lankan fashion accessories. 
-              Each category is carefully curated to offer you the finest selection 
+              Explore our diverse collection of Sri Lankan fashion accessories.
+              Each category is carefully curated to offer you the finest selection
               of authentic products.
             </p>
           </div>
@@ -67,26 +56,38 @@ export default function CategoriesPage() {
       {/* Categories Grid */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {categories.map((category) => (
-              <Link key={category.name} href={category.href} className="group">
-                <div className="relative aspect-square rounded-2xl overflow-hidden bg-white shadow-sm group-hover:shadow-lg transition-all duration-300">
-                  <Image
-                    src={category.image}
-                    alt={category.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
-                  <div className="absolute bottom-6 left-6 text-white">
-                    <h3 className="text-3xl font-playfair font-bold mb-2">{category.name}</h3>
-                    <p className="text-lg mb-2 opacity-90">{category.description}</p>
-                    <p className="text-sm opacity-80">{category.count}</p>
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="h-12 w-12 animate-spin text-pink-500" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {categories.map((category) => (
+                <Link key={category.id} href={`/products?category=${category.slug}`} className="group">
+                  <div className="relative aspect-square rounded-2xl overflow-hidden bg-white shadow-sm group-hover:shadow-lg transition-all duration-300">
+                    {category.image ? (
+                      <Image
+                        src={category.image}
+                        alt={category.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+                        <FolderOpen className="h-20 w-20 text-gray-200" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+                    <div className="absolute bottom-6 left-6 text-white">
+                      <h3 className="text-3xl font-playfair font-bold mb-2">{category.name}</h3>
+                      <p className="text-lg mb-2 opacity-90">{category.description || 'No description available.'}</p>
+                      <p className="text-sm opacity-80">View Collection</p>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -98,7 +99,7 @@ export default function CategoriesPage() {
               Can't Find What You're Looking For?
             </h2>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Browse all our products or use our search feature to find exactly what you need. 
+              Browse all our products or use our search feature to find exactly what you need.
               Our team is always ready to help you find the perfect accessory.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -119,3 +120,4 @@ export default function CategoriesPage() {
     </div>
   )
 }
+

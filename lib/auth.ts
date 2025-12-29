@@ -1,96 +1,119 @@
 import { supabase } from './supabase'
-import { mockSignIn, mockSignUp, mockGetCurrentUser, mockSignOut } from './mock-auth'
 
 export interface AuthUser {
   id: string
   email: string
   name?: string
   role: string
+  email_verified?: boolean
+}
+
+export const isSupabaseConfigured = () => {
+  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_URL.includes('supabase.co'))
 }
 
 export function isAdmin(user: AuthUser | null | undefined): boolean {
   return !!user && user.role === 'admin'
 }
 
-// Check if Supabase is configured
-function isSupabaseConfigured(): boolean {
-  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && 
-           process.env.NEXT_PUBLIC_SUPABASE_URL.includes('supabase.co'))
-}
-
 export async function signUp(email: string, password: string, name: string) {
-  // Use mock auth if Supabase not configured
-  if (!isSupabaseConfigured()) {
-    return mockSignUp(email, password, name)
-  }
-
-  const response = await fetch('/api/auth/register', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email, password, name }),
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { name, role: 'customer' } // Default role
+    }
   })
 
-  const result = await response.json()
-  
-  if (!response.ok) {
-    throw new Error(result.error || 'Failed to register')
-  }
-  
-  return result.data
+  if (error) throw new Error(error.message)
+  return data
 }
 
 export async function signIn(email: string, password: string) {
-  // Use mock auth if Supabase not configured
-  if (!isSupabaseConfigured()) {
-    return mockSignIn(email, password)
-  }
-
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) {
     throw new Error(error.message)
-  } 
+  }
   return data
 }
 
 export async function signOut() {
-  if (!isSupabaseConfigured()) {
-    mockSignOut()
-    return
-  }
-
-  const response = await fetch('/api/auth/logout', {
-    method: 'POST',
-  })
-
-  const result = await response.json()
-  
-  if (!response.ok) {
-    throw new Error(result.error || 'Failed to sign out')
-  }
+  const { error } = await supabase.auth.signOut()
+  if (error) throw new Error(error.message)
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  // Use mock auth if Supabase not configured
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) return null
+
+    // Get user details from public.User table or metadata
+    // For now, let's use metadata since we set it during signup
+    // Or fetch from your database if you sync users
+    const { data: profile } = await supabase
+      .from('User')
+      .select('*')
+      .eq('supabaseId', session.user.id)
+      .single()
+
+    return {
+      id: session.user.id,
+      email: session.user.email!,
+      name: profile?.name || session.user.user_metadata.name,
+      role: profile?.role || session.user.user_metadata.role || 'customer',
+      email_verified: !!session.user.email_confirmed_at
+    }
+  } catch (error) {
+    return null
+  }
+}
+
+export async function verifyAuthToken(token: string): Promise<AuthUser | null> {
+  // Handle mock tokens for development when Supabase is not configured
   if (!isSupabaseConfigured()) {
-    return mockGetCurrentUser()
+    if (token === 'mock-admin-token') {
+      return {
+        id: 'mock-admin-id',
+        email: 'admin@webmall.com',
+        name: 'Admin User',
+        role: 'admin',
+        email_verified: true
+      }
+    }
+    if (token === 'mock-customer-token') {
+      return {
+        id: 'mock-customer-id',
+        email: 'customer@webmall.com',
+        name: 'Customer User',
+        role: 'customer',
+        email_verified: true
+      }
+    }
+    return null
   }
 
   try {
-    const { data: { session } } = await supabase.auth.getSession()
-    const accessToken = session?.access_token
-    const response = await fetch('/api/auth/user', {
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-    })
-    const result = await response.json()
-    
-    if (!response.ok) {
-      return null
+    const { data: { user }, error } = await supabase.auth.getUser(token)
+
+    if (error || !user) return null
+
+    // Get user details from public.User table or metadata
+    const { data: profile } = await supabase
+      .from('User')
+      .select('*')
+      .eq('supabaseId', user.id)
+      .single()
+
+    return {
+      id: user.id,
+      email: user.email!,
+      name: profile?.name || user.user_metadata.name,
+      role: profile?.role || user.user_metadata.role || 'customer',
+      email_verified: !!user.email_confirmed_at
     }
-    
-    return result.user
   } catch (error) {
+    console.error('Error verifying auth token:', error)
     return null
   }
 }

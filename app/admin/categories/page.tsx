@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
 import { Plus, Edit, Trash2, FolderOpen } from 'lucide-react'
+import { ImageUpload } from '@/components/admin/ImageUpload'
 
 interface Category {
   id: string
@@ -22,7 +23,7 @@ interface Category {
 }
 
 export default function AdminCategoriesPage() {
-  const { user, loading } = useAuth()
+  const { user, loading, accessToken } = useAuth()
   const router = useRouter()
   const [categories, setCategories] = useState<Category[]>([])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -47,7 +48,9 @@ export default function AdminCategoriesPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/categories')
+      const token = await accessToken()
+      const headers = (token ? { 'Authorization': `Bearer ${token}` } : {}) as HeadersInit
+      const response = await fetch('/api/categories', { headers })
       const data = await response.json()
       if (response.ok) {
         setCategories(data)
@@ -60,9 +63,13 @@ export default function AdminCategoriesPage() {
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      const token = await accessToken()
       const response = await fetch('/api/categories', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        } as HeadersInit,
         body: JSON.stringify(formData),
       })
 
@@ -83,9 +90,13 @@ export default function AdminCategoriesPage() {
     if (!editingCategory) return
 
     try {
+      const token = await accessToken()
       const response = await fetch(`/api/categories/${editingCategory.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        } as HeadersInit,
         body: JSON.stringify(formData),
       })
 
@@ -106,8 +117,10 @@ export default function AdminCategoriesPage() {
     if (!confirm('Are you sure you want to delete this category?')) return
 
     try {
+      const token = await accessToken()
       const response = await fetch(`/api/categories/${id}`, {
         method: 'DELETE',
+        headers: (token ? { 'Authorization': `Bearer ${token}` } : {}) as HeadersInit,
       })
 
       if (response.ok) {
@@ -221,14 +234,13 @@ export default function AdminCategoriesPage() {
               />
             </div>
             <div>
-              <Label htmlFor="image">Image URL</Label>
-              <Input
-                id="image"
-                value={formData.image}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                placeholder="https://example.com/image.jpg"
+              <ImageUpload
+                onUploadComplete={(url) => setFormData({ ...formData, image: url })}
+                currentImageUrl={formData.image}
+                bucket="categories"
               />
             </div>
+
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)}>
                 Cancel
@@ -274,14 +286,13 @@ export default function AdminCategoriesPage() {
               />
             </div>
             <div>
-              <Label htmlFor="edit-image">Image URL</Label>
-              <Input
-                id="edit-image"
-                value={formData.image}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                placeholder="https://example.com/image.jpg"
+              <ImageUpload
+                onUploadComplete={(url) => setFormData({ ...formData, image: url })}
+                currentImageUrl={formData.image}
+                bucket="categories"
               />
             </div>
+
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
                 Cancel

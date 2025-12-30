@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -8,13 +8,13 @@ import { Card } from '@/components/ui/card'
 import { CheckCircle, Mail, Clock, RefreshCw, ArrowLeft } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
-export default function WaitingApprovalPage() {
+function WaitingApprovalContent() {
   const [timeElapsed, setTimeElapsed] = useState(0)
   const [isChecking, setIsChecking] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, refreshUser } = useAuth()
-  
+
   const email = searchParams.get('email') || user?.email || 'your email'
 
   // Timer for elapsed time
@@ -70,7 +70,7 @@ export default function WaitingApprovalPage() {
               <Mail className="h-8 w-8 text-blue-500 mr-3" />
               <h2 className="text-xl font-semibold text-gray-800">Check Your Email</h2>
             </div>
-            
+
             <p className="text-gray-600 mb-6">
               We've sent a verification link to <strong className="text-blue-600">{email}</strong>
             </p>
@@ -157,5 +157,17 @@ export default function WaitingApprovalPage() {
         </div>
       </Card>
     </div>
+  )
+}
+
+export default function WaitingApprovalPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-yellow-50 flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-pink-300 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <WaitingApprovalContent />
+    </Suspense>
   )
 }

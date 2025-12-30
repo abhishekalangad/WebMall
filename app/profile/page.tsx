@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, User, Mail, Phone, MapPin, Edit, Save, X } from 'lucide-react'
+import { ArrowLeft, User, Mail, Phone, MapPin, Edit, Save, X, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -30,10 +30,10 @@ export default function ProfilePage() {
       // Here you would typically save to your backend
       // For now, we'll just update the local state
       console.log('Saving profile:', formData)
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
+
       setIsEditing(false)
       // You could add a success toast here
     } catch (error) {
@@ -114,7 +114,7 @@ export default function ProfilePage() {
                   Personal Information
                 </h2>
                 {!isEditing ? (
-                  <Button 
+                  <Button
                     onClick={() => setIsEditing(true)}
                     variant="outline"
                     size="sm"
@@ -125,7 +125,7 @@ export default function ProfilePage() {
                   </Button>
                 ) : (
                   <div className="flex gap-2">
-                    <Button 
+                    <Button
                       onClick={handleSave}
                       size="sm"
                       className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
@@ -133,7 +133,7 @@ export default function ProfilePage() {
                       <Save className="h-4 w-4" />
                       Save
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleCancel}
                       variant="outline"
                       size="sm"

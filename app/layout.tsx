@@ -1,6 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter, Playfair_Display } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { CartProvider } from '@/contexts/CartContext'
 import { WishlistProvider } from '@/contexts/WishlistContext'
@@ -52,6 +53,7 @@ export default function RootLayout({
                     <Footer />
                   </div>
                   <Toaster />
+                  <Analytics />
                 </WishlistProvider>
               </CartProvider>
             </SiteConfigProvider>

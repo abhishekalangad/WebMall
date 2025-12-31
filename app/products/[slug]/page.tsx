@@ -7,15 +7,27 @@ import { SITE_URL } from '@/lib/constants'
 export const revalidate = 3600 // revalidate at most every hour
 
 export async function generateStaticParams() {
-  const products = await prisma.product.findMany({
-    where: { status: 'active' },
-    select: { slug: true },
-    take: 100 // Pre-render the first 100 products
-  })
+  // Gracefully handle missing database connection during build
+  // This allows the build to pass on Vercel even if the database is not accessible during the build step
+  if (!process.env.DATABASE_URL) {
+    console.warn('DATABASE_URL is not defined, skipping static generation for products.')
+    return []
+  }
 
-  return products.map((product) => ({
-    slug: product.slug,
-  }))
+  try {
+    const products = await prisma.product.findMany({
+      where: { status: 'active' },
+      select: { slug: true },
+      take: 100 // Pre-render the first 100 products
+    })
+
+    return products.map((product) => ({
+      slug: product.slug,
+    }))
+  } catch (error) {
+    console.warn('Failed to fetch products for static generation:', error)
+    return []
+  }
 }
 
 interface Props {

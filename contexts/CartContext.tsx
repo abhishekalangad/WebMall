@@ -62,7 +62,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 )
                 if (existingIndex >= 0) {
                   // Increase quantity if item exists
-                  mergedItems[existingIndex].quantity += guestItem.quantity
+                  mergedItems[existingIndex].quantity = (Number(mergedItems[existingIndex].quantity) || 0) + (Number(guestItem.quantity) || 0)
                 } else {
                   // Add new item
                   mergedItems.push(guestItem)
@@ -116,18 +116,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }
 
   const addItem = (newItem: Omit<CartItem, 'id'>) => {
+    // Sanity check for quantity
+    const quantityToAdd = Number(newItem.quantity) || 1
+
     setItems(prevItems => {
       const existingItem = prevItems.find(item => item.productId === newItem.productId)
       if (existingItem) {
         const updatedItems = prevItems.map(item =>
           item.productId === newItem.productId
-            ? { ...item, quantity: item.quantity + newItem.quantity }
+            ? { ...item, quantity: (Number(item.quantity) || 0) + quantityToAdd }
             : item
         )
         showToast(`${newItem.name} quantity updated in cart!`, 'success')
         return updatedItems
       } else {
-        const newItems = [...prevItems, { ...newItem, id: Date.now().toString() }]
+        const newItems = [...prevItems, { ...newItem, quantity: quantityToAdd, id: Date.now().toString() }]
         showToast(`${newItem.name} added to cart!`, 'success')
         return newItems
       }
@@ -143,13 +146,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }
 
   const updateQuantity = (productId: string, quantity: number) => {
-    if (quantity <= 0) {
+    const newQuantity = Number(quantity)
+    if (isNaN(newQuantity) || newQuantity <= 0) {
       removeItem(productId)
       return
     }
     setItems(prevItems =>
       prevItems.map(item =>
-        item.productId === productId ? { ...item, quantity } : item
+        item.productId === productId ? { ...item, quantity: newQuantity } : item
       )
     )
   }
@@ -164,8 +168,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => setToast(null), 3000)
   }
 
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
-  const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const totalItems = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
+  const totalPrice = items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0), 0)
 
   return (
     <CartContext.Provider

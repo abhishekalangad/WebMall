@@ -1,9 +1,13 @@
-'use client'
-
 import React from 'react'
 import { Users, Award, Globe, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'About Us',
+  description: 'Learn about WebMall, your destination for authentic Sri Lankan fashion accessories and handcrafted jewelry.',
+}
 
 export default function AboutPage() {
   return (
@@ -16,7 +20,7 @@ export default function AboutPage() {
               About WebMall
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Your gateway to beautiful Sri Lankan fashion accessories. We bring you authentic, 
+              Your gateway to beautiful Sri Lankan fashion accessories. We bring you authentic,
               handcrafted jewelry, bags, and accessories that tell the story of Sri Lankan craftsmanship.
             </p>
           </div>
@@ -33,20 +37,20 @@ export default function AboutPage() {
               </h2>
               <div className="space-y-4 text-gray-600 leading-Relaxed">
                 <p>
-                  WebMall was born from a passion to showcase the exceptional craftsmanship 
-                  of Sri Lankan artisans to the world. Founded in 2024, we have been 
-                  curating and delivering beautiful fashion accessories that blend traditional 
+                  WebMall was born from a passion to showcase the exceptional craftsmanship
+                  of Sri Lankan artisans to the world. Founded in 2024, we have been
+                  curating and delivering beautiful fashion accessories that blend traditional
                   techniques with modern aesthetics.
                 </p>
                 <p>
-                  Our journey began with a simple belief: that authentic Sri Lankan fashion 
-                  accessories deserve a global platform. Today, we're proud to connect 
-                  thousands of customers worldwide with the finest jewelry, bags, and 
+                  Our journey began with a simple belief: that authentic Sri Lankan fashion
+                  accessories deserve a global platform. Today, we're proud to connect
+                  thousands of customers worldwide with the finest jewelry, bags, and
                   accessories crafted by skilled local artisans.
                 </p>
                 <p>
-                  Every piece in our collection is carefully selected for its quality, 
-                  uniqueness, and cultural significance. We work directly with artisans 
+                  Every piece in our collection is carefully selected for its quality,
+                  uniqueness, and cultural significance. We work directly with artisans
                   and suppliers to ensure authenticity while supporting local communities.
                 </p>
               </div>
@@ -116,7 +120,7 @@ export default function AboutPage() {
             Join Our Journey
           </h2>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Discover authentic Sri Lankan accessories, support local artisans, 
+            Discover authentic Sri Lankan accessories, support local artisans,
             and add beautiful pieces to your collection.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

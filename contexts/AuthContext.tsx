@@ -12,6 +12,7 @@ interface AuthContextType {
   loading: boolean
   signOut: () => Promise<void>
   refreshUser: () => Promise<void>
+  updateUser: (updates: Partial<AuthUser>) => Promise<void>
   accessToken: () => Promise<string | undefined>
 }
 
@@ -94,6 +95,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         signOut: handleSignOut,
         refreshUser,
+        updateUser: async (updates: Partial<AuthUser>) => {
+          setUser(prev => prev ? { ...prev, ...updates } : null)
+          // If using mock auth, we can save to localStorage to persist across refreshes
+          if (!isSupabaseConfigured()) {
+            const mockUser = mockGetCurrentUser()
+            const updatedUser = { ...mockUser, ...updates }
+            localStorage.setItem('user', JSON.stringify(updatedUser))
+          }
+        },
         accessToken: async () => {
           if (!isSupabaseConfigured()) {
             if (!user) return undefined

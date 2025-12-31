@@ -1,7 +1,11 @@
-'use client'
-
 import React from 'react'
 import { Shield, Lock, Eye, FileText } from 'lucide-react'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+    title: 'Privacy Policy',
+    description: 'Our commitment to protecting your privacy at WebMall.',
+}
 
 export default function PrivacyPolicyPage() {
     const lastUpdated = 'December 27, 2025'

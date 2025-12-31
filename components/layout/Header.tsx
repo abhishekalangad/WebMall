@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { ShoppingBag, User, Menu, X, ChevronDown, LogOut, Settings, Package, Heart, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,19 +12,21 @@ import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useSiteConfig } from '@/contexts/SiteConfigContext'
 
-
-export function Header() {
+function HeaderContent() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const { user, signOut, loading, refreshUser } = useAuth()
+  const { user, signOut, loading } = useAuth()
   const { totalItems } = useCart()
   const { totalItems: wishlistItems } = useWishlist()
   const { settings, categories, loading: configLoading } = useSiteConfig()
 
   const userMenuRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const currentCategory = searchParams.get('category')
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -48,202 +50,143 @@ export function Header() {
     }
   }
 
-
+  const isActive = (path: string) => pathname === path
 
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3">
-            <img
-              src={settings?.logoUrl || '/logo-no-bg.png'}
-              alt={settings?.storeName || 'WebMall'}
-              className="h-12 w-auto object-contain"
-            />
-            <span className="text-3xl font-playfair font-bold text-gray-900">
-              {configLoading ? '...' : (settings?.storeName || 'WebMall')}
-            </span>
-          </Link>
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16 md:h-18">
+          {/* Left Side: Logo & Navigation Group */}
+          <div className="flex items-center flex-shrink-0 min-w-0">
+            <Link href="/" className="flex items-center space-x-2 sm:space-x-3">
+              <img
+                src={settings?.logoUrl || '/logo-no-bg.png'}
+                alt={settings?.storeName || 'WebMall'}
+                className="h-10 sm:h-14 md:h-16 w-auto object-contain"
+              />
+              <span className="text-xl sm:text-2xl md:text-3xl font-playfair font-bold text-gray-900 truncate">
+                {configLoading ? '...' : (settings?.storeName || 'WebMall')}
+              </span>
+            </Link>
 
+            {/* Desktop Navigation Grouped with Logo */}
+            <nav className="hidden lg:flex items-center space-x-8 xl:space-x-12 ml-6 xl:ml-12">
+              {categories.map((category) => {
+                const categoryPath = `/products?category=${category.slug}`
+                const isCurrent = pathname === '/products' && currentCategory === category.slug
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8 ml-16">
-            {categories.map((category) => (
-              <Link
-                key={category.id}
-                href={`/products?category=${category.slug}`}
-                className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
-              >
-                {category.name}
-              </Link>
-            ))}
+                return (
+                  <Link
+                    key={category.id}
+                    href={categoryPath}
+                    className={`font-cursive text-lg xl:text-2xl whitespace-nowrap ${isCurrent ? 'text-pink-600' : 'text-gray-600 hover:text-gray-900'}`}
+                  >
+                    {category.name}
+                  </Link>
+                )
+              })}
 
-
-            {/* User-specific navigation - only show when logged in */}
-            {user && (
-              <>
-                <Link
-                  href="/cart"
-                  className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
-                >
-                  Cart
-                </Link>
-                <Link
-                  href="/wishlist"
-                  className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
-                >
-                  Wishlist
-                </Link>
+              {user && (
                 <Link
                   href="/orders"
-                  className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                  className={`font-cursive text-lg xl:text-2xl whitespace-nowrap ${isActive('/orders') ? 'text-pink-600' : 'text-gray-600 hover:text-gray-900'}`}
                 >
                   Orders
                 </Link>
-              </>
-            )}
-          </nav>
-
-
-          {/* Search Bar */}
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <form onSubmit={handleSearch} className="w-full">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-transparent"
-                />
-              </div>
-            </form>
+              )}
+            </nav>
           </div>
 
-          {/* Right Side Actions */}
-          <div className="flex items-center space-x-4">
-            {/* Wishlist - only show when logged in */}
+          {/* Center: Search Bar (Fills remaining space without moving other items) */}
+          <div className="hidden md:flex flex-1 items-center justify-center px-4 lg:px-8 xl:px-12">
+            <div className="w-full max-w-[380px] lg:max-w-[480px]">
+              <form onSubmit={handleSearch} className="relative group">
+                <Search className="absolute left-3 lg:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-hover:text-pink-500 transition-colors" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 lg:pl-11 pr-3 lg:pr-4 h-10 lg:h-11 w-48 lg:w-64 group-hover:w-full group-focus-within:w-full border-none rounded-full bg-gray-100/80 focus:bg-white focus:ring-0 focus:outline-none transition-all duration-500 font-cursive text-base lg:text-xl"
+                />
+              </form>
+            </div>
+          </div>
+
+          {/* Right Side: Actions Grouped */}
+          <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 flex-shrink-0">
             {user && (
-              <Link href="/wishlist" className="relative p-2 text-gray-600 hover:text-gray-900">
-                <Heart className="h-6 w-6" />
+              <Link href="/wishlist" className="relative p-1.5 sm:p-2 text-gray-600 hover:text-gray-900 transition-colors">
+                <Heart className="h-5 w-5 sm:h-6 sm:w-6" />
                 {wishlistItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-0.5 sm:-top-1 -right-0.5 sm:-right-1 bg-red-500 text-white text-[10px] sm:text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center border-2 border-white font-bold">
                     {wishlistItems}
                   </span>
                 )}
               </Link>
             )}
 
-            {/* Cart - only show when logged in */}
             {user && (
-              <Link href="/cart" className="relative p-2 text-gray-600 hover:text-gray-900">
-                <ShoppingBag className="h-6 w-6" />
+              <Link href="/cart" className="relative p-1.5 sm:p-2 text-gray-600 hover:text-gray-900 transition-colors">
+                <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" />
                 {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-0.5 sm:-top-1 -right-0.5 sm:-right-1 bg-pink-500 text-white text-[10px] sm:text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center border-2 border-white font-bold">
                     {totalItems}
                   </span>
                 )}
               </Link>
             )}
 
-
-            {/* User Account */}
             {loading ? (
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 border-2 border-pink-300 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-sm text-gray-600">Loading...</span>
-              </div>
+              <div className="w-6 h-6 border-2 border-pink-300 border-t-transparent rounded-full animate-spin"></div>
             ) : user ? (
               <div className="relative" ref={userMenuRef}>
                 <Button
                   variant="ghost"
-                  className="flex items-center space-x-2 hover:bg-gray-100 rounded-full p-2"
+                  className="flex items-center space-x-1 sm:space-x-2 hover:bg-gray-100 rounded-full p-1.5 sm:p-2 transition-all"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 >
-                  <div className="w-8 h-8 bg-gradient-to-br from-pink-300 to-yellow-300 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-semibold text-gray-900">
-                      {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                    </span>
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center overflow-hidden border border-gray-100 shadow-sm">
+                    {user.profileImage ? (
+                      <img src={user.profileImage} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-pink-300 to-yellow-300 flex items-center justify-center">
+                        <span className="text-sm font-semibold text-gray-900">
+                          {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <span className="hidden sm:inline text-gray-700 font-medium">{user.name || 'Account'}</span>
                   <ChevronDown className="h-4 w-4 text-gray-500" />
                 </Button>
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-3 z-50">
-                    {/* User Info Header */}
                     <div className="px-4 py-3 border-b border-gray-100">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-pink-300 to-yellow-300 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-semibold text-gray-900">
-                            {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">{user.name || 'User'}</p>
-                          <p className="text-xs text-gray-500">{user.email}</p>
-                        </div>
-                      </div>
+                      <p className="text-sm font-semibold text-gray-900">{user.name || 'User'}</p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
                     </div>
 
-                    {/* Menu Items */}
                     <div className="py-2">
-                      <Link
-                        href="/profile"
-                        className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
+                      <Link href="/profile" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
                         <Settings className="h-4 w-4 mr-3 text-gray-400" />
                         <span>My Profile</span>
                       </Link>
-                      <Link
-                        href="/orders"
-                        className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
+                      <Link href="/orders" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
                         <Package className="h-4 w-4 mr-3 text-gray-400" />
                         <span>My Orders</span>
                       </Link>
-                      <Link
-                        href="/cart"
-                        className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
+                      <Link href="/cart" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
                         <ShoppingBag className="h-4 w-4 mr-3 text-gray-400" />
                         <span>My Cart</span>
-                        {totalItems > 0 && (
-                          <span className="ml-auto bg-pink-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                            {totalItems}
-                          </span>
-                        )}
-                      </Link>
-                      <Link
-                        href="/wishlist"
-                        className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        <Heart className="h-4 w-4 mr-3 text-gray-400" />
-                        <span>My Wishlist</span>
-                        {wishlistItems > 0 && (
-                          <span className="ml-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                            {wishlistItems}
-                          </span>
-                        )}
                       </Link>
                       {user.role === 'admin' && (
-                        <Link
-                          href="/admin"
-                          className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
+                        <Link href="/admin" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
                           <User className="h-4 w-4 mr-3 text-gray-400" />
                           <span>Admin Dashboard</span>
                         </Link>
                       )}
                     </div>
 
-                    {/* Logout Section */}
                     <div className="border-t border-gray-100 pt-2">
                       <button
                         onClick={async () => {
@@ -251,7 +194,7 @@ export function Header() {
                           await signOut()
                           window.location.href = '/'
                         }}
-                        className="flex items-center w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        className="flex items-center w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50"
                       >
                         <LogOut className="h-4 w-4 mr-3" />
                         <span>Sign Out</span>
@@ -261,26 +204,19 @@ export function Header() {
                 )}
               </div>
             ) : (
-              <div className="flex gap-2">
+              <div className="hidden sm:flex gap-2">
                 <Link href="/login">
-                  <Button
-                    className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900"
-                  >
+                  <Button className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 h-9 sm:h-10 px-4 sm:px-6 text-sm sm:text-base">
                     Sign In
-                  </Button>
-                </Link>
-                <Link href="/register">
-                  <Button variant="outline">
-                    Register
                   </Button>
                 </Link>
               </div>
             )}
 
-            {/* Mobile Menu Button */}
             <button
-              className="md:hidden p-2 text-gray-600 hover:text-gray-900"
+              className="lg:hidden p-2 text-gray-600 hover:text-gray-900 transition-colors rounded-lg hover:bg-gray-100 active:scale-95"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle menu"
             >
               {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -289,8 +225,7 @@ export function Header() {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t py-4">
-            {/* Mobile Search */}
+          <div className="lg:hidden border-t py-4 bg-white shadow-lg animate-in slide-in-from-top-2 duration-200">
             <div className="px-4 mb-4">
               <form onSubmit={handleSearch}>
                 <div className="relative">
@@ -306,72 +241,28 @@ export function Header() {
               </form>
             </div>
 
-            <div className="flex flex-col space-y-4">
+            <div className="flex flex-col space-y-1">
               {categories.map((category) => (
                 <Link
                   key={category.id}
                   href={`/products?category=${category.slug}`}
-                  className="block px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
+                  className={`block px-4 py-3 font-cursive text-xl sm:text-2xl transition-all rounded-lg mx-2 ${pathname === '/products' && currentCategory === category.slug ? 'bg-pink-50 text-pink-600 font-bold' : 'text-gray-600 hover:bg-gray-50'}`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {category.name}
                 </Link>
               ))}
-
-
-              {/* User-specific mobile navigation */}
               {user && (
-                <>
-                  <div className="border-t border-gray-200 my-2"></div>
-                  <Link
-                    href="/cart"
-                    className="block px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    My Cart
-                  </Link>
-                  <Link
-                    href="/wishlist"
-                    className="block px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    My Wishlist
-                  </Link>
-                  <Link
-                    href="/orders"
-                    className="block px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    My Orders
-                  </Link>
-                  <Link
-                    href="/profile"
-                    className="block px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    My Profile
-                  </Link>
-                  {user.role === 'admin' && (
-                    <Link
-                      href="/admin"
-                      className="block px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Admin Dashboard
-                    </Link>
-                  )}
-                  <div className="border-t border-gray-200 my-2"></div>
-                  <button
-                    onClick={async () => {
-                      setIsMobileMenuOpen(false)
-                      await signOut()
-                      window.location.href = '/'
-                    }}
-                    className="block w-full text-left px-4 py-2 text-red-600 hover:text-red-800 font-medium"
-                  >
-                    Sign Out
-                  </button>
-                </>
+                <Link href="/orders" className={`block px-4 py-3 font-cursive text-xl sm:text-2xl transition-all rounded-lg mx-2 ${isActive('/orders') ? 'bg-pink-50 text-pink-600 font-bold' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setIsMobileMenuOpen(false)}>
+                  My Orders
+                </Link>
+              )}
+              {!user && (
+                <Link href="/login" className="block px-4 py-3 mx-2" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button className="w-full bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-bold">
+                    Sign In
+                  </Button>
+                </Link>
               )}
             </div>
           </div>
@@ -383,5 +274,13 @@ export function Header() {
         onClose={() => setIsAuthModalOpen(false)}
       />
     </header>
+  )
+}
+
+export function Header() {
+  return (
+    <Suspense fallback={<div className="h-16 bg-white border-b" />}>
+      <HeaderContent />
+    </Suspense>
   )
 }

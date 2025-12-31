@@ -6,6 +6,10 @@ export interface AuthUser {
   name?: string
   role: string
   email_verified?: boolean
+  profileImage?: string
+  phone?: string
+  birthday?: string
+  address?: string
 }
 
 export const isSupabaseConfigured = () => {

@@ -1,7 +1,11 @@
-'use client'
-
 import React from 'react'
 import { FileText, CheckCircle, AlertCircle, HelpCircle } from 'lucide-react'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+    title: 'Terms of Service',
+    description: 'Terms and conditions for using the WebMall platform.',
+}
 
 export default function TermsOfServicePage() {
     const lastUpdated = 'December 27, 2025'

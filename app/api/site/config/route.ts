@@ -18,37 +18,74 @@ export async function GET() {
         try {
             console.log('[Site Config] Attempting Prisma queries...')
 
-            // 1. Fetch site settings (singleton)
-            let settings = await prisma.siteSettings.findUnique({
-                where: { id: 'default' }
-            })
+            if (!prisma) {
+                throw new Error('Prisma client is not initialized')
+            }
 
-            // Create default settings if they don't exist
-            if (!settings) {
-                settings = await prisma.siteSettings.create({
-                    data: { id: 'default' }
-                })
+            // Log available models for debugging
+            const prismaModels = Object.keys(prisma).filter(k => !k.startsWith('_') && !k.startsWith('$'))
+            console.log('[Site Config] Available Prisma models:', prismaModels)
+
+            // 1. Fetch site settings (singleton)
+            let settings = null
+            const prismaAny = prisma as any
+            if (prismaAny.siteSettings) {
+                try {
+                    settings = await prismaAny.siteSettings.findUnique({
+                        where: { id: 'default' }
+                    })
+
+                    // Create default settings if they don't exist
+                    if (!settings) {
+                        console.log('[Site Config] Creating default settings')
+                        settings = await prismaAny.siteSettings.create({
+                            data: { id: 'default' }
+                        })
+                    }
+                } catch (e: any) {
+                    console.error('[Site Config] Error fetching siteSettings:', e.message)
+                }
+            } else {
+                console.warn('[Site Config] siteSettings model not found in Prisma client object keys')
             }
 
             // 2. Fetch active hero banners
-            const banners = await prisma.heroBanner.findMany({
-                where: { isActive: true },
-                orderBy: { position: 'asc' }
-            })
+            let banners: any[] = []
+            if (prismaAny.heroBanner) {
+                try {
+                    banners = await prismaAny.heroBanner.findMany({
+                        where: { isActive: true },
+                        orderBy: { position: 'asc' }
+                    })
+                } catch (e: any) {
+                    console.error('[Site Config] Error fetching heroBanners:', e.message)
+                }
+            } else {
+                console.warn('[Site Config] heroBanner model not found in Prisma client object keys')
+            }
 
             // 3. Fetch categories
-            const categories = await prisma.category.findMany({
-                orderBy: { name: 'asc' }
-            })
+            let categories: any[] = []
+            if (prismaAny.category) {
+                try {
+                    categories = await prismaAny.category.findMany({
+                        orderBy: { name: 'asc' }
+                    })
+                } catch (e: any) {
+                    console.error('[Site Config] Error fetching categories:', e.message)
+                }
+            } else {
+                console.warn('[Site Config] category model not found in Prisma client object keys')
+            }
 
-            console.log('[Site Config] Prisma queries successful')
+            console.log('[Site Config] Prisma queries successful (or partially skipped)')
             return NextResponse.json({
-                settings,
-                banners,
-                categories
+                settings: settings || getMockSiteSettings(),
+                banners: banners,
+                categories: categories.length > 0 ? categories : getMockCategories()
             })
         } catch (prismaError: any) {
-            console.error('[Site Config] Prisma error:', prismaError.message)
+            console.error('[Site Config] Prisma error catch-all:', prismaError.message)
             console.log('[Site Config] Falling back to mock mode')
 
             // Fall back to mock data if Prisma fails
@@ -59,7 +96,7 @@ export async function GET() {
             })
         }
     } catch (error: any) {
-        console.error('[Site Config] Unexpected error:', error)
-        return NextResponse.json({ error: 'Failed to fetch site configuration' }, { status: 500 })
+        console.error('[Site Config] Unexpected server error:', error)
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }
 }

@@ -83,6 +83,14 @@
   font-family: var(--font-inter);
 }
 
+.font-cursive {
+  font-family: var(--font-cursive);
+}
+
+.font-brand-cursive {
+  font-family: var(--font-brand-cursive);
+}
+
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;

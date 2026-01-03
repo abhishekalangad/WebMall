@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { HomeView } from './HomeView'
 import { Product, Category } from '@prisma/client'
 
-export const revalidate = 3600 // revalidate at most every hour
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'WebMall - Sri Lankan Fashion & Accessories',

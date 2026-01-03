@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 
-export const revalidate = 3600 // revalidate at most every hour
+export const dynamic = 'force-dynamic'
 import { Category } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { CategoriesView } from './CategoriesView'

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 import { verifyAuthToken } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
@@ -40,40 +40,35 @@ export async function GET(request: NextRequest) {
             }, { status: 403 })
         }
 
-        const prisma = new PrismaClient()
-        try {
-            // Use Raw SQL to bypass outdated Prisma Client schema cache
-            const result: any[] = await prisma.$queryRaw`SELECT * FROM public.site_settings WHERE id = 'default' LIMIT 1`
+        // Use Raw SQL to bypass outdated Prisma Client schema cache
+        const result: any[] = await prisma.$queryRaw`SELECT * FROM public.site_settings WHERE id = 'default' LIMIT 1`
 
-            if (result.length === 0) {
-                return NextResponse.json(DEFAULT_SITE_SETTINGS)
-            }
-
-            const row = result[0]
-            // Map snake_case database columns back to camelCase for the frontend
-            const settings = {
-                id: row.id,
-                storeName: row.store_name,
-                tagline: row.tagline,
-                description: row.description,
-                logoUrl: row.logo_url,
-                contactEmail: row.contact_email,
-                contactPhone: row.contact_phone,
-                contactAddress: row.contact_address,
-                facebookUrl: row.facebook_url,
-                instagramUrl: row.instagram_url,
-                instagramUrl2: row.instagram_url_2,
-                twitterUrl: row.twitter_url,
-                shippingBaseRate: Number(row.shipping_base_rate),
-                freeShippingThreshold: Number(row.free_shipping_threshold),
-                headerNavigation: row.header_navigation,
-                customerNavigation: row.customer_navigation,
-                updatedAt: row.updated_at
-            }
-            return NextResponse.json(settings)
-        } finally {
-            await prisma.$disconnect()
+        if (result.length === 0) {
+            return NextResponse.json(DEFAULT_SITE_SETTINGS)
         }
+
+        const row = result[0]
+        // Map snake_case database columns back to camelCase for the frontend
+        const settings = {
+            id: row.id,
+            storeName: row.store_name,
+            tagline: row.tagline,
+            description: row.description,
+            logoUrl: row.logo_url,
+            contactEmail: row.contact_email,
+            contactPhone: row.contact_phone,
+            contactAddress: row.contact_address,
+            facebookUrl: row.facebook_url,
+            instagramUrl: row.instagram_url,
+            instagramUrl2: row.instagram_url_2,
+            twitterUrl: row.twitter_url,
+            shippingBaseRate: Number(row.shipping_base_rate),
+            freeShippingThreshold: Number(row.free_shipping_threshold),
+            headerNavigation: row.header_navigation,
+            customerNavigation: row.customer_navigation,
+            updatedAt: row.updated_at
+        }
+        return NextResponse.json(settings)
 
     } catch (error: any) {
         console.error('[Admin Settings GET] Unexpected error:', error)
@@ -99,7 +94,6 @@ export async function POST(request: NextRequest) {
         }
 
         const data = await request.json()
-        const prisma = new PrismaClient()
 
         try {
             console.log('[Admin Settings POST] Executing Raw Upsert...')
@@ -175,8 +169,6 @@ export async function POST(request: NextRequest) {
         } catch (prismaError: any) {
             console.error('[Admin Settings POST] Raw SQL error:', prismaError.message)
             return NextResponse.json({ error: `Database Error: ${prismaError.message}` }, { status: 500 })
-        } finally {
-            await prisma.$disconnect()
         }
     } catch (error: any) {
         console.error('[Admin Settings POST] Unexpected error:', error)

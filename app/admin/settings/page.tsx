@@ -92,10 +92,10 @@ export default function AdminSettingsPage() {
                         // Use saved navigation if it exists and has items, otherwise use defaults
                         const consolidatedSettings = {
                             ...data,
-                            headerNavigation: (data.headerNavigation && Array.isArray(data.headerNavigation) && data.headerNavigation.length > 0)
+                            headerNavigation: (data.headerNavigation && Array.isArray(data.headerNavigation))
                                 ? data.headerNavigation
                                 : DEFAULT_ADMIN_TABS,
-                            customerNavigation: (data.customerNavigation && Array.isArray(data.customerNavigation) && data.customerNavigation.length > 0)
+                            customerNavigation: (data.customerNavigation && Array.isArray(data.customerNavigation))
                                 ? data.customerNavigation
                                 : DEFAULT_CUSTOMER_TABS
                         }
@@ -366,46 +366,57 @@ export default function AdminSettingsPage() {
                                 Customize the tabs that appear in the admin header. Leave empty to use default tabs.
                             </p>
 
-                            {(settings.headerNavigation as any[] || []).map((item: any, index: number) => (
-                                <div key={index} className="flex gap-4 items-start">
-                                    <div className="flex-1 space-y-1">
-                                        <label className="text-xs font-semibold text-gray-500">Label</label>
-                                        <Input
-                                            value={item.label}
-                                            onChange={(e) => {
-                                                const newNav = [...(settings.headerNavigation as any[] || [])];
-                                                newNav[index] = { ...newNav[index], label: e.target.value };
-                                                setSettings({ ...settings, headerNavigation: newNav });
-                                            }}
-                                            placeholder="e.g. Products"
-                                        />
+                            <div className="grid grid-cols-12 gap-4 mb-2 px-1">
+                                <div className="col-span-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Label</div>
+                                <div className="col-span-7 text-xs font-semibold text-gray-500 uppercase tracking-wider">Path</div>
+                                <div className="col-span-1"></div>
+                            </div>
+
+                            <div className="space-y-2">
+                                {(settings.headerNavigation as any[] || []).map((item: any, index: number) => (
+                                    <div key={index} className="grid grid-cols-12 gap-4 items-center group">
+                                        <div className="col-span-4">
+                                            <Input
+                                                value={item.label}
+                                                onChange={(e) => {
+                                                    const newNav = [...(settings.headerNavigation as any[] || [])];
+                                                    newNav[index] = { ...newNav[index], label: e.target.value };
+                                                    setSettings({ ...settings, headerNavigation: newNav });
+                                                }}
+                                                placeholder="Label"
+                                                className="h-9"
+                                            />
+                                        </div>
+                                        <div className="col-span-7">
+                                            <Input
+                                                value={item.path}
+                                                onChange={(e) => {
+                                                    const newNav = [...(settings.headerNavigation as any[] || [])];
+                                                    newNav[index] = { ...newNav[index], path: e.target.value };
+                                                    setSettings({ ...settings, headerNavigation: newNav });
+                                                }}
+                                                placeholder="/path"
+                                                className="h-9 font-mono text-xs"
+                                            />
+                                        </div>
+                                        <div className="col-span-1 flex justify-end">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-gray-400 hover:text-red-500 hover:bg-red-50 h-9 w-9 p-0 rounded-full"
+                                                onClick={() => {
+                                                    const newNav = [...(settings.headerNavigation as any[] || [])];
+                                                    newNav.splice(index, 1);
+                                                    setSettings({ ...settings, headerNavigation: newNav });
+                                                }}
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </Button>
+                                        </div>
                                     </div>
-                                    <div className="flex-1 space-y-1">
-                                        <label className="text-xs font-semibold text-gray-500">Path</label>
-                                        <Input
-                                            value={item.path}
-                                            onChange={(e) => {
-                                                const newNav = [...(settings.headerNavigation as any[] || [])];
-                                                newNav[index] = { ...newNav[index], path: e.target.value };
-                                                setSettings({ ...settings, headerNavigation: newNav });
-                                            }}
-                                            placeholder="e.g. /admin/products"
-                                        />
-                                    </div>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        className="mt-6 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                        onClick={() => {
-                                            const newNav = [...(settings.headerNavigation as any[] || [])];
-                                            newNav.splice(index, 1);
-                                            setSettings({ ...settings, headerNavigation: newNav });
-                                        }}
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
 
                             <Button
                                 type="button"
@@ -414,7 +425,7 @@ export default function AdminSettingsPage() {
                                     const newNav = [...(settings.headerNavigation as any[] || []), { label: '', path: '' }];
                                     setSettings({ ...settings, headerNavigation: newNav });
                                 }}
-                                className="w-full mt-2 border-dashed"
+                                className="w-full mt-4 border-dashed h-9 text-sm"
                             >
                                 + Add Navigation Item
                             </Button>
@@ -453,45 +464,56 @@ export default function AdminSettingsPage() {
                                 Customize the tabs that appear in the customer header. Leave empty to show product categories by default.
                             </p>
 
-                            {(settings.customerNavigation as any[] || []).map((item: any, index: number) => (
-                                <div key={index} className="flex gap-4 items-start">
-                                    <div className="flex-1 space-y-1">
-                                        <label className="text-xs font-semibold text-gray-500">Label</label>
-                                        <Input
-                                            value={item.label}
-                                            onChange={(e) => {
-                                                const newNav = [...(settings.customerNavigation as any[] || [])];
-                                                newNav[index] = { ...newNav[index], label: e.target.value };
-                                                setSettings({ ...settings, customerNavigation: newNav });
-                                            }}
-                                            placeholder="e.g. Home"
-                                        />
+                            <div className="grid grid-cols-12 gap-4 mb-2 px-1">
+                                <div className="col-span-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Label</div>
+                                <div className="col-span-7 text-xs font-semibold text-gray-500 uppercase tracking-wider">Path</div>
+                                <div className="col-span-1"></div>
+                            </div>
+
+                            <div className="space-y-2">
+                                {(settings.customerNavigation as any[] || []).map((item: any, index: number) => (
+                                    <div key={index} className="grid grid-cols-12 gap-4 items-center group">
+                                        <div className="col-span-4">
+                                            <Input
+                                                value={item.label}
+                                                onChange={(e) => {
+                                                    const newNav = [...(settings.customerNavigation as any[] || [])];
+                                                    newNav[index] = { ...newNav[index], label: e.target.value };
+                                                    setSettings({ ...settings, customerNavigation: newNav });
+                                                }}
+                                                placeholder="Label"
+                                                className="h-9"
+                                            />
+                                        </div>
+                                        <div className="col-span-7">
+                                            <Input
+                                                value={item.path}
+                                                onChange={(e) => {
+                                                    const newNav = [...(settings.customerNavigation as any[] || [])];
+                                                    newNav[index] = { ...newNav[index], path: e.target.value };
+                                                    setSettings({ ...settings, customerNavigation: newNav });
+                                                }}
+                                                placeholder="/path"
+                                                className="h-9 font-mono text-xs"
+                                            />
+                                        </div>
+                                        <div className="col-span-1 flex justify-end">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-gray-400 hover:text-red-500 hover:bg-red-50 h-9 w-9 p-0 rounded-full"
+                                                onClick={() => {
+                                                    const newNav = (settings.customerNavigation as any[] || []).filter((_, i) => i !== index);
+                                                    setSettings({ ...settings, customerNavigation: newNav });
+                                                }}
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </Button>
+                                        </div>
                                     </div>
-                                    <div className="flex-1 space-y-1">
-                                        <label className="text-xs font-semibold text-gray-500">Path</label>
-                                        <Input
-                                            value={item.path}
-                                            onChange={(e) => {
-                                                const newNav = [...(settings.customerNavigation as any[] || [])];
-                                                newNav[index] = { ...newNav[index], path: e.target.value };
-                                                setSettings({ ...settings, customerNavigation: newNav });
-                                            }}
-                                            placeholder="e.g. /"
-                                        />
-                                    </div>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        className="mt-6 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                        onClick={() => {
-                                            const newNav = (settings.customerNavigation as any[] || []).filter((_, i) => i !== index);
-                                            setSettings({ ...settings, customerNavigation: newNav });
-                                        }}
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
 
                             <Button
                                 type="button"
@@ -500,7 +522,7 @@ export default function AdminSettingsPage() {
                                     const newNav = [...(settings.customerNavigation as any[] || []), { label: '', path: '' }];
                                     setSettings({ ...settings, customerNavigation: newNav });
                                 }}
-                                className="w-full mt-2 border-dashed"
+                                className="w-full mt-4 border-dashed h-9 text-sm"
                             >
                                 + Add Navigation Item
                             </Button>

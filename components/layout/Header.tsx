@@ -133,7 +133,7 @@ function HeaderContent() {
       : DEFAULT_CUSTOMER_TABS)
 
   return (
-    <header className="bg-white shadow-sm border-b sticky top-0 z-40">
+    <header className="bg-white shadow-sm border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16 md:h-18">
           {/* Left Side: Logo & Navigation Group */}
@@ -245,7 +245,7 @@ function HeaderContent() {
                   <ChevronDown className="h-4 w-4 text-gray-500" />
                 </Button>
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-3 z-50">
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-3 z-[9999]">
                     <div className="px-4 py-3 border-b border-gray-100">
                       <p className="text-sm font-semibold text-gray-900">{user.name || 'User'}</p>
                       <p className="text-xs text-gray-500">{user.email}</p>

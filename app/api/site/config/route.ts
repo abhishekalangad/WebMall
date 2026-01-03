@@ -85,7 +85,11 @@ export async function GET() {
             }
 
             return NextResponse.json({
-                settings: settings || DEFAULT_SITE_SETTINGS,
+                settings: settings ? {
+                    ...settings,
+                    headerNavigation: settings.headerNavigation ?? [],
+                    customerNavigation: settings.customerNavigation ?? []
+                } : DEFAULT_SITE_SETTINGS,
                 banners: banners,
                 categories: categories.length > 0 ? categories : DEFAULT_CATEGORIES
             }, {

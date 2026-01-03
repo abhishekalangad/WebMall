@@ -115,20 +115,18 @@ function HeaderContent() {
 
   const DEFAULT_ADMIN_TABS = [
     { label: 'Categories', path: '/admin/categories' },
-    { label: 'Subcategories', path: '/admin/subcategories' },
     { label: 'Products', path: '/admin/products' },
     { label: 'Orders', path: '/admin/orders' },
     { label: 'Messages', path: '/admin/messages' },
-    { label: 'Customers', path: '/admin/users' },
     { label: 'Settings', path: '/admin/settings' }
   ]
 
   // Determine which navigation to show based on user role
   const navItems = user?.role === 'admin'
-    ? (settings?.headerNavigation && Array.isArray(settings.headerNavigation) && settings.headerNavigation.length > 0
+    ? (settings?.headerNavigation && Array.isArray(settings.headerNavigation)
       ? settings.headerNavigation
       : DEFAULT_ADMIN_TABS)
-    : (settings?.customerNavigation && Array.isArray(settings.customerNavigation) && settings.customerNavigation.length > 0
+    : (settings?.customerNavigation && Array.isArray(settings.customerNavigation)
       ? settings.customerNavigation
       : DEFAULT_CUSTOMER_TABS)
 
@@ -145,7 +143,11 @@ function HeaderContent() {
                 className="h-10 sm:h-14 md:h-16 w-auto object-contain"
               />
               <span className="text-xl sm:text-2xl md:text-3xl font-playfair font-bold text-gray-900 truncate">
-                {configLoading ? '...' : (settings?.storeName || 'WebMall')}
+                {configLoading ? (
+                  <div className="h-8 w-24 bg-gray-200 animate-pulse rounded"></div>
+                ) : (
+                  settings?.storeName || 'WebMall'
+                )}
               </span>
             </Link>
 

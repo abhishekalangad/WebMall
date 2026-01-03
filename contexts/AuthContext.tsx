@@ -54,9 +54,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setSupabaseUser(session?.user ?? null)
 
+      setSupabaseUser(session?.user ?? null)
+
       if (session?.user) {
-        const currentUser = await getCurrentUser()
-        setUser(currentUser)
+        // Fetch full profile from our server API (bypassing RLS)
+        try {
+          const res = await fetch('/api/user/profile', {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          })
+
+          if (res.ok) {
+            const profileData = await res.json()
+            // Map API/Prisma response (camelCase) to AuthUser
+            const currentUser: AuthUser = {
+              id: session.user.id,
+              email: session.user.email!,
+              role: profileData.role || 'customer',
+              email_verified: !!session.user.email_confirmed_at,
+              name: profileData.name || session.user.user_metadata.name,
+              phone: profileData.phone,
+              address: profileData.address,
+              birthday: profileData.birthday,
+              profileImage: profileData.profileImage
+            }
+            setUser(currentUser)
+          } else {
+            // Fallback to basic session data if API fails
+            const basicUser = await getCurrentUser()
+            setUser(basicUser)
+          }
+        } catch (e) {
+          console.error('Failed to fetch profile via API', e)
+          const basicUser = await getCurrentUser()
+          setUser(basicUser)
+        }
       } else {
         setUser(null)
       }

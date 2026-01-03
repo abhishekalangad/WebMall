@@ -101,6 +101,12 @@ function LoginForm() {
             />
           </div>
 
+          <div className="flex justify-end">
+            <Link href="/auth/forgot-password" className="text-sm text-pink-500 hover:text-pink-600">
+              Forgot Password?
+            </Link>
+          </div>
+
           <Button type="submit" className="w-full bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold" disabled={loading}>
             {loading ? 'Please wait...' : 'Sign In'}
           </Button>

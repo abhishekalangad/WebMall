@@ -368,6 +368,15 @@ function HeaderContent() {
                   {user.role === 'admin' ? 'Customer Messages' : 'My Messages'}
                 </Link>
               )}
+              {user?.role === 'admin' && (
+                <Link
+                  href="/admin"
+                  className={`block px-4 py-3 font-cursive text-xl sm:text-2xl transition-all rounded-lg mx-2 ${isActive('/admin') ? 'bg-pink-50 text-pink-600 font-bold' : 'text-gray-600 hover:bg-gray-50'}`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Admin Dashboard
+                </Link>
+              )}
               {!user && (
                 <Link href="/login" className="block px-4 py-3 mx-2" onClick={() => setIsMobileMenuOpen(false)}>
                   <Button className="w-full bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-bold">

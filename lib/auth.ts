@@ -47,6 +47,13 @@ export async function signOut() {
   if (error) throw new Error(error.message)
 }
 
+export async function resetPasswordForEmail(email: string, redirectTo: string) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo,
+  })
+  if (error) throw new Error(error.message)
+}
+
 export async function getCurrentUser(): Promise<AuthUser | null> {
   try {
     const { data: { session } } = await supabase.auth.getSession()
@@ -56,17 +63,21 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     // For now, let's use metadata since we set it during signup
     // Or fetch from your database if you sync users
     const { data: profile } = await supabase
-      .from('User')
+      .from('users')
       .select('*')
-      .eq('supabaseId', session.user.id)
-      .single()
+      .eq('supabase_id', session.user.id)
+      .maybeSingle()
 
     return {
       id: session.user.id,
       email: session.user.email!,
       name: profile?.name || session.user.user_metadata.name,
       role: profile?.role || session.user.user_metadata.role || 'customer',
-      email_verified: !!session.user.email_confirmed_at
+      email_verified: !!session.user.email_confirmed_at,
+      phone: profile?.phone || session.user.phone,
+      address: profile?.address,
+      birthday: profile?.birthday,
+      profileImage: profile?.profileImage || profile?.profile_image
     }
   } catch (error) {
     return null
@@ -81,17 +92,21 @@ export async function verifyAuthToken(token: string): Promise<AuthUser | null> {
 
     // Get user details from public.User table or metadata
     const { data: profile } = await supabase
-      .from('User')
+      .from('users')
       .select('*')
-      .eq('supabaseId', user.id)
-      .single()
+      .eq('supabase_id', user.id)
+      .maybeSingle()
 
     return {
       id: user.id,
       email: user.email!,
       name: profile?.name || user.user_metadata.name,
       role: profile?.role || user.user_metadata.role || 'customer',
-      email_verified: !!user.email_confirmed_at
+      email_verified: !!user.email_confirmed_at,
+      phone: profile?.phone || user.phone,
+      address: profile?.address,
+      birthday: profile?.birthday,
+      profileImage: profile?.profileImage || profile?.profile_image
     }
   } catch (error) {
     console.error('Error verifying auth token:', error)

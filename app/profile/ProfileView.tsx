@@ -324,12 +324,28 @@ export function ProfileView() {
             toast({ title: "Error", description: "Passwords do not match.", variant: "destructive" })
             return
         }
-        setIsSaving(true)
-        await new Promise(r => setTimeout(r, 1500))
-        setIsSaving(false)
-        setShowPasswordDialog(false)
-        setPasswordData({ current: '', new: '', confirm: '' })
-        toast({ title: "Success", description: "Your password has been changed." })
+
+        try {
+            setIsSaving(true)
+            const { error } = await (await import('@/lib/supabase')).supabase.auth.updateUser({
+                password: passwordData.new
+            })
+
+            if (error) throw error
+
+            setShowPasswordDialog(false)
+            setPasswordData({ current: '', new: '', confirm: '' })
+            toast({ title: "Success", description: "Your password has been changed successfully." })
+        } catch (error: any) {
+            console.error('Error changing password:', error)
+            toast({
+                title: "Error",
+                description: error.message || "Failed to update password. Please try again.",
+                variant: "destructive"
+            })
+        } finally {
+            setIsSaving(false)
+        }
     }
 
     const handleNotificationSave = async () => {
@@ -782,6 +798,7 @@ export function ProfileView() {
             {/* ORDER DETAILS DIALOG - MAX MOBILE FRIENDLY */}
             <Dialog open={showOrderDialog} onOpenChange={setShowOrderDialog}>
                 <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-2xl rounded-2xl md:rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+                    <DialogTitle className="sr-only">Order Details</DialogTitle>
                     {selectedOrder && (
                         <div className="flex flex-col">
                             <div className="p-6 md:p-8 bg-slate-900 text-white">

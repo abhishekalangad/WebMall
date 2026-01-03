@@ -77,9 +77,6 @@
     "vaul": "^0.9.9",
     "zod": "^3.25.76"
   },
-  "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
-  },
   "devDependencies": {
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"

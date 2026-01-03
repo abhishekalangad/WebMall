@@ -15,6 +15,10 @@ const nextConfig = {
   },
   transpilePackages: ['@supabase/supabase-js', '@supabase/realtime-js'],
   turbopack: {},
+  experimental: {
+    workerThreads: false,
+    cpus: 1
+  },
   webpack: (config) => {
     config.module.exprContextCritical = false;
     return config;

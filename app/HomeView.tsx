@@ -6,21 +6,22 @@ import Image from 'next/image'
 import { ArrowRight, Sparkles, Shield, Truck, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ProductCard } from '@/components/products/ProductCard'
+import { InstagramShowcase } from '@/components/home/InstagramShowcase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useSiteConfig } from '@/contexts/SiteConfigContext'
 
 interface HomeViewProps {
-    initialProducts: any[]
+    featuredProducts: any[]
     initialCategories: any[]
 }
 
-export function HomeView({ initialProducts, initialCategories }: HomeViewProps) {
+export function HomeView({ featuredProducts, initialCategories }: HomeViewProps) {
     const { user } = useAuth()
     const { addItem: addToCart } = useCart()
     const { addItem: addToWishlist } = useWishlist()
-    const { banners } = useSiteConfig()
+    const { banners, settings } = useSiteConfig()
 
     const handleAddToCart = (product: any) => {
         if (!user) {
@@ -49,7 +50,7 @@ export function HomeView({ initialProducts, initialCategories }: HomeViewProps) 
             currency: product.currency,
             image: product.images[0]?.url,
             slug: product.slug,
-            category: product.category.name
+            category: product.category?.name || 'Uncategorized'
         })
     }
 
@@ -58,13 +59,13 @@ export function HomeView({ initialProducts, initialCategories }: HomeViewProps) 
             {/* Hero Section */}
             <section className="relative bg-gradient-to-br from-pink-50 via-yellow-50 to-green-50 overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-pink-100/20 to-yellow-100/20"></div>
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-24">
                     {banners.length > 0 ? (
                         <div className="space-y-12">
                             {banners.map((banner, index) => (
                                 <div key={banner.id} className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${index > 0 ? 'mt-24 pt-24 border-t border-gray-100' : ''}`}>
                                     <div className={index % 2 === 1 ? 'lg:order-2' : ''}>
-                                        <h1 className="text-5xl md:text-6xl font-playfair font-bold text-gray-900 mb-6 leading-tight">
+                                        <h1 className="text-4xl md:text-6xl font-playfair font-bold text-gray-900 mb-6 leading-tight">
                                             {banner.title}
                                         </h1>
                                         {banner.subtitle && (
@@ -101,7 +102,7 @@ export function HomeView({ initialProducts, initialCategories }: HomeViewProps) 
                     ) : (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                             <div>
-                                <h1 className="text-5xl md:text-6xl font-playfair font-bold text-gray-900 mb-6 leading-tight">
+                                <h1 className="text-4xl md:text-5xl lg:text-6xl font-playfair font-bold text-gray-900 mb-6 leading-tight">
                                     Discover
                                     <span className="bg-gradient-to-r from-pink-400 to-yellow-400 bg-clip-text text-transparent"> Beautiful </span>
                                     Accessories
@@ -112,13 +113,13 @@ export function HomeView({ initialProducts, initialCategories }: HomeViewProps) 
                                 </p>
                                 <div className="flex flex-col sm:flex-row gap-4">
                                     <Link href="/products">
-                                        <Button size="lg" className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold px-8">
+                                        <Button size="lg" className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold px-8 w-full sm:w-auto">
                                             Shop Now
                                             <ArrowRight className="ml-2 h-5 w-5" />
                                         </Button>
                                     </Link>
                                     <Link href="/categories">
-                                        <Button variant="outline" size="lg" className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8">
+                                        <Button variant="outline" size="lg" className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8 w-full sm:w-auto">
                                             Browse Categories
                                         </Button>
                                     </Link>
@@ -143,7 +144,7 @@ export function HomeView({ initialProducts, initialCategories }: HomeViewProps) 
 
 
             {/* Features Section */}
-            <section className="py-20 bg-white">
+            <section className="py-12 md:py-20 bg-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="text-center p-6">
@@ -172,7 +173,7 @@ export function HomeView({ initialProducts, initialCategories }: HomeViewProps) 
             </section>
 
             {/* Categories Section */}
-            <section className="py-20 bg-gray-50">
+            <section className="py-12 md:py-20 bg-gray-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
                         <h2 className="text-4xl font-playfair font-bold text-gray-900 mb-4">Shop by Category</h2>
@@ -210,7 +211,7 @@ export function HomeView({ initialProducts, initialCategories }: HomeViewProps) 
             </section>
 
             {/* Featured Products Section */}
-            <section className="py-20 bg-white">
+            <section className="py-12 md:py-20 bg-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
                         <h2 className="text-4xl font-playfair font-bold text-gray-900 mb-4">Featured Products</h2>
@@ -218,8 +219,8 @@ export function HomeView({ initialProducts, initialCategories }: HomeViewProps) 
                             Discover our most popular and trending accessories, loved by customers across Sri Lanka.
                         </p>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                        {initialProducts.map((product) => (
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-12">
+                        {featuredProducts.map((product) => (
                             <ProductCard
                                 key={product.id}
                                 product={product}
@@ -241,40 +242,18 @@ export function HomeView({ initialProducts, initialCategories }: HomeViewProps) 
                 </div>
             </section>
 
-            {/* Testimonials Section */}
-            <section className="py-20 bg-gradient-to-br from-pink-50 to-yellow-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <h2 className="text-4xl font-playfair font-bold text-gray-900 mb-4">What Our Customers Say</h2>
-                        <p className="text-xl text-gray-600">Join thousands of happy customers who love their WebMall purchases.</p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="bg-white rounded-2xl p-6 shadow-sm">
-                                <div className="flex items-center mb-4">
-                                    {[...Array(5)].map((_, index) => (
-                                        <Star key={index} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                                    ))}
-                                </div>
-                                <p className="text-gray-600 mb-4">
-                                    "Amazing quality and beautiful designs! The jewelry I ordered exceeded my expectations.
-                                    Fast delivery and excellent customer service."
-                                </p>
-                                <div className="flex items-center">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-pink-300 to-yellow-300 rounded-full"></div>
-                                    <div className="ml-3">
-                                        <p className="font-semibold text-gray-900">Sarah Fernando</p>
-                                        <p className="text-sm text-gray-600">Colombo</p>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+
+
+            {/* Instagram Showcase */}
+            {settings && (
+                <InstagramShowcase
+                    instagramUrl1={settings.instagramUrl || ''}
+                    instagramUrl2={settings.instagramUrl2 || ''}
+                />
+            )}
 
             {/* CTA Section */}
-            <section className="py-20 bg-gray-900">
+            <section className="py-12 md:py-20 bg-gray-900">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <h2 className="text-4xl font-playfair font-bold text-white mb-6">
                         Ready to Find Your Perfect Accessory?

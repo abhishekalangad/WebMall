@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { ShoppingBag, User, Menu, X, ChevronDown, LogOut, Settings, Package, Heart, Search } from 'lucide-react'
+import { ShoppingBag, User, Menu, X, ChevronDown, LogOut, Settings, Package, Heart, Search, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AuthModal } from '@/components/auth/AuthModal'
@@ -22,6 +22,7 @@ function HeaderContent() {
   const { totalItems: wishlistItems } = useWishlist()
   const { settings, categories, loading: configLoading } = useSiteConfig()
 
+  const [unreadMessages, setUnreadMessages] = useState(0)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const pathname = usePathname()
@@ -42,6 +43,41 @@ function HeaderContent() {
     }
   }, [])
 
+  // Fetch unread messages count
+  useEffect(() => {
+    if (user) {
+      const fetchUnread = async () => {
+        try {
+          if (user.role === 'admin') {
+            const res = await fetch('/api/contact?status=new')
+            if (res.ok) {
+              const data = await res.json()
+              setUnreadMessages(data.stats?.new || 0)
+            }
+          } else {
+            const { data: { session } } = await (await import('@/lib/supabase')).supabase.auth.getSession()
+            if (session?.access_token) {
+              const res = await fetch('/api/user/messages', {
+                headers: { 'Authorization': `Bearer ${session.access_token}` }
+              })
+              if (res.ok) {
+                const data = await res.json()
+                setUnreadMessages(data.unreadCount || 0)
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch unread count:', error)
+        }
+      }
+      fetchUnread()
+      const interval = setInterval(fetchUnread, 30000)
+      return () => clearInterval(interval)
+    } else {
+      setUnreadMessages(0)
+    }
+  }, [user])
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
@@ -51,6 +87,50 @@ function HeaderContent() {
   }
 
   const isActive = (path: string) => pathname === path
+
+  // Determine if navigation and search should be shown
+  const shouldShowNavigation = () => {
+    // Hide on auth pages
+    if (pathname.includes('/login') || pathname.includes('/register')) return false
+
+    // Hide on 404 pages (Next.js uses various patterns for this)
+    if (pathname === '/404' || pathname === '/not-found') return false
+
+    // Hide on admin pages (they have their own navigation)
+    if (pathname.startsWith('/admin') && pathname !== '/admin') return false
+
+    // Hide on checkout flow
+    if (pathname.includes('/checkout')) return false
+
+    // Show on all other pages
+    return true
+  }
+
+  const DEFAULT_CUSTOMER_TABS = [
+    { label: 'Home', path: '/' },
+    { label: 'Products', path: '/products' },
+    { label: 'About', path: '/about' },
+    { label: 'Contact', path: '/contact' }
+  ]
+
+  const DEFAULT_ADMIN_TABS = [
+    { label: 'Categories', path: '/admin/categories' },
+    { label: 'Subcategories', path: '/admin/subcategories' },
+    { label: 'Products', path: '/admin/products' },
+    { label: 'Orders', path: '/admin/orders' },
+    { label: 'Messages', path: '/admin/messages' },
+    { label: 'Customers', path: '/admin/users' },
+    { label: 'Settings', path: '/admin/settings' }
+  ]
+
+  // Determine which navigation to show based on user role
+  const navItems = user?.role === 'admin'
+    ? (settings?.headerNavigation && Array.isArray(settings.headerNavigation) && settings.headerNavigation.length > 0
+      ? settings.headerNavigation
+      : DEFAULT_ADMIN_TABS)
+    : (settings?.customerNavigation && Array.isArray(settings.customerNavigation) && settings.customerNavigation.length > 0
+      ? settings.customerNavigation
+      : DEFAULT_CUSTOMER_TABS)
 
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-40">
@@ -70,48 +150,39 @@ function HeaderContent() {
             </Link>
 
             {/* Desktop Navigation Grouped with Logo */}
-            <nav className="hidden lg:flex items-center space-x-8 xl:space-x-12 ml-6 xl:ml-12">
-              {categories.map((category) => {
-                const categoryPath = `/products?category=${category.slug}`
-                const isCurrent = pathname === '/products' && currentCategory === category.slug
-
-                return (
+            {shouldShowNavigation() && (
+              <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8 ml-6 xl:ml-12">
+                {navItems.map((link: any, index: number) => (
                   <Link
-                    key={category.id}
-                    href={categoryPath}
-                    className={`font-cursive text-lg xl:text-2xl whitespace-nowrap ${isCurrent ? 'text-pink-600' : 'text-gray-600 hover:text-gray-900'}`}
+                    key={index}
+                    href={link.path || '#'}
+                    className={`font-cursive text-lg xl:text-2xl whitespace-nowrap hover:text-pink-600 transition-colors ${isActive(link.path) ? 'text-pink-600' : 'text-gray-600'}`}
                   >
-                    {category.name}
+                    {link.label}
                   </Link>
-                )
-              })}
-
-              {user && (
-                <Link
-                  href="/orders"
-                  className={`font-cursive text-lg xl:text-2xl whitespace-nowrap ${isActive('/orders') ? 'text-pink-600' : 'text-gray-600 hover:text-gray-900'}`}
-                >
-                  Orders
-                </Link>
-              )}
-            </nav>
+                ))}
+              </nav>
+            )}
           </div>
+
 
           {/* Center: Search Bar (Fills remaining space without moving other items) */}
-          <div className="hidden md:flex flex-1 items-center justify-center px-4 lg:px-8 xl:px-12">
-            <div className="w-full max-w-[380px] lg:max-w-[480px]">
-              <form onSubmit={handleSearch} className="relative group">
-                <Search className="absolute left-3 lg:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-hover:text-pink-500 transition-colors" />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 lg:pl-11 pr-3 lg:pr-4 h-10 lg:h-11 w-48 lg:w-64 group-hover:w-full group-focus-within:w-full border-none rounded-full bg-gray-100/80 focus:bg-white focus:ring-0 focus:outline-none transition-all duration-500 font-cursive text-base lg:text-xl"
-                />
-              </form>
+          {shouldShowNavigation() && (
+            <div className="hidden md:flex flex-1 items-center justify-center px-4 lg:px-8 xl:px-12">
+              <div className="w-full max-w-[380px] lg:max-w-[480px]">
+                <form onSubmit={handleSearch} className="relative group">
+                  <Search className="absolute left-3 lg:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-hover:text-pink-500 transition-colors" />
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 lg:pl-11 pr-3 lg:pr-4 h-10 lg:h-11 w-48 lg:w-64 group-hover:w-full group-focus-within:w-full border-none rounded-full bg-gray-100/80 focus:bg-white focus:ring-0 focus:outline-none transition-all duration-500 font-cursive text-base lg:text-xl"
+                  />
+                </form>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Right Side: Actions Grouped */}
           <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 flex-shrink-0">
@@ -146,15 +217,29 @@ function HeaderContent() {
                   className="flex items-center space-x-1 sm:space-x-2 hover:bg-gray-100 rounded-full p-1.5 sm:p-2 transition-all"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 >
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center overflow-hidden border border-gray-100 shadow-sm">
-                    {user.profileImage ? (
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center overflow-hidden border border-gray-100 shadow-sm relative">
+                    {user.role === 'admin' ? (
+                      // Admin: Show WebMall transparent logo
+                      <div className="w-full h-full bg-white flex items-center justify-center">
+                        <img
+                          src="/logo-no-bg.png"
+                          alt="WebMall"
+                          className="w-full h-full object-contain scale-90"
+                        />
+                      </div>
+                    ) : user.profileImage ? (
+                      // Customer: Show profile image if available
                       <img src={user.profileImage} alt={user.name || 'User'} className="w-full h-full object-cover" />
                     ) : (
+                      // Customer: Show initials if no profile image
                       <div className="w-full h-full bg-gradient-to-br from-pink-300 to-yellow-300 flex items-center justify-center">
                         <span className="text-sm font-semibold text-gray-900">
                           {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                         </span>
                       </div>
+                    )}
+                    {unreadMessages > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 h-3 w-3 bg-red-500 border-2 border-white rounded-full animate-pulse"></span>
                     )}
                   </div>
                   <ChevronDown className="h-4 w-4 text-gray-500" />
@@ -174,6 +259,21 @@ function HeaderContent() {
                       <Link href="/orders" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
                         <Package className="h-4 w-4 mr-3 text-gray-400" />
                         <span>My Orders</span>
+                      </Link>
+                      <Link
+                        href={user.role === 'admin' ? "/admin/messages" : "/profile/messages"}
+                        className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        <div className="flex items-center">
+                          <Mail className="h-4 w-4 mr-3 text-gray-400" />
+                          <span>{user.role === 'admin' ? 'Customer Messages' : 'My Messages'}</span>
+                        </div>
+                        {unreadMessages > 0 && (
+                          <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                            {unreadMessages}
+                          </span>
+                        )}
                       </Link>
                       <Link href="/cart" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
                         <ShoppingBag className="h-4 w-4 mr-3 text-gray-400" />
@@ -231,30 +331,39 @@ function HeaderContent() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    type="text"
+                    type="search"
                     placeholder="Search products..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 py-2 w-full border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-transparent"
+                    className="pl-10 pr-4 py-2 w-full border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-transparent text-base"
                   />
                 </div>
               </form>
             </div>
 
             <div className="flex flex-col space-y-1">
-              {categories.map((category) => (
+              {navItems.map((link: any, index: number) => (
                 <Link
-                  key={category.id}
-                  href={`/products?category=${category.slug}`}
-                  className={`block px-4 py-3 font-cursive text-xl sm:text-2xl transition-all rounded-lg mx-2 ${pathname === '/products' && currentCategory === category.slug ? 'bg-pink-50 text-pink-600 font-bold' : 'text-gray-600 hover:bg-gray-50'}`}
+                  key={index}
+                  href={link.path || '#'}
+                  className={`block px-4 py-3 font-cursive text-xl sm:text-2xl transition-all rounded-lg mx-2 ${isActive(link.path) ? 'bg-pink-50 text-pink-600 font-bold' : 'text-gray-600 hover:bg-gray-50'}`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  {category.name}
+                  {link.label}
                 </Link>
               ))}
               {user && (
                 <Link href="/orders" className={`block px-4 py-3 font-cursive text-xl sm:text-2xl transition-all rounded-lg mx-2 ${isActive('/orders') ? 'bg-pink-50 text-pink-600 font-bold' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setIsMobileMenuOpen(false)}>
                   My Orders
+                </Link>
+              )}
+              {user && (
+                <Link
+                  href={user.role === 'admin' ? "/admin/messages" : "/profile/messages"}
+                  className={`block px-4 py-3 font-cursive text-xl sm:text-2xl transition-all rounded-lg mx-2 ${isActive(user.role === 'admin' ? '/admin/messages' : '/profile/messages') ? 'bg-pink-50 text-pink-600 font-bold' : 'text-gray-600 hover:bg-gray-50'}`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {user.role === 'admin' ? 'Customer Messages' : 'My Messages'}
                 </Link>
               )}
               {!user && (

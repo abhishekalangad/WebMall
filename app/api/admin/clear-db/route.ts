@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma-extended'
-import { verifyAuthToken, isSupabaseConfigured } from '@/lib/auth'
+import { verifyAuthToken } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
     try {
@@ -16,14 +16,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        if (!isSupabaseConfigured()) {
-            return NextResponse.json({
-                success: true,
-                message: 'Mock database cleared (simulated)',
-                deleted: { products: 0, categories: 0 }
-            })
-        }
-
         // Delete in order
         const products = await prisma.product.deleteMany({})
         const categories = await prisma.category.deleteMany({})
@@ -34,6 +26,7 @@ export async function POST(request: NextRequest) {
             deleted: { products: products.count, categories: categories.count }
         })
     } catch (error: any) {
+        console.error('[Clear DB] Error:', error)
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
 }

@@ -1,4 +1,4 @@
-import { Metadata, ResolvingMetadata } from 'next'
+import { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { ProductDetailView } from './ProductDetailView'
 import { notFound } from 'next/navigation'
@@ -36,8 +36,7 @@ interface Props {
 }
 
 export async function generateMetadata(
-  { params }: Props,
-  parent: ResolvingMetadata
+  { params }: Props
 ): Promise<Metadata> {
   const { slug } = await params
 
@@ -54,8 +53,6 @@ export async function generateMetadata(
 
   if (!product) return { title: 'Product Not Found' }
 
-  const previousImages = (await parent).openGraph?.images || []
-
   return {
     title: `${product.name} - Buy Online`,
     description: product.description.substring(0, 160),
@@ -70,7 +67,6 @@ export async function generateMetadata(
           width: 800,
           height: 600,
         },
-        ...previousImages,
       ],
       locale: 'en_LK',
       type: 'article',
@@ -87,12 +83,22 @@ export async function generateMetadata(
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params
 
+  // Fetch product with reviews to calculate rating
   const product = await prisma.product.findUnique({
     where: { slug: slug },
     include: {
       category: true,
       images: {
         orderBy: { position: 'asc' }
+      },
+      reviews: {
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        include: {
+          user: {
+            select: { name: true }
+          }
+        }
       }
     }
   })
@@ -101,5 +107,24 @@ export default async function ProductPage({ params }: Props) {
     notFound()
   }
 
-  return <ProductDetailView product={product} />
+  // Calculate rating stats
+  const reviewCount = product.reviews.length
+  const averageRating = reviewCount > 0
+    ? product.reviews.reduce((acc, review) => acc + (review.rating || 0), 0) / reviewCount
+    : 0
+
+  // Serialize Decimal to number for product price if needed (already likely handled by Prisma/JSON but specific fields might need check)
+  // And construct the prop object
+  const productWithRating = {
+    ...product,
+    price: Number(product.price),
+    averageRating,
+    reviewCount,
+    reviews: product.reviews.map(r => ({
+      ...r,
+      user: r.user ? r.user : { name: 'Anonymous' } // Handle potential missing user relation
+    }))
+  }
+
+  return <ProductDetailView product={productWithRating} />
 }

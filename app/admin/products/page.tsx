@@ -449,8 +449,17 @@ export default function AdminProductsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {product.currency} {product.price.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {product.stock}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900">{product.stock}</span>
+                        {product.stock === 0 ? (
+                          <Badge className="bg-red-100 text-red-800 text-xs">Out of Stock</Badge>
+                        ) : product.stock < 10 ? (
+                          <Badge className="bg-amber-100 text-amber-800 text-xs">Low Stock</Badge>
+                        ) : (
+                          <Badge className="bg-green-100 text-green-800 text-xs">In Stock</Badge>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Badge
@@ -544,7 +553,7 @@ export default function AdminProductsPage() {
                       <Label htmlFor="categoryId">Category</Label>
                       <select
                         id="categoryId"
-                        value={formData.categoryId}
+                        value={formData.categoryId || ''}
                         onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                         className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
                         required
@@ -556,6 +565,39 @@ export default function AdminProductsPage() {
                           </option>
                         ))}
                       </select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="stockCount">Stock Count</Label>
+                      <div className="relative">
+                        <Input
+                          id="stockCount"
+                          type="number"
+                          min="0"
+                          value={formData.stockCount}
+                          onChange={(e) => setFormData({ ...formData, stockCount: e.target.value })}
+                          className="mt-1"
+                          required
+                        />
+                        {formData.stockCount && parseInt(formData.stockCount) < 10 && parseInt(formData.stockCount) > 0 && (
+                          <div className="mt-1 flex items-center gap-1 text-xs text-amber-600">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                            Low stock warning
+                          </div>
+                        )}
+                        {formData.stockCount && parseInt(formData.stockCount) === 0 && (
+                          <div className="mt-1 flex items-center gap-1 text-xs text-red-600 font-medium">
+                            Out of Stock
+                          </div>
+                        )}
+                        {formData.stockCount && parseInt(formData.stockCount) >= 10 && (
+                          <div className="mt-1 flex items-center gap-1 text-xs text-green-600">
+                            In Stock
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 

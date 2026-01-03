@@ -18,7 +18,7 @@ interface Product {
     price: number
     currency: string
     images: { url: string; alt?: string | null }[]
-    category: { name: string }
+    category: { name: string } | null | undefined
 }
 
 interface ProductsViewProps {
@@ -60,13 +60,13 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
         if (searchQuery) {
             filtered = filtered.filter(product =>
                 product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                product.category.name.toLowerCase().includes(searchQuery.toLowerCase())
+                (product.category?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
             )
         }
 
         // Filter by category
         if (selectedCategory !== 'All') {
-            filtered = filtered.filter(product => product.category.name === selectedCategory)
+            filtered = filtered.filter(product => product.category?.name === selectedCategory)
         }
 
         // Sort products
@@ -113,7 +113,7 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
             currency: product.currency,
             image: product.images[0]?.url,
             slug: product.slug,
-            category: product.category.name
+            category: product.category?.name || 'Uncategorized'
         })
     }
 
@@ -132,38 +132,25 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
 
                 {/* Filters and Search */}
                 <div className="bg-white rounded-2xl shadow-sm p-6 mb-8">
-                    <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-                        <div className="flex flex-col sm:flex-row gap-4 flex-1">
-                            {/* Search */}
-                            <div className="relative flex-1 max-w-md">
+                    {/* Controls Row */}
+                    <div className="flex flex-col lg:flex-row gap-4 items-center justify-between mb-6">
+                        <div className="flex flex-col sm:flex-row gap-4 flex-1 w-full lg:w-auto">
+                            {/* Search Bar */}
+                            <div className="relative flex-1 w-full sm:max-w-md">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                                 <Input
                                     type="search"
                                     placeholder="Search products..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10 pr-4 py-2"
+                                    className="pl-10 pr-4 py-2 w-full bg-gray-100 rounded-full border-transparent focus:bg-white transition-colors"
                                 />
                             </div>
 
-                            {/* Category Filter */}
-                            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                                <SelectTrigger className="w-48">
-                                    <SelectValue placeholder="Select category" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {categories.map((category) => (
-                                        <SelectItem key={category} value={category}>
-                                            {category}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
                             {/* Sort */}
                             <Select value={sortBy} onValueChange={setSortBy}>
-                                <SelectTrigger className="w-48">
-                                    <SelectValue placeholder="Sort by" />
+                                <SelectTrigger className="w-full sm:w-[140px] border-none bg-gray-100 rounded-full px-4">
+                                    <SelectValue placeholder="Sort" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="name">Name A-Z</SelectItem>
@@ -174,12 +161,12 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                         </div>
 
                         {/* View Toggle */}
-                        <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                        <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1 self-end lg:self-auto">
                             <Button
                                 variant={viewMode === 'grid' ? 'default' : 'ghost'}
                                 size="sm"
                                 onClick={() => setViewMode('grid')}
-                                className="px-3"
+                                className="px-3 rounded-md"
                             >
                                 <Grid className="h-4 w-4" />
                             </Button>
@@ -187,10 +174,28 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                                 variant={viewMode === 'list' ? 'default' : 'ghost'}
                                 size="sm"
                                 onClick={() => setViewMode('list')}
-                                className="px-3"
+                                className="px-3 rounded-md"
                             >
                                 <List className="h-4 w-4" />
                             </Button>
+                        </div>
+                    </div>
+
+                    {/* Category Tabs Row */}
+                    <div className="w-full border-t pt-4">
+                        <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
+                            {categories.map((category) => (
+                                <button
+                                    key={category}
+                                    onClick={() => setSelectedCategory(category)}
+                                    className={`px-5 py-2.5 rounded-full whitespace-nowrap text-sm font-medium transition-all duration-300 ${selectedCategory === category
+                                        ? 'bg-gray-900 text-white shadow-lg scale-105'
+                                        : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                        }`}
+                                >
+                                    {category}
+                                </button>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -203,8 +208,8 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                 </div>
 
                 {/* Products Grid */}
-                <div className={`grid gap-6 ${viewMode === 'grid'
-                    ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                <div className={`grid gap-3 sm:gap-6 ${viewMode === 'grid'
+                    ? 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
                     : 'grid-cols-1'
                     }`}>
                     {filteredProducts.map((product) => (

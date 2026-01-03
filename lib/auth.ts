@@ -74,29 +74,6 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 }
 
 export async function verifyAuthToken(token: string): Promise<AuthUser | null> {
-  // Handle mock tokens for development when Supabase is not configured
-  if (!isSupabaseConfigured()) {
-    if (token === 'mock-admin-token') {
-      return {
-        id: 'mock-admin-id',
-        email: 'admin@webmall.com',
-        name: 'Admin User',
-        role: 'admin',
-        email_verified: true
-      }
-    }
-    if (token === 'mock-customer-token') {
-      return {
-        id: 'mock-customer-id',
-        email: 'customer@webmall.com',
-        name: 'Customer User',
-        role: 'customer',
-        email_verified: true
-      }
-    }
-    return null
-  }
-
   try {
     const { data: { user }, error } = await supabase.auth.getUser(token)
 

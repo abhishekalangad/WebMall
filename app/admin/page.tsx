@@ -318,6 +318,15 @@ export default function AdminDashboardPage() {
                 <RefreshCcw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
                 Refresh
               </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => window.location.href = '/api/admin/export/orders'}
+                className="flex items-center px-4 py-2.5 bg-white border border-gray-300 hover:border-gray-400 text-gray-700 font-medium rounded-xl transition-all shadow-sm hover:shadow"
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Export Report
+              </motion.button>
               <Link href="/admin/products">
                 <motion.button
                   whileHover={{ scale: 1.05 }}

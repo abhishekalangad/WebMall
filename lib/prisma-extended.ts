@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 
 // Define the missing types manually to solve the lint errors until prisma generate works
+// Triggering rebuild to pick up new schema changes (headerNavigation)
 export interface SiteSettings {
     id: string
     storeName: string
@@ -14,7 +15,10 @@ export interface SiteSettings {
     instagramUrl?: string
     twitterUrl?: string
     shippingBaseRate: number
+
     freeShippingThreshold: number
+    headerNavigation?: any
+    customerNavigation?: any
     updatedAt: Date
 }
 

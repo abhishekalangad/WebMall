@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getMockCouponByCode } from '@/lib/mock-data'
+import { prisma } from '@/lib/prisma-extended'
 
 export async function POST(request: NextRequest) {
     try {
@@ -14,7 +14,9 @@ export async function POST(request: NextRequest) {
         }
 
         // Find coupon
-        const coupon = getMockCouponByCode(code)
+        const coupon = await prisma.coupon.findUnique({
+            where: { code }
+        })
 
         if (!coupon) {
             return NextResponse.json({ error: 'Invalid coupon code' }, { status: 404 })

@@ -5,6 +5,7 @@ import { ShoppingBag, Heart, Minus, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useCart } from '@/contexts/CartContext'
+import { StarRating } from '@/components/ui/star-rating'
 
 interface Product {
   id: string
@@ -13,7 +14,10 @@ interface Product {
   price: number
   currency: string
   images: { url: string; alt?: string | null }[]
-  category: { name: string }
+  category: { name: string } | null | undefined
+  avgRating?: number
+  reviewCount?: number
+  stock?: number
 }
 
 interface ProductCardProps {
@@ -47,7 +51,7 @@ export function ProductCard({ product, onAddToCart, onAddToWishlist, showAddToCa
         currency: product.currency,
         image: product.images[0]?.url,
         slug: product.slug,
-        category: product.category.name
+        category: product.category?.name || 'Uncategorized'
       })
     }
   }
@@ -89,7 +93,7 @@ export function ProductCard({ product, onAddToCart, onAddToWishlist, showAddToCa
             onClick={handleWishlistToggle}
             className={`absolute top-3 right-3 p-2 rounded-full transition-all duration-200 ${isWishlisted
               ? 'bg-pink-500 text-white opacity-100'
-              : 'bg-white/80 opacity-0 group-hover:opacity-100 hover:bg-white'
+              : 'bg-white/80 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 hover:bg-white'
               }`}
           >
             <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
@@ -97,25 +101,47 @@ export function ProductCard({ product, onAddToCart, onAddToWishlist, showAddToCa
         )}
 
         {/* Category Badge */}
-        <div className="absolute top-3 left-3">
-          <span className="inline-block px-2 py-1 bg-white/90 text-xs font-medium text-gray-700 rounded-full border border-gray-100 shadow-sm">
-            {product.category.name}
-          </span>
-        </div>
+        {product.category && (
+          <div className="absolute top-3 left-3">
+            <span className="inline-block px-2 py-1 bg-white/90 text-xs font-medium text-gray-700 rounded-full border border-gray-100 shadow-sm">
+              {product.category.name}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Product Info */}
-      <div className="p-4">
+      <div className="p-3 sm:p-4">
         <Link href={`/products/${product.slug}`}>
-          <h3 className="font-semibold text-gray-900 mb-2 hover:text-pink-600 transition-colors line-clamp-2 min-h-[3rem]">
+          <h3 className="font-semibold text-gray-900 mb-2 hover:text-pink-600 transition-colors line-clamp-2 min-h-[2.5rem] sm:min-h-[3rem] text-sm sm:text-base">
             {product.name}
           </h3>
         </Link>
 
+        {/* Rating */}
+        {product.avgRating !== undefined && product.avgRating > 0 && (
+          <div className="mb-2">
+            <StarRating
+              rating={product.avgRating}
+              size="sm"
+              count={product.reviewCount}
+            />
+          </div>
+        )}
+
+        {/* Stock Badge */}
+        {product.stock !== undefined && product.stock === 0 && (
+          <div className="mb-2">
+            <span className="inline-block px-2 py-0.5 bg-red-100 text-red-700 text-xs font-medium rounded">
+              Out of Stock
+            </span>
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
             <span className="text-sm text-gray-500 font-medium">LKR</span>
-            <span className="text-xl font-bold text-gray-900 leading-tight">
+            <span className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
               {product.price.toLocaleString()}
             </span>
           </div>
@@ -144,7 +170,7 @@ export function ProductCard({ product, onAddToCart, onAddToWishlist, showAddToCa
                 <Button
                   size="sm"
                   onClick={handleAddClick}
-                  className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold px-4 rounded-full shadow-sm hover:shadow active:scale-95 transition-all"
+                  className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold px-3 sm:px-4 text-xs sm:text-sm h-8 rounded-full shadow-sm hover:shadow active:scale-95 transition-all"
                 >
                   <ShoppingBag className="h-4 w-4 mr-1.5" />
                   Add

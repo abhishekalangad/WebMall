@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma-extended'
-import { verifyAuthToken, isSupabaseConfigured } from '@/lib/auth'
-import { getMockProducts, getMockCategories } from '@/lib/mock-data'
+import { verifyAuthToken } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
     try {
@@ -15,42 +14,6 @@ export async function GET(request: NextRequest) {
 
         if (!user || user.role !== 'admin') {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-        }
-
-        // Check if Supabase is configured
-        if (!isSupabaseConfigured()) {
-            const products = getMockProducts()
-            const categories = getMockCategories()
-
-            // Mock message stats
-            const mockMessageStats = {
-                new: 0,
-                read: 0,
-                replied: 0,
-                total: 0
-            }
-
-            return NextResponse.json({
-                stats: {
-                    totalProducts: products.length,
-                    activeProducts: products.filter(p => p.status === 'active').length,
-                    totalCategories: categories.length,
-                    activeCategories: categories.length,
-                    totalUsers: 2, // Mock users count
-                    newCustomers: 0,
-                    totalSales: "LKR 43,250",
-                    salesChange: "+12.5%",
-                    totalOrders: 8,
-                    activeOrders: 2,
-                    pendingOrders: 1,
-                    completedOrders: 5,
-                    totalCoupons: 5,
-                    activeCoupons: 3,
-                    messageStats: mockMessageStats
-                },
-                recentActivity: [],
-                topProducts: products.slice(0, 5)
-            })
         }
 
         // Fetch actual counts from database
@@ -85,14 +48,11 @@ export async function GET(request: NextRequest) {
         let activeCoupons = 0
 
         try {
-            // @ts-ignore - coupon model might not exist yet
-            if (prisma.coupon) {
-                // @ts-ignore
-                totalCoupons = await prisma.coupon.count()
-                // @ts-ignore
-                activeCoupons = await prisma.coupon.count({
+            if ((prisma as any).coupon) {
+                totalCoupons = await (prisma as any).coupon.count()
+                activeCoupons = await (prisma as any).coupon.count({
                     where: {
-                        isActive: true,
+                        status: 'active',
                         expiryDate: {
                             gte: now  // Only count coupons that haven't expired
                         }
@@ -100,8 +60,7 @@ export async function GET(request: NextRequest) {
                 })
             }
         } catch (error) {
-            console.log('Coupon model not available yet')
-            // Fallback to 0 if coupon model doesn't exist
+            console.log('Coupon model lookup error:', error)
             totalCoupons = 0
             activeCoupons = 0
         }
@@ -118,13 +77,11 @@ export async function GET(request: NextRequest) {
                 }
             }).catch(() => ({ _sum: { totalAmount: 0 } }))
 
-            totalSalesAmount = salesData?._sum?.totalAmount || 0
+            totalSalesAmount = Number(salesData?._sum?.totalAmount || 0)
         }
 
         const totalSales = `LKR ${totalSalesAmount.toLocaleString()}`
         const activeOrders = totalOrders - completedOrders
-
-
 
         // Fetch message stats from contact API
         let messageStats = { new: 0, read: 0, replied: 0, total: 0 }
@@ -161,7 +118,7 @@ export async function GET(request: NextRequest) {
                 totalUsers,
                 newCustomers: 0, // Calculate from user.createdAt if needed
                 totalSales,
-                salesChange: "+12.5%", // Calculate from previous period if needed
+                salesChange: "+0%", // To be calculated properly later if needed
                 totalOrders,
                 activeOrders,
                 pendingOrders,

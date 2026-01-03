@@ -2,8 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { AuthUser, getCurrentUser, isSupabaseConfigured } from '@/lib/auth'
-import { mockGetCurrentUser } from '@/lib/mock-auth'
+import { AuthUser, getCurrentUser } from '@/lib/auth'
 import { User } from '@supabase/supabase-js'
 
 interface AuthContextType {
@@ -33,18 +32,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsRefreshing(true)
 
     try {
-      if (!isSupabaseConfigured()) {
-        // Use mock auth
-        const mockUser = mockGetCurrentUser()
-        setUser(mockUser)
+      // Use Supabase auth with timeout
+      const sessionPromise = supabase.auth.getSession()
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Session fetch timeout')), 10000)
+      )
+
+      const { data: { session }, error } = await Promise.race([
+        sessionPromise,
+        timeoutPromise
+      ]) as any
+
+      // If there's an error getting the session, clear it
+      if (error) {
+        console.warn('Session error, clearing:', error.message)
+        await supabase.auth.signOut()
         setSupabaseUser(null)
-        setLoading(false)
-        setIsRefreshing(false)
+        setUser(null)
         return
       }
 
-      // Use Supabase auth
-      const { data: { session } } = await supabase.auth.getSession()
       setSupabaseUser(session?.user ?? null)
 
       if (session?.user) {
@@ -53,8 +60,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setUser(null)
       }
-    } catch (error) {
-      console.error('Auth refresh error:', error)
+    } catch (error: any) {
+      // Handle various error types
+      const isAuthError = error?.message?.includes('refresh') ||
+        error?.message?.includes('Invalid Refresh Token') ||
+        error?.message?.includes('timeout') ||
+        error?.message?.includes('fetch') ||
+        error?.name === 'AuthApiError' ||
+        error?.code === 'ECONNREFUSED'
+
+      if (isAuthError) {
+        // Clear the invalid session
+        try {
+          await supabase.auth.signOut()
+        } catch (e) {
+          // Ignore signout errors
+        }
+      } else {
+        // Only log unexpected errors
+        console.error('Auth refresh error:', error)
+      }
+
       setUser(null)
       setSupabaseUser(null)
     } finally {
@@ -71,11 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleSignOut = async () => {
     setLoading(true)
     try {
-      if (isSupabaseConfigured()) {
-        await supabase.auth.signOut()
-      } else {
-        localStorage.removeItem('user')
-      }
+      await supabase.auth.signOut()
       setUser(null)
       setSupabaseUser(null)
     } catch (error) {
@@ -96,19 +118,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signOut: handleSignOut,
         refreshUser,
         updateUser: async (updates: Partial<AuthUser>) => {
-          setUser(prev => prev ? { ...prev, ...updates } : null)
-          // If using mock auth, we can save to localStorage to persist across refreshes
-          if (!isSupabaseConfigured()) {
-            const mockUser = mockGetCurrentUser()
-            const updatedUser = { ...mockUser, ...updates }
-            localStorage.setItem('user', JSON.stringify(updatedUser))
+          try {
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (!token) {
+              throw new Error('No access token available')
+            }
+
+            // Update database via API
+            const response = await fetch('/api/user/profile', {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(updates)
+            })
+
+            if (!response.ok) {
+              const error = await response.json()
+              throw new Error(error.error || 'Failed to update profile')
+            }
+
+            const data = await response.json()
+
+            // Update local state with response from server
+            setUser(prev => prev ? { ...prev, ...data.user } : null)
+
+            return data.user
+          } catch (error) {
+            console.error('Error updating user:', error)
+            throw error
           }
         },
         accessToken: async () => {
-          if (!isSupabaseConfigured()) {
-            if (!user) return undefined
-            return user.role === 'admin' ? 'mock-admin-token' : 'mock-customer-token'
-          }
           const { data: { session } } = await supabase.auth.getSession()
           return session?.access_token
         }

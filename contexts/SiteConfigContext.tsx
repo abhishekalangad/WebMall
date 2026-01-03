@@ -12,9 +12,12 @@ interface SiteSettings {
     contactAddress: string | null
     facebookUrl: string | null
     instagramUrl: string | null
+    instagramUrl2: string | null
     twitterUrl: string | null
     shippingBaseRate: number
     freeShippingThreshold: number
+    headerNavigation: any | null // JSON array of links for admins
+    customerNavigation: any | null // JSON array of links for customers
 }
 
 interface HeroBanner {
@@ -60,7 +63,7 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
     const fetchConfig = async () => {
         try {
             console.log('[SiteConfig] Fetching configuration...')
-            const response = await fetch('/api/site/config')
+            const response = await fetch('/api/site/config', { cache: 'no-store' })
             if (response.ok) {
                 const data = await response.json()
                 console.log('[SiteConfig] Received:', data.settings?.contactEmail)

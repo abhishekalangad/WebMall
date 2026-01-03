@@ -1,30 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma-extended'
-import { isSupabaseConfigured } from '@/lib/auth'
-import { getMockSiteSettings, getMockCategories } from '@/lib/mock-data'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+const DEFAULT_SITE_SETTINGS = {
+    id: 'default',
+    storeName: 'WebMall',
+    tagline: 'Sri Lankan Fashion Accessories',
+    description: 'Your premier destination for Sri Lankan fashion accessories.',
+    logoUrl: '/logo-no-bg.png',
+    contactEmail: 'webmalll.ik@gmail.com',
+    contactPhone: '+94 778973708',
+    contactAddress: 'Colombo, Sri Lanka',
+    facebookUrl: '',
+    instagramUrl: '',
+    twitterUrl: '',
+    shippingBaseRate: 500,
+    freeShippingThreshold: 10000,
+    headerNavigation: [],
+    customerNavigation: []
+}
+
+const DEFAULT_CATEGORIES = [
+    { id: '1', name: 'Bracelets', slug: 'bracelets' },
+    { id: '2', name: 'Necklaces', slug: 'necklaces' },
+    { id: '3', name: 'Rings', slug: 'rings' }
+]
 
 export async function GET() {
     try {
-        if (!isSupabaseConfigured()) {
-            console.log('[Site Config] Using mock mode (Supabase not configured)')
-            return NextResponse.json({
-                settings: getMockSiteSettings(),
-                banners: [],
-                categories: getMockCategories()
-            })
-        }
-
-        // Try to use Prisma, but fall back to mock if database is not available
+        // Try to use Prisma, but fall back to defaults if database is not available
         try {
             console.log('[Site Config] Attempting Prisma queries...')
 
             if (!prisma) {
                 throw new Error('Prisma client is not initialized')
             }
-
-            // Log available models for debugging
-            const prismaModels = Object.keys(prisma).filter(k => !k.startsWith('_') && !k.startsWith('$'))
-            console.log('[Site Config] Available Prisma models:', prismaModels)
 
             // 1. Fetch site settings (singleton)
             let settings = null
@@ -45,8 +57,6 @@ export async function GET() {
                 } catch (e: any) {
                     console.error('[Site Config] Error fetching siteSettings:', e.message)
                 }
-            } else {
-                console.warn('[Site Config] siteSettings model not found in Prisma client object keys')
             }
 
             // 2. Fetch active hero banners
@@ -60,8 +70,6 @@ export async function GET() {
                 } catch (e: any) {
                     console.error('[Site Config] Error fetching heroBanners:', e.message)
                 }
-            } else {
-                console.warn('[Site Config] heroBanner model not found in Prisma client object keys')
             }
 
             // 3. Fetch categories
@@ -74,25 +82,23 @@ export async function GET() {
                 } catch (e: any) {
                     console.error('[Site Config] Error fetching categories:', e.message)
                 }
-            } else {
-                console.warn('[Site Config] category model not found in Prisma client object keys')
             }
 
-            console.log('[Site Config] Prisma queries successful (or partially skipped)')
             return NextResponse.json({
-                settings: settings || getMockSiteSettings(),
+                settings: settings || DEFAULT_SITE_SETTINGS,
                 banners: banners,
-                categories: categories.length > 0 ? categories : getMockCategories()
+                categories: categories.length > 0 ? categories : DEFAULT_CATEGORIES
+            }, {
+                headers: {
+                    'Cache-Control': 'public, s-maxage=7200, stale-while-revalidate=86400',
+                },
             })
         } catch (prismaError: any) {
             console.error('[Site Config] Prisma error catch-all:', prismaError.message)
-            console.log('[Site Config] Falling back to mock mode')
-
-            // Fall back to mock data if Prisma fails
             return NextResponse.json({
-                settings: getMockSiteSettings(),
+                settings: DEFAULT_SITE_SETTINGS,
                 banners: [],
-                categories: getMockCategories()
+                categories: DEFAULT_CATEGORIES
             })
         }
     } catch (error: any) {

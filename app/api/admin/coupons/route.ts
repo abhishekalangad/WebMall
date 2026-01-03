@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyAuthToken, isSupabaseConfigured } from '@/lib/auth'
-import { getMockCoupons, addMockCoupon } from '@/lib/mock-data'
+import { prisma } from '@/lib/prisma'
+import { verifyAuthToken } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
     try {
         const authHeader = request.headers.get('Authorization')
-        if (!authHeader?.startsWith('Bearer ')) {
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
@@ -13,22 +13,24 @@ export async function GET(request: NextRequest) {
         const user = await verifyAuthToken(token)
 
         if (!user || user.role !== 'admin') {
-            return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 })
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        // For now, always use mock data (can add Prisma later)
-        const coupons = getMockCoupons()
+        const coupons = await prisma.coupon.findMany({
+            orderBy: { createdAt: 'desc' }
+        })
+
         return NextResponse.json(coupons)
-    } catch (error: any) {
-        console.error('[Admin Coupons GET] Error:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+    } catch (error) {
+        console.error('Error fetching coupons:', error)
+        return NextResponse.json({ error: 'Failed to fetch coupons' }, { status: 500 })
     }
 }
 
 export async function POST(request: NextRequest) {
     try {
         const authHeader = request.headers.get('Authorization')
-        if (!authHeader?.startsWith('Bearer ')) {
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
@@ -36,44 +38,35 @@ export async function POST(request: NextRequest) {
         const user = await verifyAuthToken(token)
 
         if (!user || user.role !== 'admin') {
-            return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 })
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        const data = await request.json()
+        const body = await request.json()
+        const { code, discountType, discountValue, expiryDate, usageLimit, minimumOrder, status } = body
 
-        // Validate required fields
-        if (!data.code || !data.discountType || !data.discountValue || !data.expiryDate) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-        }
-
-        // Validate discount value
-        if (data.discountType === 'percentage' && (data.discountValue < 0 || data.discountValue > 100)) {
-            return NextResponse.json({ error: 'Percentage discount must be between 0 and 100' }, { status: 400 })
-        }
-
-        if (data.discountValue <= 0) {
-            return NextResponse.json({ error: 'Discount value must be positive' }, { status: 400 })
-        }
-
-        // Check if coupon code already exists
-        const existingCoupons = getMockCoupons()
-        if (existingCoupons.find(c => c.code.toUpperCase() === data.code.toUpperCase())) {
+        // Validate unique code
+        const existing = await prisma.coupon.findUnique({
+            where: { code }
+        })
+        if (existing) {
             return NextResponse.json({ error: 'Coupon code already exists' }, { status: 400 })
         }
 
-        const newCoupon = addMockCoupon({
-            code: data.code.toUpperCase(),
-            discountType: data.discountType,
-            discountValue: data.discountValue,
-            expiryDate: data.expiryDate,
-            usageLimit: data.usageLimit || 999999,
-            minimumOrder: data.minimumOrder || 0,
-            status: data.status || 'active'
+        const coupon = await prisma.coupon.create({
+            data: {
+                code,
+                discountType,
+                discountValue,
+                expiryDate: new Date(expiryDate),
+                usageLimit: usageLimit || 100,
+                minimumOrder: minimumOrder || 0,
+                status: status || 'active'
+            }
         })
 
-        return NextResponse.json(newCoupon, { status: 201 })
+        return NextResponse.json(coupon)
     } catch (error: any) {
-        console.error('[Admin Coupons POST] Error:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        console.error('Error creating coupon:', error)
+        return NextResponse.json({ error: error.message || 'Failed to create coupon' }, { status: 500 })
     }
 }

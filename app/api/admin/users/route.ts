@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyAuthToken, isSupabaseConfigured } from '@/lib/auth'
+import { verifyAuthToken } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
     try {
@@ -16,14 +16,8 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        if (!isSupabaseConfigured()) {
-            return NextResponse.json([
-                { id: '1', email: 'admin@webmall.com', name: 'Admin User', role: 'admin', createdAt: new Date().toISOString(), _count: { orders: 0 } },
-                { id: '2', email: 'customer@webmall.com', name: 'Customer User', role: 'customer', createdAt: new Date().toISOString(), _count: { orders: 2 } }
-            ])
-        }
-
         const users = await prisma.user.findMany({
+            where: { role: 'customer' },
             orderBy: { createdAt: 'desc' },
             select: {
                 id: true,

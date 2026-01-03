@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const itemsWithPrices = items.map((i: any) => {
       const p = products.find(pr => pr.id === i.productId)
       if (!p) throw new Error('Invalid product')
-      const price = p.price
+      const price = Number(p.price)
       const total = price * i.quantity
       return { productId: i.productId, quantity: i.quantity, price, total }
     })

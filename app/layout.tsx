@@ -13,23 +13,27 @@ import { SITE_URL } from '@/lib/constants'
 
 const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-inter'
+  variable: '--font-inter',
+  display: 'swap',
 })
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
-  variable: '--font-playfair'
+  variable: '--font-playfair',
+  display: 'swap',
 })
 
 const dancingScript = Dancing_Script({
   subsets: ['latin'],
-  variable: '--font-cursive'
+  variable: '--font-cursive',
+  display: 'swap',
 })
 
 const greatVibes = Great_Vibes({
   subsets: ['latin'],
   weight: '400',
-  variable: '--font-brand-cursive'
+  variable: '--font-brand-cursive',
+  display: 'swap',
 })
 
 // Note: The sitemap function is typically defined in a sitemap.ts file at the root of the app directory.

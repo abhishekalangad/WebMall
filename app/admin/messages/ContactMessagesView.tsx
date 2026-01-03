@@ -5,6 +5,7 @@ import { Mail, Send, Loader2, CheckCircle, Clock, Eye, Trash2, RefreshCcw } from
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/contexts/AuthContext'
 import type { ContactMessage } from '@/types/contact'
 import {
     Dialog,
@@ -16,6 +17,7 @@ import {
 
 export default function ContactMessagesView() {
     const { toast } = useToast()
+    const { accessToken } = useAuth()
     const [messages, setMessages] = useState<ContactMessage[]>([])
     const [stats, setStats] = useState({ new: 0, read: 0, replied: 0 })
     const [isLoading, setIsLoading] = useState(true)
@@ -78,13 +80,20 @@ export default function ContactMessagesView() {
 
         setIsSendingReply(true)
         try {
+            const token = await accessToken()
+            if (!token) {
+                throw new Error('Not authenticated')
+            }
+
             const response = await fetch('/api/contact/reply', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     messageId: selectedMessage.id,
                     reply: replyText,
-                    adminEmail: 'admin@webmall.com' // Get from session in production
                 })
             })
 
@@ -114,14 +123,19 @@ export default function ContactMessagesView() {
 
     const getStatusBadge = (status: ContactMessage['status']) => {
         const styles = {
-            new: 'bg-blue-100 text-blue-700',
-            read: 'bg-yellow-100 text-yellow-700',
-            replied: 'bg-green-100 text-green-700',
+            new: 'bg-blue-100 text-blue-700 border-blue-200',
+            read: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+            replied: 'bg-green-100 text-green-700 border-green-200',
         }
         return (
-            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${styles[status]}`}>
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-            </span>
+            <div className="flex items-center gap-2">
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${styles[status]}`}>
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                </span>
+                {status === 'new' && (
+                    <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse outline outline-2 outline-red-100"></span>
+                )}
+            </div>
         )
     }
 
@@ -140,7 +154,7 @@ export default function ContactMessagesView() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Contact Messages</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Customer Messages</h1>
                     <p className="text-gray-600">View and respond to customer inquiries</p>
                 </div>
 
@@ -191,8 +205,8 @@ export default function ContactMessagesView() {
                             key={status}
                             onClick={() => setFilter(status as any)}
                             className={`px-4 py-2 rounded-lg font-medium transition-colors ${filter === status
-                                    ? 'bg-gray-900 text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                ? 'bg-gray-900 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                         >
                             {status.charAt(0).toUpperCase() + status.slice(1)}

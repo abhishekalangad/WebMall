@@ -53,9 +53,9 @@ export function CartView() {
                         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
                             {items.map((item, index) => (
                                 <div key={item.id} className={`p-6 ${index > 0 ? 'border-t' : ''}`}>
-                                    <div className="flex items-center space-x-4">
+                                    <div className="flex gap-4">
                                         {/* Product Image */}
-                                        <div className="relative w-20 h-20 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
+                                        <div className="relative w-20 h-20 sm:w-24 sm:h-24 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
                                             <Image
                                                 src={item.image || '/placeholder.jpg'}
                                                 alt={item.name}
@@ -64,50 +64,54 @@ export function CartView() {
                                             />
                                         </div>
 
-                                        {/* Product Details */}
-                                        <div className="flex-1 min-w-0">
-                                            <Link
-                                                href={`/products/${item.slug}`}
-                                                className="text-lg font-semibold text-gray-900 hover:text-pink-600 transition-colors line-clamp-1"
-                                            >
-                                                {item.name}
-                                            </Link>
-                                            <p className="text-gray-500 mt-1">
-                                                LKR {item.price.toLocaleString()}
-                                            </p>
-                                        </div>
-
-                                        {/* Quantity Controls */}
-                                        <div className="flex items-center space-x-3">
-                                            <div className="flex items-center border rounded-lg">
-                                                <button
-                                                    onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                                                    className="p-2 hover:bg-gray-50 transition-colors"
+                                        {/* Content Container */}
+                                        <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                            {/* Product Details */}
+                                            <div className="min-w-0">
+                                                <Link
+                                                    href={`/products/${item.slug}`}
+                                                    className="text-base sm:text-lg font-semibold text-gray-900 hover:text-pink-600 transition-colors line-clamp-2 sm:line-clamp-1"
                                                 >
-                                                    <Minus className="h-4 w-4" />
-                                                </button>
-                                                <span className="px-4 py-2 font-medium">{item.quantity || 0}</span>
-                                                <button
-                                                    onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                                                    className="p-2 hover:bg-gray-50 transition-colors"
-                                                >
-                                                    <Plus className="h-4 w-4" />
-                                                </button>
+                                                    {item.name}
+                                                </Link>
+                                                <p className="text-gray-500 mt-1 text-sm sm:text-base">
+                                                    LKR {item.price.toLocaleString()}
+                                                </p>
                                             </div>
 
-                                            <button
-                                                onClick={() => removeItem(item.productId)}
-                                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </button>
-                                        </div>
+                                            {/* Actions Row */}
+                                            <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto mt-2 sm:mt-0">
+                                                {/* Quantity Controls */}
+                                                <div className="flex items-center border rounded-lg h-9">
+                                                    <button
+                                                        onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                                                        className="p-2 hover:bg-gray-50 transition-colors h-full flex items-center"
+                                                    >
+                                                        <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
+                                                    </button>
+                                                    <span className="px-3 py-1 font-medium text-sm">{item.quantity || 0}</span>
+                                                    <button
+                                                        onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                                                        className="p-2 hover:bg-gray-50 transition-colors h-full flex items-center"
+                                                    >
+                                                        <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                                                    </button>
+                                                </div>
 
-                                        {/* Total Price */}
-                                        <div className="text-right">
-                                            <p className="text-lg font-semibold text-gray-900">
-                                                LKR {(item.price * item.quantity).toLocaleString()}
-                                            </p>
+                                                <button
+                                                    onClick={() => removeItem(item.productId)}
+                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                >
+                                                    <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                                                </button>
+
+                                                {/* Total Price (Mobile) - Visible on right */}
+                                                <div className="text-right sm:w-32 min-w-[80px]">
+                                                    <p className="text-base sm:text-lg font-semibold text-gray-900">
+                                                        LKR {(item.price * item.quantity).toLocaleString()}
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

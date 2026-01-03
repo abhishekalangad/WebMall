@@ -1,15 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Mail, Phone, MapPin, Send, Clock, CheckCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/contexts/AuthContext' // Import useAuth
 import type { ContactFormData } from '@/types/contact'
 
 export default function ContactView() {
     const { toast } = useToast()
+    const { user } = useAuth() // Get user from auth context
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isSubmitted, setIsSubmitted] = useState(false)
     const [formData, setFormData] = useState<ContactFormData>({
@@ -18,6 +20,17 @@ export default function ContactView() {
         subject: '',
         message: ''
     })
+
+    // Pre-fill form if user is logged in
+    useEffect(() => {
+        if (user) {
+            setFormData(prev => ({
+                ...prev,
+                name: user.name || prev.name,
+                email: user.email || prev.email
+            }))
+        }
+    }, [user])
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -39,7 +52,10 @@ export default function ContactView() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    ...formData,
+                    userId: user?.id // Include userId if available
+                }),
             })
 
             const data = await response.json()

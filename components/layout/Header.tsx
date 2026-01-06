@@ -123,11 +123,12 @@ function HeaderContent() {
 
   // Determine which navigation to show based on user role
   // Determine which navigation to show based on user role
+  // If settings exist and have items, use them. Otherwise, use defaults.
   const navItems = user?.role === 'admin'
-    ? (settings?.headerNavigation && Array.isArray(settings.headerNavigation)
+    ? (settings?.headerNavigation && Array.isArray(settings.headerNavigation) && settings.headerNavigation.length > 0
       ? settings.headerNavigation
       : DEFAULT_ADMIN_TABS)
-    : (settings?.customerNavigation && Array.isArray(settings.customerNavigation)
+    : (settings?.customerNavigation && Array.isArray(settings.customerNavigation) && settings.customerNavigation.length > 0
       ? settings.customerNavigation
       : DEFAULT_CUSTOMER_TABS)
 

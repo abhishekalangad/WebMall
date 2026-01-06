@@ -19,6 +19,7 @@ interface Product {
     currency: string
     images: { url: string; alt?: string | null }[]
     category: { name: string } | null | undefined
+    description?: string
 }
 
 interface ProductsViewProps {
@@ -220,6 +221,7 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                             onAddToWishlist={handleAddToWishlist}
                             showAddToCart={!!user}
                             showWishlist={!!user}
+                            layout={viewMode}
                         />
                     ))}
                 </div>

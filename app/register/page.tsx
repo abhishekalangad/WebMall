@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/card'
 import { signUp } from '@/lib/auth'
 import { useAuth } from '@/contexts/AuthContext'
 import { VerificationModal } from '@/components/ui/verification-modal'
+import { Eye, EyeOff } from 'lucide-react'
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -18,6 +19,8 @@ export default function RegisterPage() {
     password: '',
     confirmPassword: '',
   })
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showVerificationModal, setShowVerificationModal] = useState(false)
@@ -40,12 +43,12 @@ export default function RegisterPage() {
       await signUp(formData.email, formData.password, formData.name)
       // Refresh auth context to update auth state
       await refreshUser()
-      
+
       setRegisteredEmail(formData.email)
       setShowVerificationModal(true)
       // Clear form
       setFormData({ name: '', email: '', password: '', confirmPassword: '' })
-      
+
       // Redirect to waiting approval page after modal
       setTimeout(() => {
         router.push(`/waiting-approval?email=${encodeURIComponent(formData.email)}`)
@@ -101,29 +104,55 @@ export default function RegisterPage() {
 
           <div>
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="mt-1"
-              placeholder="Enter your password"
-              minLength={6}
-              required
-            />
+            <div className="relative mt-1">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className="pr-10"
+                placeholder="Enter your password"
+                minLength={6}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 top-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
 
           <div>
             <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-              className="mt-1"
-              placeholder="Confirm your password"
-              required
-            />
+            <div className="relative mt-1">
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                className="pr-10"
+                placeholder="Confirm your password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute inset-y-0 right-0 top-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
 
           <Button type="submit" className="w-full bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold" disabled={loading}>

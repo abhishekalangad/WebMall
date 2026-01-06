@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma-extended'
-import { verifyAuthToken } from '@/lib/auth'
+import { verifyAuthToken } from '@/lib/auth-server'
 
 export async function GET(request: NextRequest) {
     try {
@@ -84,15 +84,16 @@ export async function GET(request: NextRequest) {
         const activeOrders = totalOrders - completedOrders
 
         // Fetch message stats from contact API
-        let messageStats = { new: 0, read: 0, replied: 0, total: 0 }
-        try {
-            const messagesResponse = await fetch(`${request.nextUrl.origin}/api/contact`)
-            if (messagesResponse.ok) {
-                const messagesData = await messagesResponse.json()
-                messageStats = messagesData.stats || messageStats
-            }
-        } catch (error) {
-            console.error('Error fetching message stats:', error)
+        // Get message stats directly from DB
+        const totalMessages = await prisma.message.count()
+        const newMessages = await prisma.message.count({ where: { adminReply: null } })
+        const repliedMessages = await prisma.message.count({ where: { adminReply: { not: null } } })
+
+        const messageStats = {
+            new: newMessages,
+            read: 0, // Assuming read logic matches new mostly for dashboard
+            replied: repliedMessages,
+            total: totalMessages
         }
 
         // Get recent products

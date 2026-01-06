@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma-extended'
-import { verifyAuthToken } from '@/lib/auth'
+import { verifyAuthToken } from '@/lib/auth-server'
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,19 +16,47 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const where = isAdmin ? {} : { status: 'active' }
+    // Pagination parameters
+    const { searchParams } = new URL(request.url)
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')))
+    const skip = (page - 1) * limit
 
+    // Admins can see all products, non-admins only see active products (not deleted)
+    const where = isAdmin ? {} : { status: { not: 'deleted' } }
+
+    // Get total count for pagination metadata
+    const totalCount = await prisma.product.count({ where })
+
+    // Fetch paginated products
     const products = await prisma.product.findMany({
       where,
+      skip,
+      take: limit,
       include: { images: true, variants: true, category: true },
       orderBy: { createdAt: 'desc' }
     })
 
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalCount / limit)
+    const hasNextPage = page < totalPages
+    const hasPrevPage = page > 1
+
     if (products.length === 0) {
-      return NextResponse.json([])
+      return NextResponse.json({
+        products: [],
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          totalPages,
+          hasNextPage,
+          hasPrevPage
+        }
+      })
     }
 
-    // Get ratings for all products
+    // Get ratings for paginated products
     const productIds = products.map(p => p.id)
     const ratings: any[] = await prisma.$queryRaw`
       SELECT 
@@ -50,9 +78,22 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json(productsWithRatings, {
+    return NextResponse.json({
+      products: productsWithRatings,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+        hasNextPage,
+        hasPrevPage
+      }
+    }, {
       headers: {
         'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+        'X-Total-Count': totalCount.toString(),
+        'X-Page': page.toString(),
+        'X-Total-Pages': totalPages.toString(),
       },
     })
   } catch (error: any) {

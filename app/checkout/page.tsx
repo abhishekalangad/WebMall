@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card } from '@/components/ui/card'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabase'
 
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart()
@@ -87,14 +88,56 @@ export default function CheckoutPage() {
     setLoading(true)
 
     try {
-      // Simulate order processing
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Get authentication token
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      if (!token) {
+        throw new Error('Please log in to place an order')
+      }
+
+      // Call the orders API
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          items: items.map(item => ({
+            productId: item.productId,
+            quantity: item.quantity
+          })),
+          shippingAddress: {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            address: formData.address,
+            city: formData.city,
+            postalCode: formData.postalCode,
+            district: formData.district,
+            phone: formData.phone
+          },
+          paymentMethod: formData.paymentMethod,
+          notes: formData.notes || null,
+          couponCode: appliedCoupon?.coupon?.code || null,
+          discountAmount: discount
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to place order')
+      }
+
+      const order = await response.json()
 
       // Clear cart and show success
       clearCart()
       setOrderComplete(true)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Checkout error:', error)
+      alert(error.message || 'Failed to place order. Please try again.')
     } finally {
       setLoading(false)
     }

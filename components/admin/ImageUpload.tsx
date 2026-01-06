@@ -76,7 +76,7 @@ export function ImageUpload({
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
             <div className="flex items-center justify-between">
                 <label className="text-sm font-medium text-gray-700">Photo</label>
                 {preview && (
@@ -85,9 +85,9 @@ export function ImageUpload({
                         variant="ghost"
                         size="sm"
                         onClick={clearImage}
-                        className="text-red-500 hover:text-red-600 h-8"
+                        className="text-red-500 hover:text-red-600 h-8 text-xs sm:text-sm"
                     >
-                        <X className="h-4 w-4 mr-1" />
+                        <X className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
                         Remove
                     </Button>
                 )}
@@ -95,7 +95,7 @@ export function ImageUpload({
 
             <div
                 onClick={!uploading ? triggerSelect : undefined}
-                className={`relative aspect-square md:aspect-video rounded-xl border-2 border-dashed transition-all flex flex-center cursor-pointer overflow-hidden ${preview ? 'border-pink-300 bg-white' : 'border-gray-300 bg-gray-50 hover:border-pink-300 hover:bg-white'
+                className={`relative aspect-square md:aspect-video rounded-lg sm:rounded-xl border-2 border-dashed transition-all flex flex-center cursor-pointer overflow-hidden ${preview ? 'border-pink-300 bg-white' : 'border-gray-300 bg-gray-50 hover:border-pink-300 hover:bg-white'
                     }`}
             >
                 {preview ? (
@@ -105,13 +105,13 @@ export function ImageUpload({
                         className="w-full h-full object-cover"
                     />
                 ) : (
-                    <div className="flex flex-col items-center justify-center space-y-2 p-6 text-center w-full">
-                        <div className="p-3 rounded-full bg-pink-50 text-pink-500">
-                            <Upload className="h-6 w-6" />
+                    <div className="flex flex-col items-center justify-center space-y-2 p-4 sm:p-6 text-center w-full">
+                        <div className="p-2 sm:p-3 rounded-full bg-pink-50 text-pink-500">
+                            <Upload className="h-5 w-5 sm:h-6 sm:w-6" />
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-gray-900">Click to upload photo</p>
-                            <p className="text-xs text-gray-500">PNG, JPG or WEBP (Max. 5MB)</p>
+                            <p className="text-xs sm:text-sm font-semibold text-gray-900">Click to upload photo</p>
+                            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">PNG, JPG or WEBP (Max. 5MB)</p>
                         </div>
                     </div>
                 )}
@@ -119,8 +119,8 @@ export function ImageUpload({
                 {/* Overlay for uploading state */}
                 {uploading && (
                     <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white z-10 backdrop-blur-sm">
-                        <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                        <p className="text-sm font-medium">Uploading to secure storage...</p>
+                        <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin mb-2" />
+                        <p className="text-xs sm:text-sm font-medium">Uploading to secure storage...</p>
                     </div>
                 )}
             </div>
@@ -133,7 +133,7 @@ export function ImageUpload({
                 className="hidden"
             />
 
-            <p className="text-xs text-gray-500 italic">
+            <p className="text-[10px] sm:text-xs text-gray-500 italic">
                 * Select a high-quality image from your computer to represent this item.
             </p>
         </div>

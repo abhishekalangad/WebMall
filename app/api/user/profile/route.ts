@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma-extended'
 import { verifyAuthToken } from '@/lib/auth'
+import { sanitizeProfileData } from '@/lib/sanitize'
 
 export async function GET(request: NextRequest) {
     try {
@@ -69,7 +70,15 @@ export async function PUT(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { name, phone, address, birthday, profileImage } = body
+
+        // Sanitize all user inputs to prevent XSS attacks
+        const sanitizedData = sanitizeProfileData({
+            name: body.name,
+            phone: body.phone,
+            address: body.address,
+            birthday: body.birthday,
+            profileImage: body.profileImage
+        })
 
         // Check if user exists by Supabase ID
         let dbUser = await prisma.user.findUnique({
@@ -81,16 +90,12 @@ export async function PUT(request: NextRequest) {
         const forceRole = isOwner ? 'admin' : undefined
 
         if (dbUser) {
-            // Update existing user matches ID
+            // Update existing user
             dbUser = await prisma.user.update({
                 where: { supabaseId: user.id },
                 data: {
                     ...(forceRole && { role: forceRole }),
-                    ...(name !== undefined && { name }),
-                    ...(phone !== undefined && { phone }),
-                    ...(address !== undefined && { address }),
-                    ...(birthday !== undefined && { birthday }),
-                    ...(profileImage !== undefined && { profileImage })
+                    ...sanitizedData
                 }
             })
         } else {
@@ -106,25 +111,21 @@ export async function PUT(request: NextRequest) {
                     data: {
                         supabaseId: user.id,
                         ...(forceRole && { role: forceRole }),
-                        ...(name !== undefined && { name }),
-                        ...(phone !== undefined && { phone }),
-                        ...(address !== undefined && { address }),
-                        ...(birthday !== undefined && { birthday }),
-                        ...(profileImage !== undefined && { profileImage })
+                        ...sanitizedData
                     }
                 })
             } else {
-                // Create new user
+                // Create new user with sanitized data
                 dbUser = await prisma.user.create({
                     data: {
                         supabaseId: user.id,
                         email: user.email,
-                        name: name || user.name || '',
+                        name: sanitizedData.name || user.name || '',
                         role: isOwner ? 'admin' : 'customer',
-                        ...(phone && { phone }),
-                        ...(address && { address }),
-                        ...(birthday && { birthday }),
-                        ...(profileImage && { profileImage })
+                        ...(sanitizedData.phone && { phone: sanitizedData.phone }),
+                        ...(sanitizedData.address && { address: sanitizedData.address }),
+                        ...(sanitizedData.birthday && { birthday: sanitizedData.birthday }),
+                        ...(sanitizedData.profileImage && { profileImage: sanitizedData.profileImage })
                     }
                 })
             }

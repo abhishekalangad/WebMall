@@ -72,7 +72,7 @@ let mockSiteSettings: MockSiteSettings = {
   tagline: 'Sri Lankan Fashion Accessories',
   description: 'Your premier destination for Sri Lankan fashion accessories.',
   logoUrl: '',
-  contactEmail: 'webmalll.ik@gmail.com',
+  contactEmail: 'webmalll.lk@gmail.com',
   contactPhone: '+94 778973708',
   contactAddress: 'Colombo, Sri Lanka',
   facebookUrl: '',

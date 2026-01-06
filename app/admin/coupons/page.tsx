@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Edit, Trash2, Tag, Calendar, Users, TrendingUp, X } from 'lucide-react'
+import { Plus, Edit, Trash2, Tag, Calendar, Users, TrendingUp, X, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
 interface Coupon {
@@ -171,9 +171,16 @@ export default function AdminCouponsPage() {
             <div className="bg-white border-b mb-8">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900">Coupons</h1>
-                            <p className="text-gray-500 mt-1">Manage discount coupons and promotional codes</p>
+                        <div className="flex items-center gap-4">
+                            <Link href="/admin">
+                                <Button variant="ghost" size="icon">
+                                    <ArrowLeft className="h-5 w-5" />
+                                </Button>
+                            </Link>
+                            <div>
+                                <h1 className="text-3xl font-bold text-gray-900">Coupons</h1>
+                                <p className="text-gray-500 mt-1">Manage discount coupons and promotional codes</p>
+                            </div>
                         </div>
                         <Button
                             onClick={() => setShowForm(true)}

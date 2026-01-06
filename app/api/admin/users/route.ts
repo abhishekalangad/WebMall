@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyAuthToken } from '@/lib/auth'
+import { verifyAuthToken } from '@/lib/auth-server'
 
 export async function GET(request: NextRequest) {
     try {
@@ -17,7 +17,6 @@ export async function GET(request: NextRequest) {
         }
 
         const users = await prisma.user.findMany({
-            where: { role: 'customer' },
             orderBy: { createdAt: 'desc' },
             select: {
                 id: true,

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
-import { Mail, MessageCircle, Clock, CheckCircle, ChevronDown, ChevronUp, Settings } from 'lucide-react'
+import { Mail, MessageCircle, Clock, CheckCircle, ChevronDown, ChevronUp, Settings, ArrowLeft } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -106,7 +106,7 @@ export default function MyMessagesPage() {
                 body: JSON.stringify({
                     name: user?.name || 'Customer',
                     email: user?.email || '',
-                    subject: `Re: ${originalSubject}`,
+                    subject: `Re: ${cleanSubject(originalSubject)}`,
                     message: replyText,
                     userId: user?.id
                 })
@@ -140,6 +140,14 @@ export default function MyMessagesPage() {
         })
     }
 
+    const cleanSubject = (subject: string): string => {
+        if (!subject) return 'No Subject'
+        if (subject.toLowerCase().startsWith('re:')) {
+            return cleanSubject(subject.substring(3).trim())
+        }
+        return subject
+    }
+
     if (loading || isLoading) {
         return (
             <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center">
@@ -155,6 +163,14 @@ export default function MyMessagesPage() {
                 <div className="mb-8">
                     <div className="flex items-center justify-between mb-4">
                         <div>
+                            <Button
+                                variant="ghost"
+                                className="mb-4 pl-0 hover:bg-transparent hover:text-pink-600 transition-colors"
+                                onClick={() => router.back()}
+                            >
+                                <ArrowLeft className="h-4 w-4 mr-2" />
+                                Back
+                            </Button>
                             <h1 className="text-4xl font-playfair font-bold text-gray-900 mb-2">My Messages</h1>
                             <p className="text-gray-600">View your conversation history with support</p>
                         </div>
@@ -242,7 +258,7 @@ export default function MyMessagesPage() {
                                                     {formatDate(msg.createdAt)}
                                                 </span>
                                             </div>
-                                            <h3 className="text-xl font-bold text-gray-900 mb-2">{msg.subject}</h3>
+                                            <h3 className="text-xl font-bold text-gray-900 mb-2">{cleanSubject(msg.subject)}</h3>
                                             <p className="text-gray-600 line-clamp-2">{msg.message}</p>
                                         </div>
                                         <div className="ml-6 flex-shrink-0">

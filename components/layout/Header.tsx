@@ -48,7 +48,7 @@ function HeaderContent() {
     if (user) {
       const fetchUnread = async () => {
         try {
-          if (user.role === 'admin') {
+          if (user?.role === 'admin') {
             const res = await fetch('/api/contact?status=new')
             if (res.ok) {
               const data = await res.json()
@@ -91,7 +91,7 @@ function HeaderContent() {
   // Determine if navigation and search should be shown
   const shouldShowNavigation = () => {
     // Hide on auth pages
-    if (pathname.includes('/login') || pathname.includes('/register')) return false
+    if (pathname.includes('/login') || pathname.includes('/register') || pathname.includes('/auth/')) return false
 
     // Hide on 404 pages (Next.js uses various patterns for this)
     if (pathname === '/404' || pathname === '/not-found') return false
@@ -220,7 +220,7 @@ function HeaderContent() {
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 >
                   <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center overflow-hidden border border-gray-100 shadow-sm relative">
-                    {user.role === 'admin' ? (
+                    {user?.role === 'admin' ? (
                       // Admin: Show WebMall transparent logo
                       <div className="w-full h-full bg-white flex items-center justify-center">
                         <img
@@ -229,14 +229,14 @@ function HeaderContent() {
                           className="w-full h-full object-contain scale-90"
                         />
                       </div>
-                    ) : user.profileImage ? (
+                    ) : user?.profileImage ? (
                       // Customer: Show profile image if available
-                      <img src={user.profileImage} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                      <img src={user.profileImage} alt={user?.name || 'User'} className="w-full h-full object-cover" />
                     ) : (
                       // Customer: Show initials if no profile image
                       <div className="w-full h-full bg-gradient-to-br from-pink-300 to-yellow-300 flex items-center justify-center">
                         <span className="text-sm font-semibold text-gray-900">
-                          {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                          {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                         </span>
                       </div>
                     )}
@@ -249,8 +249,8 @@ function HeaderContent() {
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-3 z-[9999]">
                     <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-semibold text-gray-900">{user.name || 'User'}</p>
-                      <p className="text-xs text-gray-500">{user.email}</p>
+                      <p className="text-sm font-semibold text-gray-900">{user?.name || 'User'}</p>
+                      <p className="text-xs text-gray-500">{user?.email}</p>
                     </div>
 
                     <div className="py-2">
@@ -263,13 +263,13 @@ function HeaderContent() {
                         <span>My Orders</span>
                       </Link>
                       <Link
-                        href={user.role === 'admin' ? "/admin/messages" : "/profile/messages"}
+                        href={user?.role === 'admin' ? "/admin/messages" : "/profile/messages"}
                         className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         onClick={() => setIsUserMenuOpen(false)}
                       >
                         <div className="flex items-center">
                           <Mail className="h-4 w-4 mr-3 text-gray-400" />
-                          <span>{user.role === 'admin' ? 'Customer Messages' : 'My Messages'}</span>
+                          <span>{user?.role === 'admin' ? 'Customer Messages' : 'My Messages'}</span>
                         </div>
                         {unreadMessages > 0 && (
                           <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
@@ -281,7 +281,7 @@ function HeaderContent() {
                         <ShoppingBag className="h-4 w-4 mr-3 text-gray-400" />
                         <span>My Cart</span>
                       </Link>
-                      {user.role === 'admin' && (
+                      {user?.role === 'admin' && (
                         <Link href="/admin" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
                           <User className="h-4 w-4 mr-3 text-gray-400" />
                           <span>Admin Dashboard</span>
@@ -307,6 +307,14 @@ function HeaderContent() {
               </div>
             ) : (
               <div className="hidden sm:flex gap-2">
+                <Link href="/register">
+                  <Button
+                    variant="outline"
+                    className="bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-200 h-9 sm:h-10 px-4 sm:px-6 text-sm sm:text-base font-semibold"
+                  >
+                    Sign Up
+                  </Button>
+                </Link>
                 <Link href="/login">
                   <Button className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 h-9 sm:h-10 px-4 sm:px-6 text-sm sm:text-base">
                     Sign In
@@ -361,11 +369,11 @@ function HeaderContent() {
               )}
               {user && (
                 <Link
-                  href={user.role === 'admin' ? "/admin/messages" : "/profile/messages"}
-                  className={`block px-4 py-3 font-cursive text-xl sm:text-2xl transition-all rounded-lg mx-2 ${isActive(user.role === 'admin' ? '/admin/messages' : '/profile/messages') ? 'bg-pink-50 text-pink-600 font-bold' : 'text-gray-600 hover:bg-gray-50'}`}
+                  href={user?.role === 'admin' ? "/admin/messages" : "/profile/messages"}
+                  className={`block px-4 py-3 font-cursive text-xl sm:text-2xl transition-all rounded-lg mx-2 ${isActive(user?.role === 'admin' ? '/admin/messages' : '/profile/messages') ? 'bg-pink-50 text-pink-600 font-bold' : 'text-gray-600 hover:bg-gray-50'}`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  {user.role === 'admin' ? 'Customer Messages' : 'My Messages'}
+                  {user?.role === 'admin' ? 'Customer Messages' : 'My Messages'}
                 </Link>
               )}
               {user?.role === 'admin' && (

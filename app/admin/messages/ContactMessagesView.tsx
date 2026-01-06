@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Mail, Send, Loader2, CheckCircle, Clock, Eye, Trash2, RefreshCcw } from 'lucide-react'
+import { Mail, Send, Loader2, CheckCircle, Clock, Eye, Trash2, RefreshCcw, ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
@@ -30,7 +31,10 @@ export default function ContactMessagesView() {
         setIsLoading(true)
         try {
             const url = filter === 'all' ? '/api/contact' : `/api/contact?status=${filter}`
-            const response = await fetch(url)
+            const token = await accessToken()
+            const response = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
             const data = await response.json()
 
             if (response.ok) {
@@ -53,25 +57,37 @@ export default function ContactMessagesView() {
         fetchMessages()
     }, [filter])
 
-    const handleViewMessage = async (message: ContactMessage) => {
+    const handleMarkAsRead = async (id: string) => {
+        try {
+            const token = await accessToken()
+            await fetch('/api/contact', {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id, status: 'read' })
+            })
+            // Update local state to reflect change immediately (optimistic update)
+            setMessages(prev => prev.map(m => m.id === id ? { ...m, status: 'read' } : m))
+            // Also update stats if we want to be precise, or just wait for next fetch
+            setStats(prev => ({
+                ...prev,
+                new: prev.new > 0 ? prev.new - 1 : 0,
+                read: prev.read + 1
+            }))
+        } catch (error) {
+            console.error('Failed to mark as read', error)
+        }
+    }
+
+    const handleViewMessage = (message: ContactMessage) => {
         setSelectedMessage(message)
         setReplyText(message.reply || '')
 
         // Mark as read if it's new
         if (message.status === 'new') {
-            try {
-                await fetch('/api/contact/reply', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        messageId: message.id,
-                        status: 'read'
-                    })
-                })
-                fetchMessages()
-            } catch (error) {
-                console.error('Error marking as read:', error)
-            }
+            handleMarkAsRead(message.id)
         }
     }
 
@@ -149,13 +165,25 @@ export default function ContactMessagesView() {
         })
     }
 
+    const cleanSubject = (subject: string) => {
+        // Recursively remove Re: prefixes (case insensitive) and whitespace
+        return subject.replace(/^(re:\s*)+/i, '').trim()
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Customer Messages</h1>
-                    <p className="text-gray-600">View and respond to customer inquiries</p>
+                <div className="mb-8 flex items-center gap-4">
+                    <Link href="/admin">
+                        <Button variant="ghost" size="icon">
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                    </Link>
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Customer Messages</h1>
+                        <p className="text-gray-600">View and respond to customer inquiries</p>
+                    </div>
                 </div>
 
                 {/* Stats */}
@@ -250,7 +278,7 @@ export default function ContactMessagesView() {
                                         </div>
                                         <span className="text-xs text-gray-500">{formatDate(message.createdAt)}</span>
                                     </div>
-                                    <h4 className="font-semibold text-gray-800 mb-1">{message.subject}</h4>
+                                    <h4 className="font-semibold text-gray-800 mb-1">{cleanSubject(message.subject)}</h4>
                                     <p className="text-sm text-gray-600 line-clamp-2">{message.message}</p>
                                 </div>
                             ))}
@@ -279,7 +307,7 @@ export default function ContactMessagesView() {
                                     </div>
                                     <div>
                                         <p className="text-xs text-gray-500 mb-1">Subject</p>
-                                        <p className="font-medium text-gray-900">{selectedMessage.subject}</p>
+                                        <p className="font-medium text-gray-900">{cleanSubject(selectedMessage.subject)}</p>
                                     </div>
                                     <div>
                                         <p className="text-xs text-gray-500 mb-1">Message</p>

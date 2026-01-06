@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { mockSignOut } from '@/lib/mock-auth'
+import { signOut } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-    // Use mock authentication for development
-    mockSignOut()
-    
-    return NextResponse.json({ message: 'Logged out successfully' })
+    await signOut()
+
+    return NextResponse.json({
+      message: 'Logged out successfully'
+    })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('Logout error:', error)
+    return NextResponse.json(
+      { error: error.message || 'Failed to logout' },
+      { status: 500 }
+    )
   }
 }

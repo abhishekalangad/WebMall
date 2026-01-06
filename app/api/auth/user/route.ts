@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { mockGetCurrentUser } from '@/lib/mock-auth'
+import { getCurrentUser } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    // Use mock authentication for development
-    const user = mockGetCurrentUser()
+    const user = await getCurrentUser()
 
     if (!user) {
       return NextResponse.json({ user: null })
@@ -14,11 +13,20 @@ export async function GET(request: NextRequest) {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name || undefined,
-        role: user.role
+        name: user.name,
+        role: user.role,
+        phone: user.phone,
+        address: user.address,
+        birthday: user.birthday,
+        profileImage: user.profileImage,
+        email_verified: user.email_verified
       }
     })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('Get user error:', error)
+    return NextResponse.json(
+      { error: error.message || 'Failed to get user' },
+      { status: 500 }
+    )
   }
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { AuthUser, getCurrentUser } from '@/lib/auth'
 import { User } from '@supabase/supabase-js'
@@ -22,11 +22,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [supabaseUser, setSupabaseUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
 
   const refreshUser = async () => {
     if (isRefreshing) {
       return
+    }
+
+    // Clear any pending refresh timeout (debouncing)
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current)
+      refreshTimeoutRef.current = null
     }
 
     setIsRefreshing(true)
@@ -51,8 +58,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null)
         return
       }
-
-      setSupabaseUser(session?.user ?? null)
 
       setSupabaseUser(session?.user ?? null)
 
@@ -125,6 +130,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Initial auth check
     refreshUser()
+
+    // Cleanup function to clear any pending timeouts
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current)
+        refreshTimeoutRef.current = null
+      }
+    }
   }, [])
 
   const handleSignOut = async () => {

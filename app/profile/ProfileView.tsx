@@ -65,7 +65,7 @@ interface OrderDetails {
 }
 
 export function ProfileView() {
-    const { user, signOut, loading: authLoading, updateUser } = useAuth()
+    const { user, signOut, loading: authLoading, updateUser, accessToken } = useAuth()
     const { totalItems: cartCount, addItem: addToCart } = useCart()
     const { items: wishlistItems, removeItem, clearWishlist } = useWishlist()
     const { toast } = useToast()
@@ -173,9 +173,13 @@ export function ProfileView() {
             formData.append('file', file)
             formData.append('userId', user.id)
 
+            const token = await accessToken()
             // Upload to server
             const response = await fetch('/api/upload/profile-image', {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
                 body: formData,
             })
 
@@ -895,13 +899,13 @@ export function ProfileView() {
             <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
                 <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md rounded-2xl md:rounded-3xl p-6 md:p-8">
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-bold">Credentials Guard</DialogTitle>
-                        <DialogDescription className="text-sm">Rotate your password to maintain high-level security.</DialogDescription>
+                        <DialogTitle className="text-xl font-bold">Change Password</DialogTitle>
+                        <DialogDescription className="text-sm">Update your password to keep your account secure.</DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handlePasswordChange} className="space-y-5 py-4">
                         <div className="space-y-4">
                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Verification Token (Current)</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Password</Label>
                                 <Input
                                     type="password"
                                     required
@@ -912,7 +916,7 @@ export function ProfileView() {
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">New Vault Code</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">New Password</Label>
                                 <Input
                                     type="password"
                                     required
@@ -922,7 +926,7 @@ export function ProfileView() {
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Confirm Vault Code</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Confirm New Password</Label>
                                 <Input
                                     type="password"
                                     required
@@ -934,7 +938,7 @@ export function ProfileView() {
                         </div>
                         <DialogFooter className="pt-2">
                             <Button type="submit" disabled={isSaving} className="w-full h-12 rounded-xl bg-slate-900 text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-slate-200">
-                                {isSaving ? "Updating Vault..." : "Re-Encrypt Credentials"}
+                                {isSaving ? "Updating Password..." : "Update Password"}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -945,31 +949,31 @@ export function ProfileView() {
             <Dialog open={showNotificationsDialog} onOpenChange={setShowNotificationsDialog}>
                 <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md rounded-2xl md:rounded-3xl p-0 overflow-hidden shadow-2xl">
                     <DialogHeader className="p-6 md:p-8 bg-slate-50/50">
-                        <DialogTitle className="text-xl font-bold">Signal Management</DialogTitle>
-                        <DialogDescription className="text-xs">Select which frequencies you want to tune in to.</DialogDescription>
+                        <DialogTitle className="text-xl font-bold">Email Notifications</DialogTitle>
+                        <DialogDescription className="text-xs">Choose which emails you want to receive from us.</DialogDescription>
                     </DialogHeader>
                     <div className="p-4 md:p-6 space-y-2 md:space-y-3 max-h-[50vh] overflow-y-auto">
                         <NotificationToggle
-                            label="Transaction Logs"
-                            desc="Real-time alerts about your shipments and deliveries."
+                            label="Order Updates"
+                            desc="Get notified about your order status and shipping updates."
                             checked={notificationSettings.orderUpdates}
                             onCheckedChange={v => setNotificationSettings(s => ({ ...s, orderUpdates: v }))}
                         />
                         <NotificationToggle
-                            label="Market Intel"
-                            desc="Receive early access to sales and exclusive member offers."
+                            label="Promotions & Deals"
+                            desc="Receive exclusive offers, sales, and special discounts."
                             checked={notificationSettings.promotions}
                             onCheckedChange={v => setNotificationSettings(s => ({ ...s, promotions: v }))}
                         />
                         <NotificationToggle
-                            label="Security Uplink"
-                            desc="Get notified of any unusual login activity or security changes."
+                            label="Security Alerts"
+                            desc="Important notifications about your account security."
                             checked={notificationSettings.accountSecurity}
                             onCheckedChange={v => setNotificationSettings(s => ({ ...s, accountSecurity: v }))}
                         />
                         <NotificationToggle
-                            label="Curated Feed"
-                            desc="A monthly roundup of design trends and new arrivals."
+                            label="Newsletter"
+                            desc="Monthly updates with new products and style tips."
                             checked={notificationSettings.newsletter}
                             onCheckedChange={v => setNotificationSettings(s => ({ ...s, newsletter: v }))}
                         />
@@ -977,7 +981,7 @@ export function ProfileView() {
                     <div className="p-6 md:p-8 border-t border-slate-100 flex gap-4">
                         <Button variant="outline" className="flex-1 rounded-xl h-12 font-bold text-xs" onClick={() => setShowNotificationsDialog(false)}>Cancel</Button>
                         <Button onClick={handleNotificationSave} disabled={isSaving} className="flex-2 rounded-xl h-12 bg-slate-900 text-white font-black uppercase tracking-widest text-[10px] px-8 shadow-lg shadow-slate-200">
-                            {isSaving ? "Syncing..." : "Update Signals"}
+                            {isSaving ? "Saving..." : "Save Preferences"}
                         </Button>
                     </div>
                 </DialogContent>
@@ -990,24 +994,24 @@ export function ProfileView() {
                         <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 mb-4 shadow-sm">
                             <AlertTriangle className="h-6 w-6" />
                         </div>
-                        <DialogTitle className="text-xl font-bold text-red-600">Deactivate Profile?</DialogTitle>
+                        <DialogTitle className="text-xl font-bold text-red-600">Delete Account?</DialogTitle>
                         <DialogDescription className="text-slate-500 text-sm leading-relaxed">
-                            This action terminates your access permanently. You will lose your history, curated favorites, and loyalty rewards instantaneously.
+                            This action is permanent. You will lose your order history, wishlist, and all saved information.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-6 font-bold text-slate-900 text-sm text-center md:text-left">
-                        Are you certain you want to clear your WebMall presence?
+                        Are you sure you want to delete your account?
                     </div>
                     <DialogFooter className="flex flex-col sm:flex-row gap-3">
                         <Button variant="ghost" className="rounded-xl flex-1 border-slate-100 h-12 font-bold text-xs" onClick={() => setShowDeactivateDialog(false)}>
-                            Maintain Account
+                            Keep Account
                         </Button>
                         <Button
                             disabled={isSaving}
                             onClick={handleDeactivate}
                             className="rounded-xl flex-1 bg-red-600 text-white hover:bg-red-700 shadow-xl shadow-red-100 font-black uppercase tracking-widest text-[10px] h-12"
                         >
-                            {isSaving ? "Purging..." : "Confirm Deactivation"}
+                            {isSaving ? "Deleting..." : "Delete Account"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

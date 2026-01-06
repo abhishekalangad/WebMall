@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { useAuth } from './AuthContext'
 
 export interface WishlistItem {
@@ -30,41 +30,185 @@ const WishlistContext = createContext<WishlistContextType | undefined>(undefined
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<WishlistItem[]>([])
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
+  const [isLoadingWishlist, setIsLoadingWishlist] = useState(true)
   const { user } = useAuth()
+
+  // Use ref to prevent unnecessary localStorage saves
+  const prevItemsRef = useRef<WishlistItem[]>([])
+  const prevUserIdRef = useRef<string | null>(null)
 
   // Get user-specific wishlist key
   const getWishlistKey = () => {
     return user ? `webmall-wishlist-${user.id}` : 'webmall-wishlist-guest'
   }
 
-  // Load wishlist from localStorage when user changes
-  useEffect(() => {
-    const wishlistKey = getWishlistKey()
-    const savedWishlist = localStorage.getItem(wishlistKey)
-    if (savedWishlist) {
-      try {
-        setItems(JSON.parse(savedWishlist))
-      } catch (error) {
-        console.error('Error parsing wishlist data:', error)
-        setItems([])
+  // Get auth token helper
+  const getAuthToken = async () => {
+    if (!user) return null
+    try {
+      const { supabase } = await import('@/lib/supabase')
+      const { data: { session } } = await supabase.auth.getSession()
+      return session?.access_token
+    } catch (error) {
+      console.error('Error getting auth token:', error)
+      return null
+    }
+  }
+
+  // Load wishlist from server for logged-in users
+  const loadWishlistFromServer = async () => {
+    if (!user) return null
+
+    try {
+      const token = await getAuthToken()
+      if (!token) return null
+
+      const response = await fetch('/api/wishlist', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        return data.items || []
       }
-    } else {
-      setItems([])
+    } catch (error) {
+      console.error('Error loading wishlist from server:', error)
     }
+    return null
+  }
+
+  // Add item to server wishlist
+  const addItemToServer = async (productId: string) => {
+    if (!user) return
+
+    try {
+      const token = await getAuthToken()
+      if (!token) return
+
+      await fetch('/api/wishlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ productId })
+      })
+    } catch (error) {
+      console.error('Failed to add to server wishlist:', error)
+    }
+  }
+
+  // Remove item from server wishlist
+  const removeItemFromServer = async (productId: string) => {
+    if (!user) return
+
+    try {
+      const token = await getAuthToken()
+      if (!token) return
+
+      await fetch(`/api/wishlist?productId=${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+    } catch (error) {
+      console.error('Failed to remove from server wishlist:', error)
+    }
+  }
+
+  // Clear server wishlist
+  const clearServerWishlist = async () => {
+    if (!user) return
+
+    try {
+      const token = await getAuthToken()
+      if (!token) return
+
+      await fetch('/api/wishlist', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+    } catch (error) {
+      console.error('Failed to clear server wishlist:', error)
+    }
+  }
+
+  // Load wishlist when component mounts or user changes
+  useEffect(() => {
+    const loadWishlist = async () => {
+      setIsLoadingWishlist(true)
+
+      if (user) {
+        // User is logged in - load from server
+        const serverItems = await loadWishlistFromServer()
+
+        if (serverItems) {
+          setItems(serverItems)
+          // Update localStorage for consistency
+          const wishlistKey = getWishlistKey()
+          localStorage.setItem(wishlistKey, JSON.stringify(serverItems))
+        } else {
+          // Fallback to localStorage if server fails
+          const wishlistKey = getWishlistKey()
+          const savedWishlist = localStorage.getItem(wishlistKey)
+          if (savedWishlist) {
+            try {
+              setItems(JSON.parse(savedWishlist))
+            } catch (error) {
+              console.error('Error parsing wishlist:', error)
+              setItems([])
+            }
+          } else {
+            setItems([])
+          }
+        }
+      } else {
+        // Guest user - load from localStorage only
+        const wishlistKey = getWishlistKey()
+        const savedWishlist = localStorage.getItem(wishlistKey)
+
+        if (savedWishlist) {
+          try {
+            setItems(JSON.parse(savedWishlist))
+          } catch (error) {
+            console.error('Error parsing wishlist:', error)
+            setItems([])
+          }
+        } else {
+          setItems([])
+        }
+      }
+
+      setIsLoadingWishlist(false)
+    }
+
+    loadWishlist()
   }, [user])
 
-  // Save wishlist to localStorage whenever items change
+  // Save wishlist to localStorage whenever items change (with optimization to prevent unnecessary saves)
   useEffect(() => {
-    const wishlistKey = getWishlistKey()
-    localStorage.setItem(wishlistKey, JSON.stringify(items))
-  }, [items, user])
+    // Skip during initial load
+    if (isLoadingWishlist) return
 
-  // Clear wishlist when user logs out
-  useEffect(() => {
-    if (!user) {
-      setItems([])
+    const currentUserId = user?.id || null
+    const itemsChanged = JSON.stringify(prevItemsRef.current) !== JSON.stringify(items)
+    const userChanged = prevUserIdRef.current !== currentUserId
+
+    // Only save if items actually changed or user changed
+    if (itemsChanged || userChanged) {
+      const wishlistKey = getWishlistKey()
+      localStorage.setItem(wishlistKey, JSON.stringify(items))
+
+      // Update refs to current values
+      prevItemsRef.current = items
+      prevUserIdRef.current = currentUserId
     }
-  }, [user])
+  }, [items, user, isLoadingWishlist])
 
   const addItem = (newItem: Omit<WishlistItem, 'id' | 'addedAt'>) => {
     if (isInWishlist(newItem.productId)) {
@@ -80,6 +224,9 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
     setItems(prev => [...prev, wishlistItem])
     showToast(`${newItem.name} added to wishlist!`, 'success')
+
+    // Add to server for logged-in users
+    addItemToServer(newItem.productId)
   }
 
   const removeItem = (productId: string) => {
@@ -87,6 +234,8 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     setItems(prev => prev.filter(item => item.productId !== productId))
     if (itemToRemove) {
       showToast(`${itemToRemove.name} removed from wishlist`, 'info')
+      // Remove from server for logged-in users
+      removeItemFromServer(productId)
     }
   }
 
@@ -97,6 +246,8 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const clearWishlist = () => {
     setItems([])
     showToast('Wishlist cleared', 'info')
+    // Clear server wishlist for logged-in users
+    clearServerWishlist()
   }
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -121,16 +272,14 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       {children}
       {toast && (
         <div className="fixed top-4 right-4 z-50">
-          <div className={`flex items-center space-x-3 px-4 py-3 rounded-lg border shadow-lg max-w-sm ${
-            toast.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
+          <div className={`flex items-center space-x-3 px-4 py-3 rounded-lg border shadow-lg max-w-sm ${toast.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
             toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
-            'bg-blue-50 border-blue-200 text-blue-800'
-          }`}>
-            <div className={`h-5 w-5 rounded-full ${
-              toast.type === 'success' ? 'bg-green-500' :
+              'bg-blue-50 border-blue-200 text-blue-800'
+            }`}>
+            <div className={`h-5 w-5 rounded-full ${toast.type === 'success' ? 'bg-green-500' :
               toast.type === 'error' ? 'bg-red-500' :
-              'bg-blue-500'
-            }`} />
+                'bg-blue-500'
+              }`} />
             <span className="flex-1 text-sm font-medium">{toast.message}</span>
             <button
               onClick={() => setToast(null)}

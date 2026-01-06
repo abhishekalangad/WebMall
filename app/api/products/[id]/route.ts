@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma-extended'
-import { verifyAuthToken } from '@/lib/auth'
+import { verifyAuthToken } from '@/lib/auth-server'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -23,6 +23,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (!product) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    // Exclude deleted products from public access
+    if (product.status === 'deleted') {
+      return NextResponse.json({ error: 'Product not available' }, { status: 404 })
     }
 
     console.log('[Product GET] Found product:', product.name)
@@ -80,8 +85,17 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    await prisma.product.delete({ where: { id } })
-    return NextResponse.json({ success: true })
+    // Soft delete: Update status to 'deleted' instead of removing from database
+    // This prevents foreign key constraint errors when products are referenced in orders
+    await prisma.product.update({
+      where: { id },
+      data: { status: 'deleted' }
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Product marked as deleted successfully'
+    })
   } catch (error: any) {
     console.error('[Product DELETE] Error:', error)
     return NextResponse.json({ error: error.message }, { status: 400 })

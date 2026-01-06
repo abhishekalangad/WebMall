@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import {
     Users,
@@ -34,6 +35,7 @@ export default function AdminUsersPage() {
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const { accessToken } = useAuth()
+    const router = useRouter()
 
     useEffect(() => {
         fetchUsers()
@@ -76,7 +78,7 @@ export default function AdminUsersPage() {
                                 <ArrowLeft className="w-5 h-5" />
                             </Button>
                         </Link>
-                        <h1 className="text-3xl font-bold text-gray-900">Customer Management</h1>
+                        <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
                     </div>
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
                         <div className="relative max-w-md w-full">
@@ -136,7 +138,11 @@ export default function AdminUsersPage() {
                                                 {format(new Date(user.createdAt), 'MMM dd, yyyy')}
                                             </p>
                                         </div>
-                                        <Button variant="outline" size="sm">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => router.push(`/admin/users/${user.id}`)}
+                                        >
                                             View Profile
                                         </Button>
                                     </div>

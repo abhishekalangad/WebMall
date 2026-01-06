@@ -1,7 +1,8 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { useAuth } from './AuthContext'
+import Decimal from 'decimal.js'
 
 export interface CartItem {
   id: string
@@ -29,91 +30,197 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
+  const [isLoadingCart, setIsLoadingCart] = useState(true)
   const { user } = useAuth()
+
+  // Use ref to prevent unnecessary localStorage saves
+  const prevItemsRef = useRef<CartItem[]>([])
+  const prevUserIdRef = useRef<string | null>(null)
 
   // Get user-specific cart key
   const getCartKey = () => {
     return user ? `webmall-cart-${user.id}` : 'webmall-cart-guest'
   }
 
-  // Load cart from localStorage when user changes
+  // Get auth token helper
+  const getAuthToken = async () => {
+    if (!user) return null
+    try {
+      const { supabase } = await import('@/lib/supabase')
+      const { data: { session } } = await supabase.auth.getSession()
+      return session?.access_token
+    } catch (error) {
+      console.error('Error getting auth token:', error)
+      return null
+    }
+  }
+
+  // Load cart from server for logged-in users
+  const loadCartFromServer = async () => {
+    if (!user) return null
+
+    try {
+      const token = await getAuthToken()
+      if (!token) return null
+
+      const response = await fetch('/api/cart', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        return data.items || []
+      }
+    } catch (error) {
+      console.error('Error loading cart from server:', error)
+    }
+    return null
+  }
+
+  // Sync local cart with server
+  const syncCartWithServer = async (localItems: CartItem[]) => {
+    if (!user || localItems.length === 0) return
+
+    try {
+      const token = await getAuthToken()
+      if (!token) return
+
+      const response = await fetch('/api/cart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ items: localItems })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        return data.items || []
+      }
+    } catch (error) {
+      console.error('Failed to sync cart with server:', error)
+    }
+    return null
+  }
+
+  // Update server cart on item changes
+  const updateServerCart = async (action: string, productId: string, quantity: number) => {
+    if (!user) return
+
+    try {
+      const token = await getAuthToken()
+      if (!token) return
+
+      await fetch('/api/cart', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ action, productId, quantity })
+      })
+    } catch (error) {
+      console.error('Failed to update server cart:', error)
+    }
+  }
+
+  // Load cart when component mounts or user changes
   useEffect(() => {
-    const cartKey = getCartKey()
-    const savedCart = localStorage.getItem(cartKey)
+    const loadCart = async () => {
+      setIsLoadingCart(true)
 
-    if (savedCart) {
-      try {
-        const parsedCart = JSON.parse(savedCart)
+      if (user) {
+        // User is logged in - load from server
+        const serverItems = await loadCartFromServer()
 
-        // If user just logged in and had a guest cart, merge them
-        if (user) {
+        if (serverItems) {
+          // Check if there's a guest cart to merge
           const guestCartKey = 'webmall-cart-guest'
           const guestCart = localStorage.getItem(guestCartKey)
 
-          if (guestCart && guestCartKey !== cartKey) {
+          if (guestCart) {
             try {
               const guestItems = JSON.parse(guestCart)
-              // Merge guest cart with user cart
-              const mergedItems = [...parsedCart]
-
-              guestItems.forEach((guestItem: CartItem) => {
-                const existingIndex = mergedItems.findIndex(
-                  item => item.productId === guestItem.productId
-                )
-                if (existingIndex >= 0) {
-                  // Increase quantity if item exists
-                  mergedItems[existingIndex].quantity = (Number(mergedItems[existingIndex].quantity) || 0) + (Number(guestItem.quantity) || 0)
-                } else {
-                  // Add new item
-                  mergedItems.push(guestItem)
-                }
-              })
-
-              setItems(mergedItems)
+              // Merge guest cart with server cart
+              const mergedItems = await syncCartWithServer(guestItems)
+              setItems(mergedItems || serverItems)
               // Clear guest cart after merging
               localStorage.removeItem(guestCartKey)
-              return
             } catch (error) {
               console.error('Error merging carts:', error)
+              setItems(serverItems)
             }
+          } else {
+            setItems(serverItems)
+          }
+
+          // Update localStorage for consistency
+          const cartKey = getCartKey()
+          localStorage.setItem(cartKey, JSON.stringify(serverItems))
+        } else {
+          // Fallback to localStorage if server fails
+          const cartKey = getCartKey()
+          const savedCart = localStorage.getItem(cartKey)
+          if (savedCart) {
+            try {
+              const parsedCart = JSON.parse(savedCart)
+              setItems(parsedCart)
+              // Try to sync with server in background
+              syncCartWithServer(parsedCart)
+            } catch (error) {
+              console.error('Error parsing cart:', error)
+              setItems([])
+            }
+          } else {
+            setItems([])
           }
         }
+      } else {
+        // Guest user - load from localStorage only
+        const cartKey = getCartKey()
+        const savedCart = localStorage.getItem(cartKey)
 
-        setItems(parsedCart)
-      } catch (error) {
-        console.error('Error parsing cart data:', error)
-        setItems([])
+        if (savedCart) {
+          try {
+            setItems(JSON.parse(savedCart))
+          } catch (error) {
+            console.error('Error parsing cart:', error)
+            setItems([])
+          }
+        } else {
+          setItems([])
+        }
       }
-    } else {
-      // Only clear items if there's no saved cart
-      if (!user) {
-        setItems([])
-      }
+
+      setIsLoadingCart(false)
     }
+
+    loadCart()
   }, [user])
 
-  // Save cart to localStorage whenever items change
+  // Save cart to localStorage whenever items change (with optimization to prevent unnecessary saves)
   useEffect(() => {
-    const cartKey = getCartKey()
-    localStorage.setItem(cartKey, JSON.stringify(items))
-  }, [items, user])
+    // Skip during initial load
+    if (isLoadingCart) return
 
-  const syncCartWithServer = async () => {
-    try {
-      // TODO: Implement server cart sync
-      const response = await fetch('/api/cart/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items })
-      })
-      if (response.ok) {
-        const serverItems = await response.json()
-        setItems(serverItems)
-      }
-    } catch (error) {
-      console.error('Failed to sync cart:', error)
+    const currentUserId = user?.id || null
+    const itemsChanged = JSON.stringify(prevItemsRef.current) !== JSON.stringify(items)
+    const userChanged = prevUserIdRef.current !== currentUserId
+
+    // Only save if items actually changed or user changed
+    if (itemsChanged || userChanged) {
+      const cartKey = getCartKey()
+      localStorage.setItem(cartKey, JSON.stringify(items))
+
+      // Update refs to current values
+      prevItemsRef.current = items
+      prevUserIdRef.current = currentUserId
     }
-  }
+  }, [items, user, isLoadingCart])
+
 
   const addItem = (newItem: Omit<CartItem, 'id'>) => {
     // Sanity check for quantity
@@ -122,16 +229,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems(prevItems => {
       const existingItem = prevItems.find(item => item.productId === newItem.productId)
       if (existingItem) {
+        const newQuantity = (Number(existingItem.quantity) || 0) + quantityToAdd
         const updatedItems = prevItems.map(item =>
           item.productId === newItem.productId
-            ? { ...item, quantity: (Number(item.quantity) || 0) + quantityToAdd }
+            ? { ...item, quantity: newQuantity }
             : item
         )
         showToast(`${newItem.name} quantity updated in cart!`, 'success')
+        // Update server for logged-in users
+        updateServerCart('update', newItem.productId, newQuantity)
         return updatedItems
       } else {
         const newItems = [...prevItems, { ...newItem, quantity: quantityToAdd, id: Date.now().toString() }]
         showToast(`${newItem.name} added to cart!`, 'success')
+        // Update server for logged-in users
+        updateServerCart('add', newItem.productId, quantityToAdd)
         return newItems
       }
     })
@@ -142,6 +254,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems(prevItems => prevItems.filter(item => item.productId !== productId))
     if (itemToRemove) {
       showToast(`${itemToRemove.name} removed from cart`, 'info')
+      // Update server for logged-in users
+      updateServerCart('remove', productId, 0)
     }
   }
 
@@ -156,11 +270,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         item.productId === productId ? { ...item, quantity: newQuantity } : item
       )
     )
+    // Update server for logged-in users
+    updateServerCart('update', productId, newQuantity)
   }
 
-  const clearCart = () => {
+  const clearCart = async () => {
     setItems([])
     showToast('Cart cleared', 'info')
+
+    // Clear server cart for logged-in users
+    if (user) {
+      try {
+        const token = await getAuthToken()
+        if (token) {
+          await fetch('/api/cart', {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+        }
+      } catch (error) {
+        console.error('Failed to clear server cart:', error)
+      }
+    }
   }
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -168,8 +301,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => setToast(null), 3000)
   }
 
+  // Calculate total items (safe with integers)
   const totalItems = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
-  const totalPrice = items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0), 0)
+
+  // Calculate total price using Decimal.js to prevent floating-point errors
+  const totalPrice = items.reduce((sum, item) => {
+    const price = new Decimal(item.price || 0)
+    const quantity = new Decimal(item.quantity || 0)
+    return sum.plus(price.times(quantity))
+  }, new Decimal(0)).toNumber()
 
   return (
     <CartContext.Provider

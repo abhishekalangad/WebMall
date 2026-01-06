@@ -4,11 +4,13 @@ import { Inter, Playfair_Display, Dancing_Script, Great_Vibes } from 'next/font/
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { CartProvider } from '@/contexts/CartContext'
+import { Suspense } from 'react'
 import { WishlistProvider } from '@/contexts/WishlistContext'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { Toaster } from '@/components/ui/toaster'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { VerificationOverlay } from '@/components/auth/VerificationOverlay'
 import { SiteConfigProvider } from '@/contexts/SiteConfigContext'
 import { SITE_URL } from '@/lib/constants'
 
@@ -134,6 +136,9 @@ export default function RootLayout({
                     </main>
                     <Footer />
                   </div>
+                  <Suspense fallback={null}>
+                    <VerificationOverlay />
+                  </Suspense>
                   <Toaster />
                 </WishlistProvider>
               </CartProvider>

@@ -123,10 +123,10 @@ function HeaderContent() {
 
   // Determine which navigation to show based on user role
   const navItems = user?.role === 'admin'
-    ? (settings?.headerNavigation && Array.isArray(settings.headerNavigation)
+    ? (settings?.headerNavigation && Array.isArray(settings.headerNavigation) && settings.headerNavigation.length > 0
       ? settings.headerNavigation
       : DEFAULT_ADMIN_TABS)
-    : (settings?.customerNavigation && Array.isArray(settings.customerNavigation)
+    : (settings?.customerNavigation && Array.isArray(settings.customerNavigation) && settings.customerNavigation.length > 0
       ? settings.customerNavigation
       : DEFAULT_CUSTOMER_TABS)
 
@@ -152,7 +152,7 @@ function HeaderContent() {
             </Link>
 
             {/* Desktop Navigation Grouped with Logo */}
-            {shouldShowNavigation() && (
+            {shouldShowNavigation() && !configLoading && (
               <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8 ml-6 xl:ml-12">
                 {navItems.map((link: any, index: number) => (
                   <Link

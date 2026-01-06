@@ -102,6 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Handle various error types
       const isAuthError = error?.message?.includes('refresh') ||
         error?.message?.includes('Invalid Refresh Token') ||
+        error?.message?.includes('Refresh Token Not Found') ||
         error?.message?.includes('timeout') ||
         error?.message?.includes('fetch') ||
         error?.name === 'AuthApiError' ||

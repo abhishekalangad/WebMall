@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma-extended'
+import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -40,53 +40,52 @@ export async function GET() {
 
             // 1. Fetch site settings (singleton)
             let settings = null
-            const prismaAny = prisma as any
-            if (prismaAny.siteSettings) {
-                try {
-                    settings = await prismaAny.siteSettings.findUnique({
-                        where: { id: 'default' }
-                    })
 
-                    // Create default settings if they don't exist
-                    if (!settings) {
-                        console.log('[Site Config] Creating default settings')
-                        settings = await prismaAny.siteSettings.create({
-                            data: { id: 'default' }
-                        })
-                    }
-                } catch (e: any) {
-                    console.error('[Site Config] Error fetching siteSettings:', e.message)
+            // Now using typed Prisma client
+            try {
+                settings = await prisma.siteSettings.findUnique({
+                    where: { id: 'default' }
+                })
+
+                // Create default settings if they don't exist
+                if (!settings) {
+                    console.log('[Site Config] Creating default settings')
+                    settings = await prisma.siteSettings.create({
+                        data: {
+                            id: 'default',
+                            storeName: 'WebMall'
+                        }
+                    })
                 }
+            } catch (e: any) {
+                console.error('[Site Config] Error fetching siteSettings:', e.message)
             }
 
             // 2. Fetch active hero banners
             let banners: any[] = []
-            if (prismaAny.heroBanner) {
-                try {
-                    banners = await prismaAny.heroBanner.findMany({
-                        where: { isActive: true },
-                        orderBy: { position: 'asc' }
-                    })
-                } catch (e: any) {
-                    console.error('[Site Config] Error fetching heroBanners:', e.message)
-                }
+            try {
+                banners = await prisma.heroBanner.findMany({
+                    where: { isActive: true },
+                    orderBy: { position: 'asc' }
+                })
+            } catch (e: any) {
+                console.error('[Site Config] Error fetching heroBanners:', e.message)
             }
 
             // 3. Fetch categories
             let categories: any[] = []
-            if (prismaAny.category) {
-                try {
-                    categories = await prismaAny.category.findMany({
-                        orderBy: { name: 'asc' }
-                    })
-                } catch (e: any) {
-                    console.error('[Site Config] Error fetching categories:', e.message)
-                }
+            try {
+                categories = await prisma.category.findMany({
+                    orderBy: { name: 'asc' }
+                })
+            } catch (e: any) {
+                console.error('[Site Config] Error fetching categories:', e.message)
             }
 
             return NextResponse.json({
                 settings: settings ? {
                     ...settings,
+                    // If DB has null, use empty array. If DB has data, use it.
                     headerNavigation: settings.headerNavigation ?? [],
                     customerNavigation: settings.customerNavigation ?? []
                 } : DEFAULT_SITE_SETTINGS,

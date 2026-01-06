@@ -59,6 +59,7 @@ export default function AdminSettingsPage() {
         contactAddress: 'Colombo, Sri Lanka',
         facebookUrl: '',
         instagramUrl: '',
+        instagramUrl2: '',
         twitterUrl: '',
         shippingBaseRate: 500,
         freeShippingThreshold: 10000,
@@ -322,32 +323,43 @@ export default function AdminSettingsPage() {
                             </div>
                             <h2 className="text-xl font-bold text-gray-900">Social Presence</h2>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-gray-700">Facebook URL</label>
-                                <Input
-                                    name="facebookUrl"
-                                    value={settings.facebookUrl || ''}
-                                    onChange={handleChange}
-                                    placeholder="https://..."
-                                />
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-700">Facebook URL</label>
+                                    <Input
+                                        name="facebookUrl"
+                                        value={settings.facebookUrl || ''}
+                                        onChange={handleChange}
+                                        placeholder="https://..."
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-700">Instagram URL</label>
+                                    <Input
+                                        name="instagramUrl"
+                                        value={settings.instagramUrl || ''}
+                                        onChange={handleChange}
+                                        placeholder="https://..."
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-700">Twitter URL</label>
+                                    <Input
+                                        name="twitterUrl"
+                                        value={settings.twitterUrl || ''}
+                                        onChange={handleChange}
+                                        placeholder="https://..."
+                                    />
+                                </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-gray-700">Instagram URL</label>
+                                <label className="text-sm font-semibold text-gray-700">Second Instagram URL (Optional)</label>
                                 <Input
-                                    name="instagramUrl"
-                                    value={settings.instagramUrl || ''}
+                                    name="instagramUrl2"
+                                    value={settings.instagramUrl2 || ''}
                                     onChange={handleChange}
-                                    placeholder="https://..."
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-gray-700">Twitter URL</label>
-                                <Input
-                                    name="twitterUrl"
-                                    value={settings.twitterUrl || ''}
-                                    onChange={handleChange}
-                                    placeholder="https://..."
+                                    placeholder="https://... (for additional Instagram profile)"
                                 />
                             </div>
                         </div>

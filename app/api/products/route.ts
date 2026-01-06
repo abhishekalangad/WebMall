@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')))
     const skip = (page - 1) * limit
 
-    // Admins can see all products, non-admins only see active products (not deleted)
-    const where = isAdmin ? {} : { status: { not: 'deleted' } }
+    // Admins can see all products (including drafts), non-admins only see active products
+    const where = isAdmin ? { status: { not: 'deleted' } } : { status: 'active' }
 
     // Get total count for pagination metadata
     const totalCount = await prisma.product.count({ where })

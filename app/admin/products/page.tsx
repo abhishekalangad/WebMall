@@ -22,7 +22,8 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import { toast } from '@/hooks/use-toast'
-import { ImageUpload } from '@/components/admin/ImageUpload'
+import { MultiImageUpload } from '@/components/admin/MultiImageUpload'
+import { ProductVariants, ProductVariant } from '@/components/admin/ProductVariants'
 
 export default function AdminProductsPage() {
   const { user, loading: authLoading, accessToken } = useAuth()
@@ -31,6 +32,7 @@ export default function AdminProductsPage() {
   // State
   const [products, setProducts] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
+  const [subcategories, setSubcategories] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
@@ -45,8 +47,10 @@ export default function AdminProductsPage() {
     price: '',
     originalPrice: '',
     categoryId: '',
+    subcategoryId: '',
     stockCount: '',
-    imageUrl: '',
+    images: [] as { url: string; alt?: string; position: number }[],
+    variants: [] as ProductVariant[],
     inStock: true,
     longDescription: '',
     features: '',
@@ -80,19 +84,22 @@ export default function AdminProductsPage() {
       const token = await accessToken()
       const headers = (token ? { 'Authorization': `Bearer ${token}` } : {}) as HeadersInit
 
-      const [productsRes, categoriesRes] = await Promise.all([
+      const [productsRes, categoriesRes, subcategoriesRes] = await Promise.all([
         fetch('/api/products', { headers }),
-        fetch('/api/categories', { headers })
+        fetch('/api/categories', { headers }),
+        fetch('/api/subcategories', { headers })
       ])
 
       const productsData = await productsRes.json()
       const categoriesData = await categoriesRes.json()
+      const subcategoriesData = await subcategoriesRes.json()
 
       // Handle paginated response structure { products: [], pagination: {} }
       const productsList = productsData.products || (Array.isArray(productsData) ? productsData : [])
 
       setProducts(productsList)
       setCategories(Array.isArray(categoriesData) ? categoriesData : [])
+      setSubcategories(Array.isArray(subcategoriesData) ? subcategoriesData : [])
     } catch (error) {
       console.error('Error fetching data:', error)
       toast({
@@ -180,16 +187,34 @@ export default function AdminProductsPage() {
     setSubmitting(true)
 
     try {
+      // Validate at least one image
+      if (formData.images.length === 0) {
+        toast({
+          title: 'Error',
+          description: 'Please add at least one product image',
+          variant: 'destructive'
+        })
+        setSubmitting(false)
+        return
+      }
+
       const payload = {
         name: formData.name,
         slug: formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
         description: formData.description,
         price: parseFloat(formData.price),
         categoryId: formData.categoryId,
+        subcategoryId: formData.subcategoryId || null,
         stock: parseInt(formData.stockCount),
         status: formData.inStock ? 'active' : 'inactive',
-        images: [{ url: formData.imageUrl, alt: formData.name }],
-        variants: [], // Simplified for now
+        images: formData.images,
+        variants: formData.variants.map(v => ({
+          sku: v.sku,
+          name: v.name,
+          attributes: v.attributes,
+          priceOverride: v.priceOverride,
+          stock: v.stock
+        })),
         currency: 'LKR'
       }
 
@@ -237,8 +262,25 @@ export default function AdminProductsPage() {
       price: product.price.toString(),
       originalPrice: '',
       categoryId: product.categoryId,
+      subcategoryId: product.subcategoryId || '',
       stockCount: product.stock.toString(),
-      imageUrl: product.images[0]?.url || '',
+      images: product.images && product.images.length > 0
+        ? product.images.map((img: any, index: number) => ({
+          url: img.url,
+          alt: img.alt || '',
+          position: img.position ?? index
+        }))
+        : [],
+      variants: product.variants && product.variants.length > 0
+        ? product.variants.map((v: any) => ({
+          id: v.id,
+          sku: v.sku,
+          name: v.name,
+          attributes: v.attributes || {},
+          priceOverride: v.priceOverride,
+          stock: v.stock
+        }))
+        : [],
       inStock: product.status === 'active',
       longDescription: '',
       features: '',
@@ -261,8 +303,10 @@ export default function AdminProductsPage() {
       price: '',
       originalPrice: '',
       categoryId: categories[0]?.id || '',
+      subcategoryId: '',
       stockCount: '',
-      imageUrl: '',
+      images: [],
+      variants: [],
       inStock: true,
       longDescription: '',
       features: '',
@@ -551,123 +595,231 @@ export default function AdminProductsPage() {
                   </div>
                 </div>
 
-                <form onSubmit={handleSubmitForm} className="p-4 sm:p-6 pt-4 space-y-4 sm:space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                    <div>
-                      <Label htmlFor="name" className="text-sm font-medium">Product Name</Label>
-                      <Input
-                        id="name"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="mt-1.5 h-10 sm:h-9"
-                        placeholder="Enter product name"
-                        required
-                      />
+                <form onSubmit={handleSubmitForm} className="p-4 sm:p-6 pt-4 space-y-6">
+                  {/* Section 1: Basic Information */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 pb-2 border-b">
+                      <Package className="h-5 w-5 text-pink-500" />
+                      <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="name" className="text-sm font-medium">Product Name *</Label>
+                        <Input
+                          id="name"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="mt-1.5 h-10"
+                          placeholder="e.g., Cotton T-Shirt"
+                          required
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Keep it clear and descriptive</p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="categoryId" className="text-sm font-medium">Category *</Label>
+                        <select
+                          id="categoryId"
+                          value={formData.categoryId || ''}
+                          onChange={(e) => setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '' })}
+                          className="mt-1.5 w-full h-10 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                          required
+                        >
+                          <option value="" disabled>Select a category</option>
+                          {categories.map((category) => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="subcategoryId" className="text-sm font-medium">
+                          Subcategory <span className="text-gray-400">(Optional)</span>
+                          {formData.categoryId && (
+                            <span className="ml-2 text-xs text-gray-500">
+                              ({subcategories.filter(sub => sub.categoryId === formData.categoryId).length} available)
+                            </span>
+                          )}
+                        </Label>
+                        <select
+                          id="subcategoryId"
+                          value={formData.subcategoryId || ''}
+                          onChange={(e) => setFormData({ ...formData, subcategoryId: e.target.value })}
+                          className="mt-1.5 w-full h-10 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                          disabled={!formData.categoryId}
+                        >
+                          <option value="">No subcategory</option>
+                          {subcategories
+                            .filter(sub => sub.categoryId === formData.categoryId)
+                            .map((subcategory) => (
+                              <option key={subcategory.id} value={subcategory.id}>
+                                {subcategory.name}
+                              </option>
+                            ))}
+                        </select>
+                        {!formData.categoryId && (
+                          <p className="text-xs text-gray-500 mt-1">Select a category first</p>
+                        )}
+                        {formData.categoryId && subcategories.filter(sub => sub.categoryId === formData.categoryId).length === 0 && (
+                          <p className="text-xs text-amber-600 mt-1">
+                            ⚠️ No subcategories available for this category
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     <div>
-                      <Label htmlFor="categoryId" className="text-sm font-medium">Category</Label>
-                      <select
-                        id="categoryId"
-                        value={formData.categoryId || ''}
-                        onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                        className="mt-1.5 w-full h-10 sm:h-9 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                      <Label htmlFor="description" className="text-sm font-medium">Short Description *</Label>
+                      <textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        className="mt-1.5 w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                        rows={3}
+                        maxLength={200}
+                        placeholder="Brief description that appears in product listings"
                         required
-                      >
-                        <option value="" disabled>Select a category</option>
-                        {categories.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </select>
+                      />
+                      <p className="text-xs text-gray-500 mt-1">{formData.description.length}/200 characters</p>
                     </div>
                   </div>
 
-                  <div>
-                    <Label htmlFor="description" className="text-sm font-medium">Short Description</Label>
-                    <textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="mt-1.5 w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-                      rows={3}
-                      placeholder="Enter short product description"
-                      required
+                  {/* Section 2: Product Images */}
+                  <div className="space-y-4 pt-6 border-t">
+                    <div className="flex items-center gap-2 pb-2">
+                      <div className="flex items-center gap-2">
+                        <svg className="h-5 w-5 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <h3 className="text-lg font-semibold text-gray-900">Product Images</h3>
+                        <Badge variant="destructive" className="text-xs">Required</Badge>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600">Upload high-quality images. The first image will be the main product image.</p>
+
+                    <MultiImageUpload
+                      images={formData.images}
+                      onChange={(images) => setFormData({ ...formData, images })}
                     />
+
+                    <div className="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+                      <svg className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div>
+                        <p>✓ Supports JPG, PNG, WebP formats</p>
+                        <p>✓ Maximum 5MB per image</p>
+                        <p>✓ Upload up to 8 images per product</p>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div>
-                      <Label htmlFor="price" className="text-sm font-medium">Price (LKR)</Label>
-                      <Input
-                        id="price"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.price}
-                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                        className="mt-1.5 h-10 sm:h-9"
-                        placeholder="0.00"
-                        required
-                      />
+                  {/* Section 3: Pricing & Inventory */}
+                  <div className="space-y-4 pt-6 border-t">
+                    <div className="flex items-center gap-2 pb-2">
+                      <svg className="h-5 w-5 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <h3 className="text-lg font-semibold text-gray-900">Pricing & Inventory</h3>
                     </div>
 
-                    <div>
-                      <Label htmlFor="stock" className="text-sm font-medium">Stock Count</Label>
-                      <div className="relative">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="price" className="text-sm font-medium">Price (LKR) *</Label>
+                        <Input
+                          id="price"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formData.price}
+                          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                          className="mt-1.5 h-10"
+                          placeholder="0.00"
+                          required
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Base price for this product</p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="stock" className="text-sm font-medium">Stock Count *</Label>
                         <Input
                           id="stock"
                           type="number"
                           min="0"
                           value={formData.stockCount}
                           onChange={(e) => setFormData({ ...formData, stockCount: e.target.value })}
-                          className="mt-1.5 h-10 sm:h-9"
+                          className="mt-1.5 h-10"
                           placeholder="0"
                           required
                         />
-                        {formData.stockCount && parseInt(formData.stockCount) < 10 && parseInt(formData.stockCount) > 0 && (
-                          <div className="mt-1.5 flex items-center gap-1 text-xs text-amber-600">
-                            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                            </svg>
-                            Low stock warning
-                          </div>
-                        )}
                         {formData.stockCount && parseInt(formData.stockCount) === 0 && (
-                          <div className="mt-1.5 flex items-center gap-1 text-xs text-red-600 font-medium">
+                          <div className="mt-2 flex items-center gap-2 text-xs text-red-600 font-medium bg-red-50 px-2 py-1.5 rounded">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
                             Out of Stock
                           </div>
                         )}
+                        {formData.stockCount && parseInt(formData.stockCount) > 0 && parseInt(formData.stockCount) < 10 && (
+                          <div className="mt-2 flex items-center gap-2 text-xs text-amber-600 bg-amber-50 px-2 py-1.5 rounded">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                            Low Stock ({formData.stockCount} units)
+                          </div>
+                        )}
                         {formData.stockCount && parseInt(formData.stockCount) >= 10 && (
-                          <div className="mt-1.5 flex items-center gap-1 text-xs text-green-600">
-                            In Stock
+                          <div className="mt-2 flex items-center gap-2 text-xs text-green-600 bg-green-50 px-2 py-1.5 rounded">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            In Stock ({formData.stockCount} units)
                           </div>
                         )}
                       </div>
                     </div>
+
+                    <div className="flex items-center space-x-2 py-2">
+                      <input
+                        type="checkbox"
+                        id="inStock"
+                        checked={formData.inStock}
+                        onChange={(e) => setFormData({ ...formData, inStock: e.target.checked })}
+                        className="h-4 w-4 rounded border-gray-300 text-pink-600 focus:ring-pink-500"
+                      />
+                      <Label htmlFor="inStock" className="text-sm font-medium cursor-pointer">Mark as Active</Label>
+                      <p className="text-xs text-gray-500">(Product will be visible to customers)</p>
+                    </div>
                   </div>
 
-                  <div>
-                    <ImageUpload
-                      onUploadComplete={(url) => setFormData({ ...formData, imageUrl: url })}
-                      currentImageUrl={formData.imageUrl}
-                      bucket="products"
+                  {/* Section 4: Product Variants */}
+                  <div className="space-y-4 pt-6 border-t">
+                    <div className="flex items-center justify-between pb-2">
+                      <div className="flex items-center gap-2">
+                        <svg className="h-5 w-5 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                        </svg>
+                        <h3 className="text-lg font-semibold text-gray-900">Product Variants</h3>
+                        <Badge variant="outline" className="text-xs">Optional</Badge>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600">Create variants for different colors, sizes, or styles. Each variant can have its own price and stock.</p>
+
+                    <ProductVariants
+                      variants={formData.variants}
+                      onChange={(variants) => setFormData({ ...formData, variants })}
+                      basePrice={parseFloat(formData.price) || 0}
+                      currency="LKR"
                     />
                   </div>
 
-                  <div className="flex items-center space-x-2 py-2">
-                    <input
-                      type="checkbox"
-                      id="inStock"
-                      checked={formData.inStock}
-                      onChange={(e) => setFormData({ ...formData, inStock: e.target.checked })}
-                      className="h-4 w-4 rounded border-gray-300 text-pink-600 focus:ring-pink-500"
-                    />
-                    <Label htmlFor="inStock" className="text-sm font-medium cursor-pointer">Mark as Active</Label>
-                  </div>
-
-                  <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 sm:pt-6 border-t sticky bottom-0 bg-white pb-4 sm:pb-0">
+                  {/* Submit Buttons */}
+                  <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t sticky bottom-0 bg-white pb-4 sm:pb-0">
                     <Button
                       type="button"
                       variant="outline"

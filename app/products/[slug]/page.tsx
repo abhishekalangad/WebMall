@@ -64,8 +64,12 @@ export default async function ProductPage({ params }: Props) {
     where: { slug: slug },
     include: {
       category: true,
+      subcategory: true,  // Added subcategory
       images: {
         orderBy: { position: 'asc' }
+      },
+      variants: {          // Added variants!!!
+        orderBy: { sku: 'asc' }
       },
       reviews: {
         orderBy: { createdAt: 'desc' },

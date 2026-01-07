@@ -36,9 +36,13 @@ function LoginForm() {
     setSuccessMessage('')
 
     try {
+      // Sign in - this sets the session in Supabase
       await signIn(email, password)
 
-      // Refresh user state to get updated auth info
+      // Small delay to ensure Supabase session is fully set
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Now refresh user state to get updated auth info
       await refreshUser()
 
       // Get redirect path
@@ -48,6 +52,7 @@ function LoginForm() {
       router.push(redirect || '/products')
       router.refresh()
     } catch (error: any) {
+      console.error('Login error:', error)
       setError(error.message || 'Login failed')
       setLoading(false)
     }

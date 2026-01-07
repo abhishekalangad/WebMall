@@ -14,11 +14,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const product = isUuid
       ? await prisma.product.findUnique({
         where: { id },
-        include: { images: true, variants: true, category: true }
+        include: { images: true, variants: true, category: true, subcategory: true }
       })
       : await prisma.product.findUnique({
         where: { slug: id },
-        include: { images: true, variants: true, category: true }
+        include: { images: true, variants: true, category: true, subcategory: true }
       })
 
     if (!product) {
@@ -54,13 +54,74 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const body = await request.json()
-    const { name, slug, description, price, currency, categoryId, status, stock } = body
+    const {
+      name,
+      slug,
+      description,
+      price,
+      currency,
+      categoryId,
+      subcategoryId,
+      status,
+      stock,
+      images = [],
+      variants = []
+    } = body
 
-    const updated = await prisma.product.update({
-      where: { id },
-      data: {
-        name, slug, description, price, currency, categoryId, status, stock,
-      }
+    // Update product with transaction for data consistency
+    const updated = await prisma.$transaction(async (tx) => {
+      // Delete existing images and variants
+      await tx.productImage.deleteMany({
+        where: { productId: id }
+      })
+
+      await tx.productVariant.deleteMany({
+        where: { productId: id }
+      })
+
+      // Update product with new data
+      return await tx.product.update({
+        where: { id },
+        data: {
+          name,
+          slug,
+          description,
+          price,
+          currency,
+          categoryId,
+          subcategoryId: subcategoryId || null,
+          status,
+          stock,
+          // Create new images
+          images: images.length > 0
+            ? {
+              create: images.map((img: any) => ({
+                url: img.url,
+                alt: img.alt ?? null,
+                position: img.position ?? 0
+              }))
+            }
+            : undefined,
+          // Create new variants
+          variants: variants.length > 0
+            ? {
+              create: variants.map((v: any) => ({
+                sku: v.sku,
+                name: v.name,
+                attributes: v.attributes ?? {},
+                priceOverride: v.priceOverride ?? null,
+                stock: v.stock ?? 0
+              }))
+            }
+            : undefined
+        },
+        include: {
+          images: true,
+          variants: true,
+          category: true,
+          subcategory: true
+        }
+      })
     })
 
     return NextResponse.json(updated)

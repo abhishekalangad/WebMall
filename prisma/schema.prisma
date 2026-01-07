@@ -97,15 +97,16 @@ model Product {
 }
 
 model ProductVariant {
-  id            String  @id @default(dbgenerated("uuid_generate_v4()")) @map("id") @db.Uuid
-  productId     String? @map("product_id") @db.Uuid
-  sku           String  @unique @map("sku")
-  name          String  @map("name")
-  attributes    Json    @map("attributes")
-  priceOverride Decimal? @map("price_override") @db.Decimal(10, 2)
-  stock         Int     @map("stock")
+  id            String     @id @default(dbgenerated("uuid_generate_v4()")) @map("id") @db.Uuid
+  productId     String?    @map("product_id") @db.Uuid
+  sku           String     @unique @map("sku")
+  name          String     @map("name")
+  attributes    Json       @map("attributes")
+  priceOverride Decimal?   @map("price_override") @db.Decimal(10, 2)
+  stock         Int        @map("stock")
   
-  product       Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product       Product?   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems     CartItem[]
 
   @@map("product_variants")
   @@schema("public")
@@ -138,16 +139,20 @@ model Cart {
 }
 
 model CartItem {
-  id        String   @id @default(dbgenerated("uuid_generate_v4()")) @map("id") @db.Uuid
-  cartId    String?  @map("cart_id") @db.Uuid
-  productId String?  @map("product_id") @db.Uuid
-  quantity  Int      @map("quantity")
-  createdAt DateTime @default(now()) @map("created_at")
+  id                String          @id @default(dbgenerated("uuid_generate_v4()")) @map("id") @db.Uuid
+  cartId            String?         @map("cart_id") @db.Uuid
+  productId         String?         @map("product_id") @db.Uuid
+  variantId         String?         @map("variant_id") @db.Uuid
+  variantName       String?         @map("variant_name")
+  variantAttributes Json?           @map("variant_attributes")
+  quantity          Int             @map("quantity")
+  createdAt         DateTime        @default(now()) @map("created_at")
   
-  cart      Cart?    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product   Product? @relation(fields: [productId], references: [id])
+  cart              Cart?           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product           Product?        @relation(fields: [productId], references: [id])
+  variant           ProductVariant? @relation(fields: [variantId], references: [id])
 
-  @@unique([cartId, productId])
+  @@unique([cartId, productId, variantId])
   @@map("cart_items")
   @@schema("public")
 }

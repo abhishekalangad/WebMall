@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       where,
       skip,
       take: limit,
-      include: { images: true, variants: true, category: true },
+      include: { images: true, variants: true, category: true, subcategory: true },
       orderBy: { createdAt: 'desc' }
     })
 
@@ -117,7 +117,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, slug, description, price, currency = 'LKR', categoryId, status = 'active', stock = 0, images = [], variants = [] } = body
+    const {
+      name,
+      slug,
+      description,
+      price,
+      currency = 'LKR',
+      categoryId,
+      subcategoryId,
+      status = 'active',
+      stock = 0,
+      images = [],
+      variants = []
+    } = body
 
     const created = await prisma.product.create({
       data: {
@@ -127,12 +139,13 @@ export async function POST(request: NextRequest) {
         price,
         currency,
         categoryId,
+        subcategoryId: subcategoryId || null,
         status,
         stock,
         images: images.length ? { create: images.map((img: any) => ({ url: img.url, alt: img.alt ?? null, position: img.position ?? 0 })) } : undefined,
         variants: variants.length ? { create: variants.map((v: any) => ({ sku: v.sku, name: v.name, attributes: v.attributes ?? {}, priceOverride: v.priceOverride ?? null, stock: v.stock ?? 0 })) } : undefined,
       },
-      include: { images: true, variants: true }
+      include: { images: true, variants: true, category: true, subcategory: true }
     })
     return NextResponse.json(created, { status: 201 })
   } catch (error: any) {

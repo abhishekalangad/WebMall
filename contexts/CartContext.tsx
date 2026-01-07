@@ -7,18 +7,21 @@ import Decimal from 'decimal.js'
 export interface CartItem {
   id: string
   productId: string
+  variantId?: string
   name: string
   price: number
   quantity: number
   image?: string
   slug: string
+  variantName?: string
+  variantAttributes?: Record<string, string>
 }
 
 interface CartContextType {
   items: CartItem[]
   addItem: (item: Omit<CartItem, 'id'>) => void
   removeItem: (productId: string) => void
-  updateQuantity: (productId: string, quantity: number) => void
+  updateQuantity: (productId: string, quantity: number, variantId?: string) => void
   clearCart: () => void
   totalItems: number
   totalPrice: number
@@ -107,7 +110,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }
 
   // Update server cart on item changes
-  const updateServerCart = async (action: string, productId: string, quantity: number) => {
+  const updateServerCart = async (action: string, productId: string, quantity: number, variantId?: string, variantName?: string, variantAttributes?: Record<string, string>) => {
     if (!user) return
 
     try {
@@ -120,7 +123,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ action, productId, quantity })
+        body: JSON.stringify({ action, productId, quantity, variantId, variantName, variantAttributes })
       })
     } catch (error) {
       console.error('Failed to update server cart:', error)
@@ -227,23 +230,27 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const quantityToAdd = Number(newItem.quantity) || 1
 
     setItems(prevItems => {
-      const existingItem = prevItems.find(item => item.productId === newItem.productId)
+      // Match by both productId AND variantId to allow different variants as separate items
+      const existingItem = prevItems.find(item =>
+        item.productId === newItem.productId &&
+        item.variantId === newItem.variantId
+      )
       if (existingItem) {
         const newQuantity = (Number(existingItem.quantity) || 0) + quantityToAdd
         const updatedItems = prevItems.map(item =>
-          item.productId === newItem.productId
+          item.productId === newItem.productId && item.variantId === newItem.variantId
             ? { ...item, quantity: newQuantity }
             : item
         )
         showToast(`${newItem.name} quantity updated in cart!`, 'success')
         // Update server for logged-in users
-        updateServerCart('update', newItem.productId, newQuantity)
+        updateServerCart('update', newItem.productId, newQuantity, newItem.variantId, newItem.variantName, newItem.variantAttributes)
         return updatedItems
       } else {
         const newItems = [...prevItems, { ...newItem, quantity: quantityToAdd, id: Date.now().toString() }]
         showToast(`${newItem.name} added to cart!`, 'success')
         // Update server for logged-in users
-        updateServerCart('add', newItem.productId, quantityToAdd)
+        updateServerCart('add', newItem.productId, quantityToAdd, newItem.variantId, newItem.variantName, newItem.variantAttributes)
         return newItems
       }
     })
@@ -259,19 +266,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (productId: string, quantity: number, variantId?: string) => {
     const newQuantity = Number(quantity)
     if (isNaN(newQuantity) || newQuantity <= 0) {
-      removeItem(productId)
+      // Remove the specific variant item
+      setItems(prevItems => prevItems.filter(item =>
+        !(item.productId === productId && item.variantId === variantId)
+      ))
       return
     }
+
+    // Find the item to get variant details for server update
+    const itemToUpdate = items.find(item =>
+      item.productId === productId && item.variantId === variantId
+    )
+
     setItems(prevItems =>
       prevItems.map(item =>
-        item.productId === productId ? { ...item, quantity: newQuantity } : item
+        item.productId === productId && item.variantId === variantId
+          ? { ...item, quantity: newQuantity }
+          : item
       )
     )
-    // Update server for logged-in users
-    updateServerCart('update', productId, newQuantity)
+    // Update server for logged-in users with full variant details
+    if (itemToUpdate) {
+      updateServerCart('update', productId, newQuantity, variantId, itemToUpdate.variantName, itemToUpdate.variantAttributes)
+    }
   }
 
   const clearCart = async () => {

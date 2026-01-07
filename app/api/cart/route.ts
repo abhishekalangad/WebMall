@@ -34,6 +34,13 @@ export async function GET(request: NextRequest) {
                                     orderBy: { position: 'asc' }
                                 }
                             }
+                        },
+                        variant: {
+                            select: {
+                                id: true,
+                                name: true,
+                                attributes: true
+                            }
                         }
                     }
                 }
@@ -67,6 +74,13 @@ export async function GET(request: NextRequest) {
                                         orderBy: { position: 'asc' }
                                     }
                                 }
+                            },
+                            variant: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    attributes: true
+                                }
                             }
                         }
                     }
@@ -78,11 +92,14 @@ export async function GET(request: NextRequest) {
         const cartItems = cart.items.map(item => ({
             id: item.id,
             productId: item.productId!,
+            variantId: item.variantId || undefined,
             name: item.product?.name || 'Unknown Product',
             price: Number(item.product?.price || 0),
             quantity: item.quantity,
             image: item.product?.images[0]?.url,
-            slug: item.product?.slug || ''
+            slug: item.product?.slug || '',
+            variantName: item.variantName || undefined,
+            variantAttributes: item.variantAttributes as Record<string, string> || undefined
         }))
 
         return NextResponse.json({ items: cartItems })
@@ -137,13 +154,20 @@ export async function POST(request: NextRequest) {
         // Merge local cart items with server cart
         // For each local item, either update or create
         for (const item of items) {
-            const existingItem = cart.items.find(i => i.productId === item.productId)
+            const existingItem = cart.items.find(i =>
+                i.productId === item.productId &&
+                (i.variantId || null) === (item.variantId || null)
+            )
 
             if (existingItem) {
                 // Update quantity (use maximum from local and server)
                 await prisma.cartItem.update({
                     where: { id: existingItem.id },
-                    data: { quantity: Math.max(existingItem.quantity, item.quantity) }
+                    data: {
+                        quantity: Math.max(existingItem.quantity, item.quantity),
+                        variantName: item.variantName,
+                        variantAttributes: item.variantAttributes
+                    }
                 })
             } else {
                 // Create new item
@@ -151,6 +175,9 @@ export async function POST(request: NextRequest) {
                     data: {
                         cartId: cart.id,
                         productId: item.productId,
+                        variantId: item.variantId,
+                        variantName: item.variantName,
+                        variantAttributes: item.variantAttributes,
                         quantity: item.quantity
                     }
                 })
@@ -174,6 +201,13 @@ export async function POST(request: NextRequest) {
                                     orderBy: { position: 'asc' }
                                 }
                             }
+                        },
+                        variant: {
+                            select: {
+                                id: true,
+                                name: true,
+                                attributes: true
+                            }
                         }
                     }
                 }
@@ -184,11 +218,14 @@ export async function POST(request: NextRequest) {
         const cartItems = updatedCart!.items.map(item => ({
             id: item.id,
             productId: item.productId!,
+            variantId: item.variantId || undefined,
             name: item.product?.name || 'Unknown Product',
             price: Number(item.product?.price || 0),
             quantity: item.quantity,
             image: item.product?.images[0]?.url,
-            slug: item.product?.slug || ''
+            slug: item.product?.slug || '',
+            variantName: item.variantName || undefined,
+            variantAttributes: item.variantAttributes as Record<string, string> || undefined
         }))
 
         return NextResponse.json({ items: cartItems })
@@ -214,7 +251,7 @@ export async function PUT(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { productId, quantity, action } = body
+        const { productId, quantity, action, variantId, variantName, variantAttributes } = body
 
         const cart = await prisma.cart.findFirst({
             where: { user: { supabaseId: user.id } }
@@ -229,7 +266,8 @@ export async function PUT(request: NextRequest) {
             await prisma.cartItem.deleteMany({
                 where: {
                     cartId: cart.id,
-                    productId: productId
+                    productId: productId,
+                    variantId: variantId || null
                 }
             })
         } else if (action === 'add') {
@@ -237,20 +275,28 @@ export async function PUT(request: NextRequest) {
             const existingItem = await prisma.cartItem.findFirst({
                 where: {
                     cartId: cart.id,
-                    productId: productId
+                    productId: productId,
+                    variantId: variantId || null
                 }
             })
 
             if (existingItem) {
                 await prisma.cartItem.update({
                     where: { id: existingItem.id },
-                    data: { quantity: quantity }
+                    data: {
+                        quantity: quantity,
+                        variantName: variantName,
+                        variantAttributes: variantAttributes
+                    }
                 })
             } else {
                 await prisma.cartItem.create({
                     data: {
                         cartId: cart.id,
                         productId: productId,
+                        variantId: variantId,
+                        variantName: variantName,
+                        variantAttributes: variantAttributes,
                         quantity: quantity
                     }
                 })
@@ -260,9 +306,14 @@ export async function PUT(request: NextRequest) {
             await prisma.cartItem.updateMany({
                 where: {
                     cartId: cart.id,
-                    productId: productId
+                    productId: productId,
+                    variantId: variantId || null
                 },
-                data: { quantity: quantity }
+                data: {
+                    quantity: quantity,
+                    variantName: variantName,
+                    variantAttributes: variantAttributes
+                }
             })
         }
 

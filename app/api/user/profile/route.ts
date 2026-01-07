@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Enforce admin access for site owner
-        const isOwner = ['webmalll.ik@gmail.com', 'webmall.ik@gmail.com', 'webmalll.lk@gmail.com', 'webmall.lk@gmail.com'].includes(user.email || '')
+        const isOwner = ['adminwebmall@gmail.com', 'webmalll.lk@gmail.com', 'webmall.lk@gmail.com'].includes(user.email || '')
 
         if (isOwner && profile.role !== 'admin') {
             profile.role = 'admin'

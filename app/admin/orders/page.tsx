@@ -65,7 +65,7 @@ export default function AdminOrdersPage() {
       const response = await fetch('/api/orders', { headers })
       const data = await response.json()
       if (response.ok) {
-        setOrders(data)
+        setOrders(data.orders || [])
       }
     } catch (error) {
       console.error('Failed to fetch orders:', error)

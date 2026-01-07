@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Package, Search, Filter, Eye, Calendar, MapPin, CreditCard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -10,72 +10,106 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/AuthContext'
 
-// Mock orders data
-const mockOrders = [
-    {
-        id: 'ORD-001',
-        date: '2024-01-15',
-        status: 'delivered',
-        total: 12500,
-        items: [
-            { name: 'Pearl & Gold Earrings', quantity: 1, price: 3500 },
-            { name: 'Leather Crossbody Bag', quantity: 1, price: 8900 }
-        ],
-        shippingAddress: '123 Main Street, Colombo 03, Sri Lanka'
-    },
-    {
-        id: 'ORD-002',
-        date: '2024-01-10',
-        status: 'shipped',
-        total: 2800,
-        items: [
-            { name: 'Crystal Bracelet Set', quantity: 1, price: 2800 }
-        ],
-        shippingAddress: '456 Park Avenue, Kandy, Sri Lanka'
-    },
-    {
-        id: 'ORD-003',
-        date: '2024-01-05',
-        status: 'processing',
-        total: 5700,
-        items: [
-            { name: 'Silk Phone Cover', quantity: 1, price: 1200 },
-            { name: 'Designer Wallet', quantity: 1, price: 4500 }
-        ],
-        shippingAddress: '789 Ocean Drive, Galle, Sri Lanka'
+// Types for API data
+interface OrderItem {
+    id: string
+    product: {
+        id: string
+        name: string
+        slug?: string
+        images?: Array<{ url: string }>
     }
-]
+    quantity: number
+    price: number
+    total: number
+}
+
+interface Order {
+    id: string
+    orderNumber: string
+    status: string
+    totalAmount: number
+    currency: string
+    paymentMethod: string
+    shippingAddress: any
+    notes?: string
+    createdAt: string
+    updatedAt: string
+    items: OrderItem[]
+}
 
 const statusColors = {
-    processing: 'bg-yellow-100 text-yellow-800',
-    shipped: 'bg-blue-100 text-blue-800',
+    pending: 'bg-yellow-100 text-yellow-800',
+    confirmed: 'bg-blue-100 text-blue-800',
+    shipped: 'bg-purple-100 text-purple-800',
     delivered: 'bg-green-100 text-green-800',
     cancelled: 'bg-red-100 text-red-800'
 }
 
 const statusLabels = {
-    processing: 'Processing',
+    pending: 'Pending',
+    confirmed: 'Confirmed',
     shipped: 'Shipped',
     delivered: 'Delivered',
     cancelled: 'Cancelled'
 }
 
 export function OrdersView() {
-    const { user, loading } = useAuth()
-    const [orders] = useState(mockOrders)
-    const [filteredOrders, setFilteredOrders] = useState(mockOrders)
+    const { user, loading: authLoading, accessToken } = useAuth()
+    const [orders, setOrders] = useState<Order[]>([])
+    const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState('all')
+    const [isLoadingOrders, setIsLoadingOrders] = useState(true)
+
+    // Fetch orders from API
+    useEffect(() => {
+        if (user && !authLoading) {
+            fetchOrders()
+        } else if (!authLoading) {
+            setIsLoadingOrders(false)
+        }
+    }, [user, authLoading])
+
+    const fetchOrders = async () => {
+        try {
+            setIsLoadingOrders(true)
+            const token = await accessToken()
+            if (!token) {
+                console.error('No access token available')
+                setIsLoadingOrders(false)
+                return
+            }
+
+            const response = await fetch('/api/orders', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            if (response.ok) {
+                const data = await response.json()
+                setOrders(data.orders || [])
+                setFilteredOrders(data.orders || [])
+            } else {
+                console.error('Failed to fetch orders:', response.statusText)
+            }
+        } catch (error) {
+            console.error('Error fetching orders:', error)
+        } finally {
+            setIsLoadingOrders(false)
+        }
+    }
 
     // Filter orders based on search and status
-    React.useEffect(() => {
+    useEffect(() => {
         let filtered = orders
 
         if (searchQuery) {
             filtered = filtered.filter(order =>
-                order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 order.items.some(item =>
-                    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+                    item.product.name.toLowerCase().includes(searchQuery.toLowerCase())
                 )
             )
         }
@@ -87,7 +121,7 @@ export function OrdersView() {
         setFilteredOrders(filtered)
     }, [searchQuery, statusFilter, orders])
 
-    if (loading) {
+    if (authLoading || isLoadingOrders) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
@@ -160,7 +194,8 @@ export function OrdersView() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Orders</SelectItem>
-                                    <SelectItem value="processing">Processing</SelectItem>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="confirmed">Confirmed</SelectItem>
                                     <SelectItem value="shipped">Shipped</SelectItem>
                                     <SelectItem value="delivered">Delivered</SelectItem>
                                     <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -197,7 +232,7 @@ export function OrdersView() {
                                     <div className="flex-1">
                                         <div className="flex items-center gap-4 mb-4">
                                             <h3 className="text-lg font-semibold text-gray-900">
-                                                Order #{order.id}
+                                                Order #{order.orderNumber}
                                             </h3>
                                             <Badge className={statusColors[order.status as keyof typeof statusColors]}>
                                                 {statusLabels[order.status as keyof typeof statusLabels]}
@@ -207,25 +242,27 @@ export function OrdersView() {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                             <div className="flex items-center gap-2 text-sm text-gray-600">
                                                 <Calendar className="h-4 w-4" />
-                                                <span>Ordered on {new Date(order.date).toLocaleDateString()}</span>
+                                                <span>Ordered on {new Date(order.createdAt).toLocaleDateString()}</span>
                                             </div>
                                             <div className="flex items-center gap-2 text-sm text-gray-600">
                                                 <CreditCard className="h-4 w-4" />
-                                                <span>Total: {order.total.toLocaleString('en-LK')} LKR</span>
+                                                <span>Total: {order.currency} {order.totalAmount.toLocaleString('en-LK')}</span>
                                             </div>
                                         </div>
 
                                         <div className="flex items-start gap-2 text-sm text-gray-600 mb-4">
                                             <MapPin className="h-4 w-4 mt-0.5" />
-                                            <span>{order.shippingAddress}</span>
+                                            <span>
+                                                {order.shippingAddress?.address}, {order.shippingAddress?.city}, {order.shippingAddress?.postalCode}
+                                            </span>
                                         </div>
 
                                         <div className="space-y-2">
                                             <p className="text-sm font-medium text-gray-900">Items:</p>
                                             {order.items.map((item, index) => (
                                                 <div key={index} className="flex justify-between text-sm text-gray-600">
-                                                    <span>{item.name} x {item.quantity}</span>
-                                                    <span>{(item.price * item.quantity).toLocaleString('en-LK')} LKR</span>
+                                                    <span>{item.product.name} x {item.quantity}</span>
+                                                    <span>{order.currency} {item.total.toLocaleString('en-LK')}</span>
                                                 </div>
                                             ))}
                                         </div>

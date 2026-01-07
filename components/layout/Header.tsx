@@ -17,7 +17,7 @@ function HeaderContent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const { user, signOut, loading } = useAuth()
+  const { user, signOut, loading, accessToken } = useAuth()
   const { totalItems } = useCart()
   const { totalItems: wishlistItems } = useWishlist()
   const { settings, categories, loading: configLoading } = useSiteConfig()
@@ -49,10 +49,15 @@ function HeaderContent() {
       const fetchUnread = async () => {
         try {
           if (user?.role === 'admin') {
-            const res = await fetch('/api/contact?status=new')
-            if (res.ok) {
-              const data = await res.json()
-              setUnreadMessages(data.stats?.new || 0)
+            const token = await accessToken()
+            if (token) {
+              const res = await fetch('/api/contact?status=new', {
+                headers: { 'Authorization': `Bearer ${token}` }
+              })
+              if (res.ok) {
+                const data = await res.json()
+                setUnreadMessages(data.stats?.new || 0)
+              }
             }
           } else {
             const { data: { session } } = await (await import('@/lib/supabase')).supabase.auth.getSession()
@@ -76,7 +81,7 @@ function HeaderContent() {
     } else {
       setUnreadMessages(0)
     }
-  }, [user])
+  }, [user, accessToken])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -96,8 +101,11 @@ function HeaderContent() {
     // Hide on 404 pages (Next.js uses various patterns for this)
     if (pathname === '/404' || pathname === '/not-found') return false
 
-    // Hide on admin pages (they have their own navigation)
-    if (pathname.startsWith('/admin') && pathname !== '/admin') return false
+    // Show on admin pages for admin users (they should see their custom admin navigation)
+    if (pathname.startsWith('/admin') && user?.role === 'admin') return true
+
+    // Hide on admin pages for non-admin users
+    if (pathname.startsWith('/admin')) return false
 
     // Hide on checkout flow
     if (pathname.includes('/checkout')) return false

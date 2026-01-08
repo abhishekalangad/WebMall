@@ -110,7 +110,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
                 name: v.name,
                 attributes: v.attributes ?? {},
                 priceOverride: v.priceOverride ?? null,
-                stock: v.stock ?? 0
+                stock: v.stock ?? 0,
+                image: v.image,
+                images: v.images || []
               }))
             }
             : undefined

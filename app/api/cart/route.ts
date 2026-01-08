@@ -39,7 +39,9 @@ export async function GET(request: NextRequest) {
                             select: {
                                 id: true,
                                 name: true,
-                                attributes: true
+                                attributes: true,
+                                image: true,
+                                images: true
                             }
                         }
                     }
@@ -79,7 +81,8 @@ export async function GET(request: NextRequest) {
                                 select: {
                                     id: true,
                                     name: true,
-                                    attributes: true
+                                    attributes: true,
+                                    image: true
                                 }
                             }
                         }
@@ -96,7 +99,9 @@ export async function GET(request: NextRequest) {
             name: item.product?.name || 'Unknown Product',
             price: Number(item.product?.price || 0),
             quantity: item.quantity,
-            image: item.product?.images[0]?.url,
+            image: (item.variant?.images && item.variant.images.length > 0)
+                ? item.variant.images[0]
+                : (item.variant?.image || item.product?.images[0]?.url),
             slug: item.product?.slug || '',
             variantName: item.variantName || undefined,
             variantAttributes: item.variantAttributes as Record<string, string> || undefined
@@ -206,7 +211,9 @@ export async function POST(request: NextRequest) {
                             select: {
                                 id: true,
                                 name: true,
-                                attributes: true
+                                attributes: true,
+                                image: true,
+                                images: true
                             }
                         }
                     }
@@ -222,7 +229,9 @@ export async function POST(request: NextRequest) {
             name: item.product?.name || 'Unknown Product',
             price: Number(item.product?.price || 0),
             quantity: item.quantity,
-            image: item.product?.images[0]?.url,
+            image: (item.variant?.images && item.variant.images.length > 0)
+                ? item.variant.images[0]
+                : (item.variant?.image || item.product?.images[0]?.url),
             slug: item.product?.slug || '',
             variantName: item.variantName || undefined,
             variantAttributes: item.variantAttributes as Record<string, string> || undefined

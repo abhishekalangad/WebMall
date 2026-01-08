@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useCart } from '@/contexts/CartContext'
 import { StarRating } from '@/components/ui/star-rating'
+import { getValidImageUrl, handleImageError } from '@/lib/image-utils'
 
 interface Product {
   id: string
@@ -38,7 +39,7 @@ export function ProductCard({
   showWishlist = true,
   layout = 'grid'
 }: ProductCardProps) {
-  const primaryImage = product.images[0]?.url || '/placeholder.jpg'
+  const primaryImage = getValidImageUrl(product.images[0]?.url, '/placeholder.png')
   const { isInWishlist, addItem: addToWishlist, removeItem: removeFromWishlist } = useWishlist()
   const { items, updateQuantity } = useCart()
 
@@ -85,17 +86,19 @@ export function ProductCard({
 
   if (layout === 'list') {
     return (
-      <div className="group relative bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-row h-48 sm:h-56">
+      <Link
+        href={`/products/${product.slug}`}
+        className="block group relative bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-row h-48 sm:h-56 cursor-pointer"
+      >
         {/* Product Image - Fixed Width */}
         <div className="relative w-1/3 sm:w-48 md:w-56 overflow-hidden bg-gray-100 flex-shrink-0">
-          <Link href={`/products/${product.slug}`} className="block w-full h-full">
-            <Image
-              src={primaryImage}
-              alt={product.name}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-          </Link>
+          <Image
+            src={primaryImage}
+            alt={product.name}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={handleImageError}
+          />
 
           {/* Category Badge */}
           {product.category && (
@@ -111,15 +114,13 @@ export function ProductCard({
         <div className="flex-1 p-4 flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-start">
-              <Link href={`/products/${product.slug}`}>
-                <h3 className="font-semibold text-gray-900 mb-1 hover:text-pink-600 transition-colors text-lg">
-                  {product.name}
-                </h3>
-              </Link>
+              <h3 className="font-semibold text-gray-900 mb-1 hover:text-pink-600 transition-colors text-lg">
+                {product.name}
+              </h3>
               {showWishlist && (
                 <button
                   onClick={handleWishlistToggle}
-                  className={`p-1.5 rounded-full transition-all duration-200 ${isWishlisted
+                  className={`p-1.5 rounded-full transition-all duration-200 z-10 ${isWishlisted
                     ? 'bg-pink-50 text-pink-500'
                     : 'bg-gray-50 text-gray-400 hover:text-pink-500 hover:bg-pink-50'
                     }`}
@@ -153,7 +154,7 @@ export function ProductCard({
             </div>
 
             {showAddToCart && (
-              <div className="flex items-center">
+              <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
                 {quantity > 0 ? (
                   <div className="flex items-center bg-pink-50 rounded-full p-1 border border-pink-100 shadow-sm">
                     <button onClick={handleDecreaseQuantity} className="p-1.5 hover:bg-white rounded-full text-pink-600">
@@ -177,29 +178,31 @@ export function ProductCard({
             )}
           </div>
         </div>
-      </div>
+      </Link>
     )
   }
 
   return (
-    <div className="group relative bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+    <Link
+      href={`/products/${product.slug}`}
+      className="block group relative bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer"
+    >
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden bg-gray-100">
-        <Link href={`/products/${product.slug}`}>
-          <Image
-            src={primaryImage}
-            alt={product.name}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        </Link>
+        <Image
+          src={primaryImage}
+          alt={product.name}
+          fill
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
+          onError={handleImageError}
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-10 opacity-transition duration-300 sm:group-hover:opacity-10"></div>
 
         {/* Wishlist Button */}
         {showWishlist && (
           <button
             onClick={handleWishlistToggle}
-            className={`absolute top-3 right-3 p-2 rounded-full transition-all duration-200 ${isWishlisted
+            className={`absolute top-3 right-3 p-2 rounded-full transition-all duration-200 z-10 ${isWishlisted
               ? 'bg-pink-500 text-white opacity-100'
               : 'bg-white/80 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 hover:bg-white'
               }`}
@@ -220,11 +223,9 @@ export function ProductCard({
 
       {/* Product Info */}
       <div className="p-3 sm:p-4">
-        <Link href={`/products/${product.slug}`}>
-          <h3 className="font-semibold text-gray-900 mb-2 hover:text-pink-600 transition-colors line-clamp-2 min-h-[2.5rem] sm:min-h-[3rem] text-sm sm:text-base">
-            {product.name}
-          </h3>
-        </Link>
+        <h3 className="font-semibold text-gray-900 mb-2 hover:text-pink-600 transition-colors line-clamp-2 min-h-[2.5rem] sm:min-h-[3rem] text-sm sm:text-base">
+          {product.name}
+        </h3>
 
         {/* Rating */}
         {product.avgRating !== undefined && product.avgRating > 0 && (
@@ -255,7 +256,7 @@ export function ProductCard({
           </div>
 
           {showAddToCart && (
-            <div className="flex items-center">
+            <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
               {quantity > 0 ? (
                 <div className="flex items-center bg-pink-50 rounded-full p-1 border border-pink-100 shadow-sm animate-fade-in">
                   <button
@@ -288,6 +289,6 @@ export function ProductCard({
           )}
         </div>
       </div>
-    </div>
+    </Link>
   )
 }

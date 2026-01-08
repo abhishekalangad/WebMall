@@ -104,6 +104,8 @@ model ProductVariant {
   attributes    Json       @map("attributes")
   priceOverride Decimal?   @map("price_override") @db.Decimal(10, 2)
   stock         Int        @map("stock")
+  image         String?    @map("image")
+  images        String[]   @default([]) @map("variant_images")
   
   product       Product?   @relation(fields: [productId], references: [id], onDelete: Cascade)
   cartItems     CartItem[]

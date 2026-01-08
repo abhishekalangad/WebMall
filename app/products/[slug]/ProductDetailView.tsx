@@ -30,6 +30,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useSiteConfig } from '@/contexts/SiteConfigContext'
 import { motion, AnimatePresence } from 'framer-motion'
+import { getValidImageUrl, handleImageError } from '@/lib/image-utils'
 
 interface ProductDetailViewProps {
     product: any
@@ -42,6 +43,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
     const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlist()
     const { toast } = useToast()
     const [selectedImage, setSelectedImage] = useState(0)
+    const [manualImageOverride, setManualImageOverride] = useState<string | null>(null)
 
     // Local quantity
     const [quantity, setQuantity] = useState(1)
@@ -57,11 +59,39 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
     // Auto-switch image when variant is selected
     useEffect(() => {
         if (selectedVariant) {
-            // Switch to first image when a variant is selected
-            // This provides visual feedback that variant changed
-            setSelectedImage(0)
+            // Priority 1: If variant has multiple images, show the first one
+            if (selectedVariant.images && selectedVariant.images.length > 0) {
+                setManualImageOverride(selectedVariant.images[0])
+                return
+            }
+
+            // Priority 2: If variant has its own specific single image, show it (backward compatible)
+            if (selectedVariant.image) {
+                setManualImageOverride(selectedVariant.image)
+                return
+            }
+
+            // Priority 3: Reset override if no specific image
+            setManualImageOverride(null)
+
+            // Priority 3: Try to find mapping in main images (existing logic)
+            if (initialProduct.variants && initialProduct.images &&
+                initialProduct.variants.length === initialProduct.images.length) {
+
+                const variantIndex = initialProduct.variants.findIndex((v: any) => v.id === selectedVariant.id)
+
+                if (variantIndex !== -1) {
+                    setSelectedImage(variantIndex)
+                    return
+                }
+            }
+
+            // Don't reset selectedImage to 0 if we just don't have a mapping, 
+            // user might be looking at a specific image.
+        } else {
+            setManualImageOverride(null)
         }
-    }, [selectedVariant])
+    }, [selectedVariant, initialProduct])
 
     // Load reviews
     useEffect(() => {
@@ -84,8 +114,8 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
         images: initialProduct.images && initialProduct.images.length > 0
             ? initialProduct.images
                 .sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0))
-                .map((img: any) => ({ url: img.url, alt: img.alt || initialProduct.name }))
-            : [{ url: '/placeholder.jpg', alt: initialProduct.name }],
+                .map((img: any) => ({ url: getValidImageUrl(img.url, '/placeholder.png'), alt: img.alt || initialProduct.name }))
+            : [{ url: '/placeholder.png', alt: initialProduct.name }],
         category: initialProduct.category || { name: 'Uncategorized', slug: 'uncategorized' },
         inStock: selectedVariant
             ? selectedVariant.stock > 0
@@ -133,10 +163,16 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
             return
         }
 
-        // Build unique cart key using productId + variantId
-        const cartKey = selectedVariant
-            ? `${product.id}-${selectedVariant.id}`
-            : product.id
+        // Validate stock availability
+        const availableStock = selectedVariant ? selectedVariant.stock : product.stockCount
+        if (availableStock <= 0) {
+            toast({
+                title: "Out of Stock",
+                description: "This product is currently unavailable",
+                variant: "destructive"
+            })
+            return
+        }
 
         // Find if this specific variant is already in cart
         const cartItem = items.find(item =>
@@ -145,12 +181,27 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
         )
         const inCartQty = cartItem ? cartItem.quantity : 0
 
+        // Check if adding would exceed stock
+        if (inCartQty + quantity > availableStock) {
+            toast({
+                title: "Stock Limit",
+                description: `Only ${availableStock} units available. You have ${inCartQty} in cart.`,
+                variant: "destructive"
+            })
+            return
+        }
+
+        // Prepare variant display name for toast
+        const variantInfo = selectedVariant
+            ? ` (${selectedVariant.name})`
+            : ''
+
         if (inCartQty > 0) {
             // Update existing cart item with variant ID
             updateQuantity(product.id, quantity + inCartQty, selectedVariant?.id)
             toast({
                 title: "Cart Updated",
-                description: `${product.name} quantity updated!`
+                description: `${product.name}${variantInfo} quantity updated to ${quantity + inCartQty}!`,
             })
         } else {
             addItem({
@@ -159,10 +210,16 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                 name: product.name,
                 price: effectivePrice,
                 quantity: quantity,
-                image: product.images[selectedImage]?.url || product.images[0]?.url,  // Use selected image
+                image: (selectedVariant?.images && selectedVariant.images.length > 0)
+                    ? selectedVariant.images[0]
+                    : (selectedVariant?.image || product.images[selectedImage]?.url || product.images[0]?.url),
                 slug: product.slug,
                 variantName: selectedVariant?.name,
                 variantAttributes: selectedVariant?.attributes
+            })
+            toast({
+                title: "Added to Cart!",
+                description: `${product.name}${variantInfo} × ${quantity}`,
             })
         }
     }
@@ -264,11 +321,12 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
 
                         <div className="aspect-square bg-white rounded-2xl overflow-hidden shadow-sm">
                             <Image
-                                src={product.images[selectedImage]?.url || '/placeholder.png'}
+                                src={getValidImageUrl(manualImageOverride || product.images[selectedImage]?.url, '/placeholder.png')}
                                 alt={product.name}
                                 width={600}
                                 height={600}
                                 className="w-full h-full object-cover"
+                                onError={handleImageError}
                                 priority
                             />
                         </div>
@@ -285,6 +343,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                             key={i}
                                             onClick={() => {
                                                 setSelectedImage(i)
+                                                setManualImageOverride(null)
                                                 // If this image is linked to a variant, select it
                                                 if (linkedVariant) {
                                                     setSelectedVariant(linkedVariant)
@@ -296,11 +355,12 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                 }`}
                                         >
                                             <Image
-                                                src={img.url}
+                                                src={getValidImageUrl(img.url, '/placeholder.png')}
                                                 alt={`Product view ${i + 1}`}
                                                 width={100}
                                                 height={100}
                                                 className="w-full h-full object-cover"
+                                                onError={handleImageError}
                                             />
                                             {/* Show variant badge if linked */}
                                             {linkedVariant && (
@@ -396,7 +456,11 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                             )}
                                                         </Label>
 
-                                                        <div className={`grid gap-3 ${isColorAttr ? 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5' : isSizeAttr ? 'grid-cols-4 sm:grid-cols-5 md:grid-cols-6' : 'grid-cols-2 sm:grid-cols-3'}`}>
+                                                        <div className={`grid gap-2 sm:gap-3 ${isColorAttr
+                                                            ? 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6'
+                                                            : isSizeAttr
+                                                                ? 'grid-cols-3 sm:grid-cols-5 md:grid-cols-6'
+                                                                : 'grid-cols-2 sm:grid-cols-3'}`}>
                                                             {Array.from(attrValues).map(value => {
                                                                 const selectedAttr = selectedVariant?.attributes[attrType]
                                                                 const isSelected = selectedAttr === value
@@ -474,7 +538,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                                             setSelectedVariant(matchingVariant)
                                                                         }}
                                                                         disabled={!hasStock}
-                                                                        className={`group relative py-3 px-4 border-2 rounded-xl text-center font-semibold transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${isSelected
+                                                                        className={`group relative py-2 px-3 sm:py-3 sm:px-4 border-2 rounded-xl text-center font-semibold transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${isSelected
                                                                             ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-pink-100 text-pink-700 ring-4 ring-pink-100 shadow-lg scale-105'
                                                                             : 'border-gray-200 bg-white hover:border-pink-300 hover:bg-pink-50 hover:shadow-md'
                                                                             }`}

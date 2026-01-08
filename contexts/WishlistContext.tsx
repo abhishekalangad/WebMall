@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useAuth } from './AuthContext'
 
 export interface WishlistItem {
@@ -80,7 +80,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   }
 
   // Add item to server wishlist
-  const addItemToServer = async (productId: string) => {
+  const addItemToServer = useCallback(async (productId: string) => {
     if (!user) return
 
     try {
@@ -98,10 +98,10 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Failed to add to server wishlist:', error)
     }
-  }
+  }, [user, getAuthToken])
 
   // Remove item from server wishlist
-  const removeItemFromServer = async (productId: string) => {
+  const removeItemFromServer = useCallback(async (productId: string) => {
     if (!user) return
 
     try {
@@ -117,10 +117,10 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Failed to remove from server wishlist:', error)
     }
-  }
+  }, [user, getAuthToken])
 
   // Clear server wishlist
-  const clearServerWishlist = async () => {
+  const clearServerWishlist = useCallback(async () => {
     if (!user) return
 
     try {
@@ -136,7 +136,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Failed to clear server wishlist:', error)
     }
-  }
+  }, [user, getAuthToken])
 
   // Load wishlist when component mounts or user changes
   useEffect(() => {
@@ -210,7 +210,13 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items, user, isLoadingWishlist])
 
-  const addItem = (newItem: Omit<WishlistItem, 'id' | 'addedAt'>) => {
+  // Define showToast first since other functions depend on it
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3000)
+  }, [])
+
+  const addItem = useCallback((newItem: Omit<WishlistItem, 'id' | 'addedAt'>) => {
     if (isInWishlist(newItem.productId)) {
       showToast(`${newItem.name} is already in your wishlist!`, 'info')
       return
@@ -227,9 +233,9 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
     // Add to server for logged-in users
     addItemToServer(newItem.productId)
-  }
+  }, [items, addItemToServer])
 
-  const removeItem = (productId: string) => {
+  const removeItem = useCallback((productId: string) => {
     const itemToRemove = items.find(item => item.productId === productId)
     setItems(prev => prev.filter(item => item.productId !== productId))
     if (itemToRemove) {
@@ -237,38 +243,33 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       // Remove from server for logged-in users
       removeItemFromServer(productId)
     }
-  }
+  }, [items, removeItemFromServer])
 
-  const isInWishlist = (productId: string) => {
+  const isInWishlist = useCallback((productId: string) => {
     return items.some(item => item.productId === productId)
-  }
+  }, [items])
 
-  const clearWishlist = () => {
+  const clearWishlist = useCallback(() => {
     setItems([])
     showToast('Wishlist cleared', 'info')
     // Clear server wishlist for logged-in users
     clearServerWishlist()
-  }
-
-  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
-    setToast({ message, type })
-    setTimeout(() => setToast(null), 3000)
-  }
+  }, [clearServerWishlist])
 
   const totalItems = items.length
 
+  const contextValue = useMemo(() => ({
+    items,
+    addItem,
+    removeItem,
+    isInWishlist,
+    clearWishlist,
+    totalItems,
+    showToast,
+  }), [items, addItem, removeItem, isInWishlist, clearWishlist, totalItems, showToast])
+
   return (
-    <WishlistContext.Provider
-      value={{
-        items,
-        addItem,
-        removeItem,
-        isInWishlist,
-        clearWishlist,
-        totalItems,
-        showToast,
-      }}
-    >
+    <WishlistContext.Provider value={contextValue}>
       {children}
       {toast && (
         <div className="fixed top-4 right-4 z-50">

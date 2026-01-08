@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
         status,
         stock,
         images: images.length ? { create: images.map((img: any) => ({ url: img.url, alt: img.alt ?? null, position: img.position ?? 0 })) } : undefined,
-        variants: variants.length ? { create: variants.map((v: any) => ({ sku: v.sku, name: v.name, attributes: v.attributes ?? {}, priceOverride: v.priceOverride ?? null, stock: v.stock ?? 0 })) } : undefined,
+        variants: variants.length ? { create: variants.map((v: any) => ({ sku: v.sku, name: v.name, attributes: v.attributes ?? {}, priceOverride: v.priceOverride ?? null, stock: v.stock ?? 0, image: v.image, images: v.images || [] })) } : undefined,
       },
       include: { images: true, variants: true, category: true, subcategory: true }
     })

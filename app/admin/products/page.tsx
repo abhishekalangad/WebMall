@@ -213,7 +213,9 @@ export default function AdminProductsPage() {
           name: v.name,
           attributes: v.attributes,
           priceOverride: v.priceOverride,
-          stock: v.stock
+          stock: v.stock,
+          image: v.image,
+          images: v.images
         })),
         currency: 'LKR'
       }
@@ -278,7 +280,9 @@ export default function AdminProductsPage() {
           name: v.name,
           attributes: v.attributes || {},
           priceOverride: v.priceOverride,
-          stock: v.stock
+          stock: v.stock,
+          image: v.image,
+          images: v.images || []
         }))
         : [],
       inStock: product.status === 'active',
@@ -516,12 +520,12 @@ export default function AdminProductsPage() {
                         </Badge>
                       </td>
                       <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex gap-1 sm:gap-2">
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => router.push(`/products/${product.slug}`)}
-                            className="h-8 w-8 p-0 sm:w-auto sm:px-2"
+                            className="h-8 w-8 p-0 sm:w-auto sm:px-2 flex-shrink-0"
                             title="View"
                           >
                             <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -530,7 +534,7 @@ export default function AdminProductsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleEditProduct(product)}
-                            className="h-8 w-8 p-0 sm:w-auto sm:px-2"
+                            className="h-8 w-8 p-0 sm:w-auto sm:px-2 flex-shrink-0"
                             title="Edit"
                           >
                             <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -539,7 +543,7 @@ export default function AdminProductsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleToggleStock(product)}
-                            className="hidden lg:inline-flex h-8"
+                            className="hidden lg:inline-flex h-8 flex-shrink-0"
                             title={product.status === 'active' ? 'Archive' : 'Activate'}
                           >
                             {product.status === 'active' ? 'Archive' : 'Activate'}
@@ -548,7 +552,7 @@ export default function AdminProductsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDeleteProduct(product.id)}
-                            className="h-8 w-8 p-0 sm:w-auto sm:px-2 text-red-600 hover:text-red-800"
+                            className="h-8 w-8 p-0 sm:w-auto sm:px-2 text-red-600 hover:text-red-800 flex-shrink-0"
                             title="Delete"
                           >
                             <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />

@@ -11,6 +11,7 @@ import { useWishlist } from '@/contexts/WishlistContext'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
+import { getValidImageUrl, handleImageError } from '@/lib/image-utils'
 
 export function WishlistView() {
     const { items, removeItem, clearWishlist, totalItems } = useWishlist()
@@ -121,10 +122,11 @@ export function WishlistView() {
                                 <div className="relative aspect-square overflow-hidden bg-gray-100">
                                     <Link href={`/products/${item.slug}`}>
                                         <Image
-                                            src={item.image || '/placeholder.jpg'}
+                                            src={getValidImageUrl(item.image, '/placeholder.png')}
                                             alt={item.name}
                                             fill
                                             className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                            onError={handleImageError}
                                         />
                                     </Link>
 

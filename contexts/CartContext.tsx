@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useAuth } from './AuthContext'
 import Decimal from 'decimal.js'
 
@@ -110,7 +110,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }
 
   // Update server cart on item changes
-  const updateServerCart = async (action: string, productId: string, quantity: number, variantId?: string, variantName?: string, variantAttributes?: Record<string, string>) => {
+  const updateServerCart = useCallback(async (action: string, productId: string, quantity: number, variantId?: string, variantName?: string, variantAttributes?: Record<string, string>) => {
     if (!user) return
 
     try {
@@ -128,7 +128,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Failed to update server cart:', error)
     }
-  }
+  }, [user, getAuthToken])
 
   // Load cart when component mounts or user changes
   useEffect(() => {
@@ -224,8 +224,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items, user, isLoadingCart])
 
+  // Define showToast first since other functions depend on it
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3000)
+  }, [])
 
-  const addItem = (newItem: Omit<CartItem, 'id'>) => {
+  const addItem = useCallback((newItem: Omit<CartItem, 'id'>) => {
     // Sanity check for quantity
     const quantityToAdd = Number(newItem.quantity) || 1
 
@@ -254,9 +259,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return newItems
       }
     })
-  }
+  }, [updateServerCart])
 
-  const removeItem = (productId: string) => {
+  const removeItem = useCallback((productId: string) => {
     const itemToRemove = items.find(item => item.productId === productId)
     setItems(prevItems => prevItems.filter(item => item.productId !== productId))
     if (itemToRemove) {
@@ -264,9 +269,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       // Update server for logged-in users
       updateServerCart('remove', productId, 0)
     }
-  }
+  }, [items, updateServerCart])
 
-  const updateQuantity = (productId: string, quantity: number, variantId?: string) => {
+  const updateQuantity = useCallback((productId: string, quantity: number, variantId?: string) => {
     const newQuantity = Number(quantity)
     if (isNaN(newQuantity) || newQuantity <= 0) {
       // Remove the specific variant item
@@ -292,9 +297,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (itemToUpdate) {
       updateServerCart('update', productId, newQuantity, variantId, itemToUpdate.variantName, itemToUpdate.variantAttributes)
     }
-  }
+  }, [items, updateServerCart])
 
-  const clearCart = async () => {
+  const clearCart = useCallback(async () => {
     setItems([])
     showToast('Cart cleared', 'info')
 
@@ -314,12 +319,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         console.error('Failed to clear server cart:', error)
       }
     }
-  }
-
-  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
-    setToast({ message, type })
-    setTimeout(() => setToast(null), 3000)
-  }
+  }, [user, getAuthToken])
 
   // Calculate total items (safe with integers)
   const totalItems = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
@@ -331,19 +331,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return sum.plus(price.times(quantity))
   }, new Decimal(0)).toNumber()
 
+  const contextValue = useMemo(() => ({
+    items,
+    addItem,
+    removeItem,
+    updateQuantity,
+    clearCart,
+    totalItems,
+    totalPrice,
+    showToast,
+  }), [items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice, showToast])
+
   return (
-    <CartContext.Provider
-      value={{
-        items,
-        addItem,
-        removeItem,
-        updateQuantity,
-        clearCart,
-        totalItems,
-        totalPrice,
-        showToast,
-      }}
-    >
+    <CartContext.Provider value={contextValue}>
       {children}
       {toast && (
         <div className="fixed top-4 right-4 z-50">

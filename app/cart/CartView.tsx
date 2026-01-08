@@ -3,13 +3,14 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Minus, Plus, Trash2, ShoppingBag, Gift, Tag, Truck, X, ChevronRight, Sparkles } from 'lucide-react'
+import { Minus, Plus, Trash2, ShoppingBag, Gift, Tag, Truck, X, ChevronRight, Sparkles, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useCart } from '@/contexts/CartContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
+import { getValidImageUrl, handleImageError } from '@/lib/image-utils'
 
 export function CartView() {
     const { items, updateQuantity, removeItem, clearCart, totalItems, totalPrice } = useCart()
@@ -100,34 +101,46 @@ export function CartView() {
         <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-yellow-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
-                <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                        <h1 className="text-4xl font-playfair font-bold text-gray-900 mb-2">
-                            Shopping Cart
-                        </h1>
-                        <p className="text-gray-600 flex items-center gap-2">
-                            <ShoppingBag className="h-4 w-4" />
-                            {totalItems} {totalItems === 1 ? 'item' : 'items'} in your cart
-                        </p>
+                <div className="mb-8">
+                    {/* Back Button */}
+                    <Link
+                        href="/products"
+                        className="inline-flex items-center text-gray-600 hover:text-pink-600 transition-colors mb-6 group"
+                    >
+                        <ArrowLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+                        <span className="font-medium">Continue Shopping</span>
+                    </Link>
+
+                    {/* Header Content */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h1 className="text-4xl font-playfair font-bold text-gray-900 mb-2">
+                                Shopping Cart
+                            </h1>
+                            <p className="text-gray-600 flex items-center gap-2">
+                                <ShoppingBag className="h-4 w-4" />
+                                {totalItems} {totalItems === 1 ? 'item' : 'items'} in your cart
+                            </p>
+                        </div>
+                        {items.length > 0 && (
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    if (confirm('Clear all items from cart?')) {
+                                        clearCart()
+                                        toast({
+                                            title: 'Cart Cleared',
+                                            description: 'All items removed from cart'
+                                        })
+                                    }
+                                }}
+                                className="border-red-200 text-red-600 hover:bg-red-50"
+                            >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Clear Cart
+                            </Button>
+                        )}
                     </div>
-                    {items.length > 0 && (
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                if (confirm('Clear all items from cart?')) {
-                                    clearCart()
-                                    toast({
-                                        title: 'Cart Cleared',
-                                        description: 'All items removed from cart'
-                                    })
-                                }
-                            }}
-                            className="border-red-200 text-red-600 hover:bg-red-50"
-                        >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Clear Cart
-                        </Button>
-                    )}
                 </div>
 
                 {/* Free Shipping Progress */}
@@ -180,10 +193,11 @@ export function CartView() {
                                                 className="relative w-24 h-24 sm:w-28 sm:h-28 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 group"
                                             >
                                                 <Image
-                                                    src={item.image || '/placeholder.jpg'}
+                                                    src={getValidImageUrl(item.image, '/placeholder.png')}
                                                     alt={item.name}
                                                     fill
                                                     className="object-cover group-hover:scale-110 transition-transform duration-300"
+                                                    onError={handleImageError}
                                                 />
                                                 <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity" />
                                             </Link>

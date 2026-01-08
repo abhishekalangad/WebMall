@@ -1,36 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
-import { existsSync } from 'fs'
+import { createClient } from '@supabase/supabase-js'
 import { verifyAuthToken } from '@/lib/auth-server'
 
 export async function POST(request: NextRequest) {
     try {
-        // 🔒 AUTHENTICATION CHECK - CRITICAL SECURITY
+        // 🔒 AUTHENTICATION CHECK
         const authHeader = request.headers.get('Authorization')
         if (!authHeader?.startsWith('Bearer ')) {
-            return NextResponse.json(
-                { error: 'Unauthorized - Authentication required' },
-                { status: 401 }
-            )
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         const token = authHeader.split(' ')[1]
         const user = await verifyAuthToken(token)
 
-        if (!user) {
-            return NextResponse.json(
-                { error: 'Unauthorized - Invalid token' },
-                { status: 401 }
-            )
-        }
-
-        // Only allow admin users to upload product images
-        if (user.role !== 'admin') {
-            return NextResponse.json(
-                { error: 'Forbidden - Admin access required' },
-                { status: 403 }
-            )
+        if (!user || user.role !== 'admin') {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
         const formData = await request.formData()
@@ -38,74 +22,68 @@ export async function POST(request: NextRequest) {
         const bucket = formData.get('bucket') as string | null
 
         if (!file) {
-            return NextResponse.json(
-                { error: 'No file provided' },
-                { status: 400 }
-            )
+            return NextResponse.json({ error: 'No file provided' }, { status: 400 })
         }
 
         // Validate file type
         if (!file.type.startsWith('image/')) {
-            return NextResponse.json(
-                { error: 'File must be an image' },
-                { status: 400 }
-            )
+            return NextResponse.json({ error: 'File must be an image' }, { status: 400 })
         }
 
         // Validate file size (max 5MB)
-        const maxSize = 5 * 1024 * 1024
-        if (file.size > maxSize) {
-            return NextResponse.json(
-                { error: 'File size must be less than 5MB' },
-                { status: 400 }
-            )
+        if (file.size > 5 * 1024 * 1024) {
+            return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 })
         }
 
+        // Initialize Supabase Admin Client
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+        if (!supabaseUrl || !supabaseServiceKey) {
+            console.error('Supabase credentials missing')
+            return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+        }
+
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+
+        // Create unique filename
+        const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+        const timestamp = Date.now()
+        const randomStr = Math.random().toString(36).substring(2, 8)
+        const bucketName = bucket === 'products' ? 'products' : 'general'
+        const fileName = `${bucketName}/${timestamp}-${randomStr}.${fileExtension}`
+
+        // Convert File to Buffer for upload
         const bytes = await file.arrayBuffer()
         const buffer = Buffer.from(bytes)
 
-        // 🔒 SECURITY: Sanitize file extension - prevent path traversal
-        const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif']
-        const fileExtension = file.name.split('.').pop()?.toLowerCase()
+        // Upload to Supabase Storage
+        const { data, error } = await supabaseAdmin
+            .storage
+            .from('products') // Assuming 'products' is the main bucket
+            .upload(fileName, buffer, {
+                contentType: file.type,
+                upsert: false
+            })
 
-        if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
-            return NextResponse.json(
-                { error: 'Invalid file type. Allowed: jpg, jpeg, png, webp, gif' },
-                { status: 400 }
-            )
+        if (error) {
+            console.error('Supabase Upload Error:', error)
+            return NextResponse.json({ error: 'Failed to upload to storage' }, { status: 500 })
         }
 
-        // Determine upload directory based on bucket parameter
-        const bucketName = bucket === 'products' ? 'products' : 'general'
-
-        // Create unique, SAFE filename (no user input in filename)
-        const timestamp = Date.now()
-        const randomStr = Math.random().toString(36).substring(2, 8)
-        const safeFileName = `${bucketName}-${timestamp}-${randomStr}.${fileExtension}`
-
-        // Create uploads directory if it doesn't exist
-        const uploadsDir = path.join(process.cwd(), 'public', 'uploads', bucketName)
-        if (!existsSync(uploadsDir)) {
-            await mkdir(uploadsDir, { recursive: true })
-        }
-
-        // Save file
-        const filePath = path.join(uploadsDir, safeFileName)
-        await writeFile(filePath, new Uint8Array(buffer))
-
-        // Return the public URL in the format expected by MultiImageUpload component
-        const imageUrl = `/uploads/${bucketName}/${safeFileName}`
+        // Get Public URL
+        const { data: { publicUrl } } = supabaseAdmin
+            .storage
+            .from('products')
+            .getPublicUrl(fileName)
 
         return NextResponse.json({
-            url: imageUrl,
+            url: publicUrl,
             success: true,
             message: 'File uploaded successfully'
         })
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error uploading file:', error)
-        return NextResponse.json(
-            { error: 'Failed to upload file' },
-            { status: 500 }
-        )
+        return NextResponse.json({ error: error.message || 'Failed to upload file' }, { status: 500 })
     }
 }

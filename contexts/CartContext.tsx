@@ -20,7 +20,7 @@ export interface CartItem {
 interface CartContextType {
   items: CartItem[]
   addItem: (item: Omit<CartItem, 'id'>) => void
-  removeItem: (productId: string) => void
+  removeItem: (productId: string, variantId?: string) => void
   updateQuantity: (productId: string, quantity: number, variantId?: string) => void
   clearCart: () => void
   totalItems: number
@@ -261,13 +261,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     })
   }, [updateServerCart])
 
-  const removeItem = useCallback((productId: string) => {
-    const itemToRemove = items.find(item => item.productId === productId)
-    setItems(prevItems => prevItems.filter(item => item.productId !== productId))
+  const removeItem = useCallback((productId: string, variantId?: string) => {
+    const itemToRemove = items.find(item =>
+      item.productId === productId &&
+      (variantId ? item.variantId === variantId : true)
+    )
+
+    setItems(prevItems => prevItems.filter(item => {
+      if (item.productId !== productId) return true
+      if (variantId && item.variantId !== variantId) return true
+      return false
+    }))
+
     if (itemToRemove) {
       showToast(`${itemToRemove.name} removed from cart`, 'info')
       // Update server for logged-in users
-      updateServerCart('remove', productId, 0)
+      updateServerCart('remove', productId, 0, variantId)
     }
   }, [items, updateServerCart])
 

@@ -19,11 +19,18 @@ export function CartView() {
     const [discount, setDiscount] = useState(0)
     const [removingItem, setRemovingItem] = useState<string | null>(null)
 
-    // Calculate free shipping progress
+    // Calculate free shipping progress and costs
     const freeShippingThreshold = 5000
+    const shippingRatePerItem = 350
+    const isFreeShipping = totalPrice >= freeShippingThreshold
+
+    // Shipping logic: Per item charge if under threshold
+    const shippingCost = isFreeShipping ? 0 : (totalItems * shippingRatePerItem)
+
     const shippingProgress = Math.min((totalPrice / freeShippingThreshold) * 100, 100)
     const amountToFreeShipping = Math.max(freeShippingThreshold - totalPrice, 0)
 
+    // ... promo logic ...
     const handleApplyPromo = () => {
         // Demo promo codes
         const promos: Record<string, number> = {
@@ -51,7 +58,7 @@ export function CartView() {
     const handleRemoveItem = (productId: string, variantId?: string) => {
         setRemovingItem(productId)
         setTimeout(() => {
-            removeItem(productId)
+            removeItem(productId, variantId)
             setRemovingItem(null)
             toast({
                 title: 'Item Removed',
@@ -60,7 +67,7 @@ export function CartView() {
         }, 300)
     }
 
-    const finalTotal = totalPrice - (totalPrice * discount)
+    const finalTotal = totalPrice - (totalPrice * discount) + shippingCost
 
     // Estimated delivery date (3-5 business days from now)
     const estimatedDate = new Date()
@@ -334,7 +341,11 @@ export function CartView() {
                                         <Truck className="h-4 w-4" />
                                         Shipping
                                     </span>
-                                    <span className="font-medium text-green-600">FREE</span>
+                                    {isFreeShipping ? (
+                                        <span className="font-medium text-green-600">FREE</span>
+                                    ) : (
+                                        <span className="font-medium text-gray-900">LKR {shippingCost.toLocaleString()}</span>
+                                    )}
                                 </div>
                             </div>
 

@@ -93,7 +93,9 @@ export async function GET() {
                 categories: categories.length > 0 ? categories : DEFAULT_CATEGORIES
             }, {
                 headers: {
-                    'Cache-Control': 'public, s-maxage=7200, stale-while-revalidate=86400',
+                    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
                 },
             })
         } catch (prismaError: any) {

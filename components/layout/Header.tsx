@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, Suspense } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { ShoppingBag, User, Menu, X, ChevronDown, LogOut, Settings, Package, Heart, Search, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -142,7 +143,7 @@ function HeaderContent() {
 
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16 md:h-18">
           {/* Left Side: Logo & Navigation Group */}
           <div className="flex items-center flex-shrink-0 min-w-0">
@@ -150,7 +151,7 @@ function HeaderContent() {
               <img
                 src={settings?.logoUrl || '/logo-no-bg.png'}
                 alt={settings?.storeName || 'WebMall'}
-                className="h-10 sm:h-14 md:h-16 w-auto object-contain"
+                className="h-9 sm:h-12 md:h-14 w-auto object-contain"
               />
               <span className="text-xl sm:text-2xl md:text-3xl font-playfair font-bold text-gray-900 truncate">
                 {configLoading ? (
@@ -163,7 +164,7 @@ function HeaderContent() {
 
             {/* Desktop Navigation Grouped with Logo */}
             {shouldShowNavigation() && !configLoading && (
-              <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8 ml-6 xl:ml-12">
+              <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8 ml-4 xl:ml-8">
                 {navItems.map((link: any, index: number) => (
                   <Link
                     key={index}
@@ -178,18 +179,18 @@ function HeaderContent() {
           </div>
 
 
-          {/* Center: Search Bar (Fills remaining space without moving other items) */}
+          {/* Center: Search Bar */}
           {shouldShowNavigation() && (
-            <div className="hidden md:flex flex-1 items-center justify-center px-4 lg:px-8 xl:px-12">
-              <div className="w-full max-w-[380px] lg:max-w-[480px]">
+            <div className="hidden md:flex flex-1 items-center px-6 lg:px-12 max-w-2xl">
+              <div className="w-full">
                 <form onSubmit={handleSearch} className="relative group">
-                  <Search className="absolute left-3 lg:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-hover:text-pink-500 transition-colors" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-hover:text-pink-500 transition-colors" />
                   <input
                     type="text"
                     placeholder="Search..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 lg:pl-11 pr-3 lg:pr-4 h-10 lg:h-11 w-48 lg:w-64 group-hover:w-full group-focus-within:w-full border-none rounded-full bg-gray-100/80 focus:bg-white focus:ring-0 focus:outline-none transition-all duration-500 font-cursive text-base lg:text-xl"
+                    className="w-full pl-10 pr-4 h-10 border-none rounded-full bg-gray-100/80 focus:bg-white focus:ring-2 focus:ring-pink-100 transition-all font-cursive text-lg"
                   />
                 </form>
               </div>

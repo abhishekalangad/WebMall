@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
-import { existsSync } from 'fs'
+import { createClient } from '@supabase/supabase-js'
 import { verifyAuthToken } from '@/lib/auth-server'
 
 export async function POST(request: NextRequest) {
@@ -36,8 +34,6 @@ export async function POST(request: NextRequest) {
             )
         }
 
-
-
         // Validate file type
         if (!file.type.startsWith('image/')) {
             return NextResponse.json(
@@ -55,10 +51,18 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        const bytes = await file.arrayBuffer()
-        const buffer = Buffer.from(bytes)
+        // Initialize Supabase Admin Client
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-        // 🔒 SECURITY: Sanitize file extension - prevent path traversal
+        if (!supabaseUrl || !supabaseServiceKey) {
+            console.error('Supabase credentials missing')
+            return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+        }
+
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+
+        // 🔒 SECURITY: Sanitize file extension
         const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif']
         const fileExtension = file.name.split('.').pop()?.toLowerCase()
 
@@ -69,32 +73,78 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Create unique, SAFE filename (no user input in filename)
+        // Create unique filename path: profiles/{userId}/{timestamp}.{ext}
+        // Grouping by userId keeps the bucket organized
         const timestamp = Date.now()
-        const safeFileName = `profile-${userId}-${timestamp}.${fileExtension}`
+        const fileName = `profiles/${userId}/${timestamp}.${fileExtension}`
 
-        // Create uploads directory if it doesn't exist
-        const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'profiles')
-        if (!existsSync(uploadsDir)) {
-            await mkdir(uploadsDir, { recursive: true })
+        // Convert File to Buffer for upload
+        const bytes = await file.arrayBuffer()
+        const buffer = Buffer.from(bytes)
+
+        // Upload to Supabase Storage
+        // Using a 'profiles' bucket if it exists
+        const bucketName = 'profiles'
+
+        const { error: uploadError } = await supabaseAdmin
+            .storage
+            .from(bucketName)
+            .upload(fileName, buffer, {
+                contentType: file.type,
+                upsert: false
+            })
+
+        if (uploadError) {
+            // Fallback to 'general' bucket if 'profiles' doesn't exist (common setup issue)
+            if (uploadError.message.includes('Bucket not found')) {
+                console.warn(`Bucket '${bucketName}' not found, falling back to 'general' bucket`)
+                const fallbackBucket = 'general'
+                const { error: fallbackError } = await supabaseAdmin
+                    .storage
+                    .from(fallbackBucket)
+                    .upload(fileName, buffer, {
+                        contentType: file.type,
+                        upsert: false
+                    })
+
+                if (fallbackError) {
+                    console.error('Supabase Upload Error (Fallback):', fallbackError)
+                    throw fallbackError
+                }
+
+                // Get Public URL from fallback bucket
+                const { data: { publicUrl } } = supabaseAdmin
+                    .storage
+                    .from(fallbackBucket)
+                    .getPublicUrl(fileName)
+
+                return NextResponse.json({
+                    success: true,
+                    imageUrl: publicUrl,
+                    message: 'Profile image uploaded successfully'
+                })
+            }
+
+            console.error('Supabase Upload Error:', uploadError)
+            return NextResponse.json({ error: 'Failed to upload to storage' }, { status: 500 })
         }
 
-        // Save file
-        const filePath = path.join(uploadsDir, safeFileName)
-        await writeFile(filePath, new Uint8Array(buffer))
-
-        // Return the public URL
-        const imageUrl = `/uploads/profiles/${safeFileName}`
+        // Get Public URL
+        const { data: { publicUrl } } = supabaseAdmin
+            .storage
+            .from(bucketName)
+            .getPublicUrl(fileName)
 
         return NextResponse.json({
             success: true,
-            imageUrl,
+            imageUrl: publicUrl,
             message: 'Profile image uploaded successfully'
         })
-    } catch (error) {
+
+    } catch (error: any) {
         console.error('Error uploading profile image:', error)
         return NextResponse.json(
-            { error: 'Failed to upload image' },
+            { error: error.message || 'Failed to upload image' },
             { status: 500 }
         )
     }
@@ -103,7 +153,7 @@ export async function POST(request: NextRequest) {
 // DELETE endpoint to remove profile images
 export async function DELETE(request: NextRequest) {
     try {
-        // 🔒 AUTHENTICATION CHECK - CRITICAL SECURITY
+        // 🔒 AUTHENTICATION CHECK
         const authHeader = request.headers.get('Authorization')
         if (!authHeader?.startsWith('Bearer ')) {
             return NextResponse.json(
@@ -125,57 +175,50 @@ export async function DELETE(request: NextRequest) {
         const { searchParams } = new URL(request.url)
         const imageUrl = searchParams.get('imageUrl')
 
-        if (!imageUrl || !imageUrl.startsWith('/uploads/profiles/')) {
+        if (!imageUrl) {
             return NextResponse.json(
                 { error: 'Invalid image URL' },
                 { status: 400 }
             )
         }
 
-        // 🔒 AUTHORIZATION CHECK - Verify user owns this image
-        // Extract userId from filename (format: profile-{userId}-{timestamp}.{ext})
-        const fileName = imageUrl.split('/').pop()
-        if (!fileName) {
-            return NextResponse.json(
-                { error: 'Invalid image URL' },
-                { status: 400 }
-            )
+        // Initialize Supabase
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+        if (!supabaseUrl || !supabaseServiceKey) {
+            return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+        }
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+
+        // Try to parse bucket and path from URL
+        let bucketName = 'profiles'
+        let filePath = ''
+
+        try {
+            const urlObj = new URL(imageUrl)
+            const pathParts = urlObj.pathname.split('/')
+
+            // Expected: /storage/v1/object/public/{bucket}/{path...}
+            const publicIndex = pathParts.indexOf('public')
+            if (publicIndex !== -1 && pathParts.length > publicIndex + 2) {
+                bucketName = pathParts[publicIndex + 1]
+                filePath = pathParts.slice(publicIndex + 2).join('/')
+            } else {
+                throw new Error('Could not parse storage path')
+            }
+        } catch (e) {
+            console.error('Error parsing URL for delete:', e)
+            return NextResponse.json({ error: 'Invalid image URL format' }, { status: 400 })
         }
 
-        const fileNameParts = fileName.split('-')
-        if (fileNameParts.length < 3 || fileNameParts[0] !== 'profile') {
-            return NextResponse.json(
-                { error: 'Invalid image format' },
-                { status: 400 }
-            )
-        }
+        const { error } = await supabaseAdmin
+            .storage
+            .from(bucketName)
+            .remove([filePath])
 
-        const fileUserId = fileNameParts[1]
-
-        // Only allow users to delete their own images
-        if (fileUserId !== user.id) {
-            return NextResponse.json(
-                { error: 'Forbidden - You can only delete your own profile images' },
-                { status: 403 }
-            )
-        }
-
-        // 🔒 SECURITY: Validate path to prevent traversal
-        const safePath = path.normalize(imageUrl).replace(/^(\.\.[\/\\])+/, '')
-        const filePath = path.join(process.cwd(), 'public', safePath)
-
-        // Ensure file path is within uploads directory
-        const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'profiles')
-        if (!filePath.startsWith(uploadsDir)) {
-            return NextResponse.json(
-                { error: 'Invalid file path' },
-                { status: 400 }
-            )
-        }
-
-        if (existsSync(filePath)) {
-            const { unlink } = await import('fs/promises')
-            await unlink(filePath)
+        if (error) {
+            console.error('Supabase Delete Error:', error)
+            return NextResponse.json({ error: 'Failed to delete image' }, { status: 500 })
         }
 
         return NextResponse.json({

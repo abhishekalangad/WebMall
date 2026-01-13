@@ -10,16 +10,20 @@ const prismaClientSingleton = () => {
   let connectionUrl = process.env.DATABASE_URL || ''
 
   if (isPoolerUrl) {
-    // For Supabase Pooler (Transaction mode), use optimized settings
+    // For Supabase Pooler (Transaction mode)
     if (!connectionUrl.includes('pgbouncer=true')) {
       connectionUrl += connectionUrl.includes('?') ? '&' : '?'
-      connectionUrl += 'pgbouncer=true&connection_limit=10'
+      // In dev, use a reasonable pool size to handle concurrent requests (metadata + page fetch)
+      // In prod (serverless), allow more connections
+      const limit = process.env.NODE_ENV === 'development' ? 5 : 10
+      connectionUrl += `pgbouncer=true&connection_limit=${limit}`
     }
   } else {
-    // For direct connections, use smaller pool
+    // For direct connections
     if (!connectionUrl.includes('connection_limit')) {
       connectionUrl += connectionUrl.includes('?') ? '&' : '?'
-      connectionUrl += 'connection_limit=5'
+      const limit = process.env.NODE_ENV === 'development' ? 5 : 5
+      connectionUrl += `connection_limit=${limit}`
     }
   }
 

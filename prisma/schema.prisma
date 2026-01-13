@@ -107,8 +107,9 @@ model ProductVariant {
   image         String?    @map("image")
   images        String[]   @default([]) @map("variant_images")
   
-  product       Product?   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product       Product?        @relation(fields: [productId], references: [id], onDelete: Cascade)
   cartItems     CartItem[]
+  wishlistItems WishlistItem[]
 
   @@map("product_variants")
   @@schema("public")
@@ -152,7 +153,7 @@ model CartItem {
   
   cart              Cart?           @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product           Product?        @relation(fields: [productId], references: [id])
-  variant           ProductVariant? @relation(fields: [variantId], references: [id])
+  variant           ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
   @@unique([cartId, productId, variantId])
   @@map("cart_items")
@@ -176,12 +177,14 @@ model WishlistItem {
   id         String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id") @db.Uuid
   wishlistId String?   @map("wishlist_id") @db.Uuid
   productId  String?   @map("product_id") @db.Uuid
+  variantId  String?   @map("variant_id") @db.Uuid
   createdAt  DateTime  @default(now()) @map("created_at")
   
-  wishlist   Wishlist? @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
-  product    Product?  @relation(fields: [productId], references: [id])
+  wishlist   Wishlist?        @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  product    Product?         @relation(fields: [productId], references: [id])
+  variant    ProductVariant?  @relation(fields: [variantId], references: [id])
 
-  @@unique([wishlistId, productId])
+  @@unique([wishlistId, productId, variantId])
   @@map("wishlist_items")
   @@schema("public")
 }

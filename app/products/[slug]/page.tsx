@@ -97,6 +97,10 @@ export default async function ProductPage({ params }: Props) {
   // And construct the prop object
   const productWithRating = {
     ...product,
+    variants: product.variants.map(v => ({
+      ...v,
+      priceOverride: v.priceOverride ? Number(v.priceOverride) : null
+    })),
     price: Number(product.price),
     averageRating,
     reviewCount,

@@ -5,11 +5,19 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Plus, X, Trash2, Copy, Edit2, Sparkles, Upload, Loader2, ImageIcon } from 'lucide-react'
+import { Plus, X, Trash2, Copy, Edit2, Sparkles, Upload, Loader2, ImageIcon, Check } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from '@/hooks/use-toast'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export interface ProductVariant {
     id?: string
@@ -27,21 +35,23 @@ interface ProductVariantsProps {
     onChange: (variants: ProductVariant[]) => void
     basePrice: number
     currency?: string
+    existingImages?: { url: string }[]
 }
 
 // Preset attribute options
 const PRESET_ATTRIBUTES = {
-    Color: ['Red', 'Blue', 'Green', 'Black', 'White', 'Yellow', 'Pink', 'Purple', 'Orange', 'Brown', 'Gray', 'Multicolor'],
-    Size: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
-    Material: ['Cotton', 'Polyester', 'Silk', 'Leather', 'Wool', 'Denim', 'Linen'],
-    Style: ['Classic', 'Modern', 'Vintage', 'Casual', 'Formal', 'Sport']
+    Color: ['Red', 'Blue', 'Green', 'Black', 'White', 'Yellow', 'Pink', 'Purple', 'Orange', 'Brown', 'Gray', 'Multicolor', 'Gold', 'Silver'],
+    Size: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'One Size'],
+    Material: ['Cotton', 'Polyester', 'Silk', 'Leather', 'Wool', 'Denim', 'Linen', 'Velvet', 'Satin'],
+    Style: ['Classic', 'Modern', 'Vintage', 'Casual', 'Formal', 'Sport', 'Boho', 'Chic']
 }
 
 export function ProductVariants({
     variants,
     onChange,
     basePrice,
-    currency = 'LKR'
+    currency = 'LKR',
+    existingImages = []
 }: ProductVariantsProps) {
     const { accessToken } = useAuth()
     const [showForm, setShowForm] = useState(false)
@@ -55,16 +65,22 @@ export function ProductVariants({
         image: null,
         images: []
     })
-    const [selectedAttributeType, setSelectedAttributeType] = useState('')
-    const [customAttributeKey, setCustomAttributeKey] = useState('')
-    const [customAttributeValue, setCustomAttributeValue] = useState('')
+
+    // For Attribute Selection
+    const [selectedAttrType, setSelectedAttrType] = useState<string>('')
+    const [selectedAttrValue, setSelectedAttrValue] = useState<string>('')
+    const [customAttrType, setCustomAttrType] = useState('')
+    const [customAttrValue, setCustomAttrValue] = useState('')
+
     const [uploading, setUploading] = useState(false)
 
     // Auto-generate variant name from attributes
     useEffect(() => {
-        if (Object.keys(formData.attributes).length > 0 && !editingIndex) {
+        if (Object.keys(formData.attributes).length > 0 && (!formData.name || !editingIndex)) {
             const attrValues = Object.values(formData.attributes).join(' - ')
-            setFormData(prev => ({ ...prev, name: attrValues }))
+            if (!editingIndex || formData.name === '') {
+                setFormData(prev => ({ ...prev, name: attrValues }))
+            }
         }
     }, [formData.attributes, editingIndex])
 
@@ -73,32 +89,34 @@ export function ProductVariants({
         const attrShort = Object.values(formData.attributes)
             .map(v => v.substring(0, 3).toUpperCase())
             .join('-')
-        return `VAR-${attrShort}`.substring(0, 20)
+        const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
+        return `VAR-${attrShort}-${randomSuffix}`.substring(0, 30)
     }
 
-    const handleAddPresetAttribute = (type: string, value: string) => {
-        setFormData({
-            ...formData,
-            attributes: {
-                ...formData.attributes,
-                [type]: value
-            }
-        })
-    }
+    const handleAddAttribute = () => {
+        const type = selectedAttrType === 'Custom' ? customAttrType : selectedAttrType
+        const value = selectedAttrType === 'Custom' ? customAttrValue : (selectedAttrValue === 'Custom' ? customAttrValue : selectedAttrValue)
 
-    const handleAddCustomAttribute = () => {
-        if (!customAttributeKey.trim() || !customAttributeValue.trim()) return
+        if (!type.trim() || !value.trim()) {
+            toast({ title: 'Error', description: 'Please select or enter both attribute type and value', variant: 'destructive' })
+            return
+        }
 
-        setFormData({
-            ...formData,
+        setFormData(prev => ({
+            ...prev,
             attributes: {
-                ...formData.attributes,
-                [customAttributeKey.trim()]: customAttributeValue.trim()
+                ...prev.attributes,
+                [type.trim()]: value.trim()
             }
-        })
-        setCustomAttributeKey('')
-        setCustomAttributeValue('')
-        setSelectedAttributeType('')
+        }))
+
+        // Reset inputs
+        if (selectedAttrType !== 'Custom') {
+            setSelectedAttrValue('')
+        } else {
+            setCustomAttrType('')
+            setCustomAttrValue('')
+        }
     }
 
     const handleRemoveAttribute = (key: string) => {
@@ -163,6 +181,19 @@ export function ProductVariants({
         }
     }
 
+    const handleSelectExistingImage = (url: string) => {
+        if (formData.images?.includes(url)) return
+
+        setFormData(prev => {
+            const newImages = [...(prev.images || []), url]
+            return {
+                ...prev,
+                images: newImages,
+                image: newImages[0] || null
+            }
+        })
+    }
+
     const handleRemoveVariantImage = (index: number) => {
         setFormData(prev => {
             const newImages = (prev.images || []).filter((_, i) => i !== index)
@@ -176,11 +207,6 @@ export function ProductVariants({
 
     const handleSaveVariant = () => {
         // Validate
-        if (!formData.sku.trim()) {
-            toast({ title: 'Error', description: 'SKU is required', variant: 'destructive' })
-            return
-        }
-
         if (!formData.name.trim()) {
             toast({ title: 'Error', description: 'Variant name is required', variant: 'destructive' })
             return
@@ -191,20 +217,26 @@ export function ProductVariants({
             return
         }
 
+        // Auto generate SKU if missing
+        let processedData = { ...formData }
+        if (!processedData.sku.trim()) {
+            processedData.sku = generateSKUSuggestion()
+        }
+
         // Check for duplicate SKU
         const duplicateSKU = variants.some((v, i) =>
-            v.sku === formData.sku && i !== editingIndex
+            v.sku === processedData.sku && i !== editingIndex
         )
+        // If duplicate, append random string
         if (duplicateSKU) {
-            toast({ title: 'Error', description: 'SKU already exists. Please use a unique SKU.', variant: 'destructive' })
-            return
+            processedData.sku = `${processedData.sku}-${Math.floor(Math.random() * 1000)}`
         }
 
         const newVariants = [...variants]
         if (editingIndex !== null) {
-            newVariants[editingIndex] = formData
+            newVariants[editingIndex] = processedData
         } else {
-            newVariants.push(formData)
+            newVariants.push(processedData)
         }
 
         onChange(newVariants)
@@ -221,7 +253,7 @@ export function ProductVariants({
         const variant = variants[index]
         setFormData({
             ...variant,
-            sku: `${variant.sku}-COPY`,
+            sku: `${variant.sku}-COPY-${Math.floor(Math.random() * 100)}`,
             name: `${variant.name} (Copy)`
         })
         setEditingIndex(null)
@@ -245,9 +277,10 @@ export function ProductVariants({
             image: null,
             images: []
         })
-        setSelectedAttributeType('')
-        setCustomAttributeKey('')
-        setCustomAttributeValue('')
+        setSelectedAttrType('')
+        setSelectedAttrValue('')
+        setCustomAttrType('')
+        setCustomAttrValue('')
     }
 
     return (
@@ -255,290 +288,292 @@ export function ProductVariants({
             {/* Header */}
             {!showForm && (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="p-1 px-2 bg-pink-50 rounded-lg border border-pink-100 inline-block w-fit">
-                        {variants.length > 0 ? (
-                            <p className="text-xs font-medium text-pink-700">
-                                {variants.length} Variant{variants.length !== 1 ? 's' : ''} Created
-                            </p>
-                        ) : (
-                            <p className="text-xs font-medium text-gray-500">No variants added yet</p>
-                        )}
+                    <div className="flex items-center gap-2">
+                        <span className="p-2 bg-pink-100 rounded-lg text-pink-600">
+                            <Sparkles className="h-4 w-4" />
+                        </span>
+                        <div>
+                            <h3 className="font-semibold text-gray-900">Product Variants</h3>
+                            <p className="text-xs text-gray-500">{variants.length} active variant{variants.length !== 1 ? 's' : ''}</p>
+                        </div>
                     </div>
                     <Button
                         type="button"
-                        variant="outline"
-                        size="sm"
                         onClick={() => setShowForm(true)}
-                        className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold border-none w-full sm:w-auto shadow-sm"
+                        className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto shadow-sm"
                     >
                         <Plus className="h-4 w-4 mr-2" />
-                        Add Variant
+                        Add New Variant
                     </Button>
                 </div>
             )}
 
             {/* Existing Variants List */}
             {variants.length > 0 && !showForm && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-3">
                     {variants.map((variant, index) => (
-                        <Card key={index} className="p-4 hover:shadow-md transition-shadow">
-                            <div className="flex gap-4">
-                                {/* Variant Image Preview */}
-                                <div className="h-16 w-16 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-200">
-                                    {variant.image ? (
-                                        <Image
-                                            src={variant.image}
-                                            alt={variant.name}
-                                            width={64}
-                                            height={64}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                            <ImageIcon className="h-6 w-6" />
-                                        </div>
-                                    )}
-                                </div>
+                        <div key={index} className="group flex flex-col sm:flex-row gap-4 p-4 bg-white border border-gray-100 rounded-xl hover:shadow-md transition-all hover:border-pink-200">
+                            {/* Variant Image */}
+                            <div className="relative h-20 w-20 sm:h-24 sm:w-24 bg-gray-50 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
+                                {variant.image ? (
+                                    <Image
+                                        src={variant.image}
+                                        alt={variant.name}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                        <ImageIcon className="h-8 w-8" />
+                                    </div>
+                                )}
+                            </div>
 
-                                <div className="space-y-3 flex-1">
-                                    {/* Header */}
-                                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="font-semibold text-gray-900 text-sm truncate">{variant.name}</h4>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <Badge variant="secondary" className="text-[10px] font-mono">
-                                                    {variant.sku}
-                                                </Badge>
-                                                <span className="text-[10px] text-gray-400">
-                                                    {variant.images?.length || (variant.image ? 1 : 0)} photos
-                                                </span>
-                                            </div>
+                            <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+                                <div>
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 truncate pr-4">{variant.name}</h4>
+                                            <p className="text-xs text-gray-500 font-mono mt-1">SKU: {variant.sku}</p>
                                         </div>
-                                        <div className="flex gap-1 bg-gray-50 p-1 rounded-md border self-end sm:self-start">
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleDuplicateVariant(index)}
-                                                className="h-7 w-7 p-0 hover:bg-white hover:shadow-sm"
-                                                title="Duplicate"
-                                            >
-                                                <Copy className="h-3.5 w-3.5" />
+                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-blue-600" onClick={() => handleEditVariant(index)}>
+                                                <Edit2 className="h-4 w-4" />
                                             </Button>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleEditVariant(index)}
-                                                className="h-7 w-7 p-0 hover:bg-white hover:shadow-sm"
-                                                title="Edit"
-                                            >
-                                                <Edit2 className="h-3.5 w-3.5" />
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-green-600" onClick={() => handleDuplicateVariant(index)}>
+                                                <Copy className="h-4 w-4" />
                                             </Button>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleDeleteVariant(index)}
-                                                className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-white hover:shadow-sm"
-                                                title="Delete"
-                                            >
-                                                <Trash2 className="h-3.5 w-3.5" />
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-red-600" onClick={() => handleDeleteVariant(index)}>
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     </div>
 
-                                    {/* Attributes */}
-                                    <div className="flex flex-wrap gap-1.5">
+                                    <div className="flex flex-wrap gap-2 mt-3">
                                         {Object.entries(variant.attributes).map(([key, value]) => (
-                                            <Badge key={key} className="bg-pink-100 text-pink-700 text-xs">
-                                                {key}: {value}
-                                            </Badge>
+                                            <div key={key} className="flex items-center text-xs bg-gray-50 border border-gray-200 rounded-md px-2 py-1">
+                                                <span className="text-gray-500 mr-1">{key}:</span>
+                                                <span className="font-medium text-gray-900">{value}</span>
+                                            </div>
                                         ))}
                                     </div>
+                                </div>
 
-                                    {/* Stats */}
-                                    <div className="flex items-center justify-between text-xs pt-2 border-t">
-                                        <span className="font-medium text-gray-700">
-                                            {currency} {(variant.priceOverride || basePrice).toLocaleString()}
-                                            {variant.priceOverride && (
-                                                <span className="text-gray-400 ml-1">(override)</span>
-                                            )}
-                                        </span>
-                                        <span className={`font-medium ${variant.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                            {variant.stock} units
-                                        </span>
+                                <div className="flex items-end justify-between mt-4">
+                                    <div className="flex gap-4 text-sm">
+                                        <div>
+                                            <span className="text-xs text-gray-500 block">Price</span>
+                                            <span className="font-semibold text-gray-900">
+                                                {currency} {(variant.priceOverride || basePrice).toLocaleString()}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span className="text-xs text-gray-500 block">Stock</span>
+                                            <span className={`font-semibold ${variant.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                {variant.stock}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </Card>
+                        </div>
                     ))}
                 </div>
             )}
 
             {/* Add/Edit Form */}
             {showForm && (
-                <Card className="p-4 sm:p-6 space-y-6 border-2 border-pink-200 bg-gradient-to-br from-pink-50/30 to-yellow-50/30">
-                    {/* Form Header */}
-                    <div className="flex items-center justify-between pb-3 border-b">
+                <Card className="p-0 overflow-hidden border-2 border-pink-100 shadow-xl rounded-xl animate-in zoom-in-95 duration-200">
+                    <div className="px-6 py-4 border-b bg-gray-50/50 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <Sparkles className="h-5 w-5 text-pink-500" />
-                            <h3 className="text-lg font-semibold text-gray-900">
-                                {editingIndex !== null ? 'Edit Variant' : 'Add New Variant'}
-                            </h3>
+                            <div className="h-8 w-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
+                                {editingIndex !== null ? <Edit2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-gray-900">{editingIndex !== null ? 'Edit Variant' : 'Create Variant'}</h3>
+                                <p className="text-xs text-gray-500">Configure variant details and attributes</p>
+                            </div>
                         </div>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleCancelForm}
-                            className="h-8 w-8 p-0"
-                        >
+                        <Button variant="ghost" size="sm" onClick={handleCancelForm} className="h-8 w-8 p-0 rounded-full hover:bg-gray-200">
                             <X className="h-4 w-4" />
                         </Button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Left Column: Attributes */}
-                        <div className="space-y-4">
-                            <div>
-                                <Label className="text-sm font-semibold flex items-center gap-2">
-                                    <svg className="h-4 w-4 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                    </svg>
-                                    Variant Attributes *
-                                </Label>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Choose from presets or add custom attributes
-                                </p>
-                            </div>
+                    <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* LEFT COLUMN: Attributes & Info */}
+                        <div className="space-y-6">
+                            {/* Attribute Selector */}
+                            <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 space-y-4">
+                                <Label className="text-sm font-bold text-blue-900">1. Variant Attributes</Label>
 
-                            {/* Selected Attributes */}
-                            {Object.keys(formData.attributes).length > 0 && (
-                                <div className="flex flex-wrap gap-2 p-3 bg-white rounded-lg border">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs font-medium text-gray-600">Type</Label>
+                                        <Select
+                                            value={selectedAttrType}
+                                            onValueChange={(val) => {
+                                                setSelectedAttrType(val)
+                                                setSelectedAttrValue('')
+                                            }}
+                                        >
+                                            <SelectTrigger className="h-9 bg-white border-blue-200">
+                                                <SelectValue placeholder="Attribute" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {Object.keys(PRESET_ATTRIBUTES).map(key => (
+                                                    <SelectItem key={key} value={key}>{key}</SelectItem>
+                                                ))}
+                                                <SelectItem value="Custom">+ Custom Type</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        {selectedAttrType === 'Custom' && (
+                                            <Input
+                                                placeholder="e.g. Fabric"
+                                                value={customAttrType}
+                                                onChange={e => setCustomAttrType(e.target.value)}
+                                                className="h-9 mt-1"
+                                            />
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs font-medium text-gray-600">Value</Label>
+                                        {selectedAttrType && selectedAttrType !== 'Custom' ? (
+                                            <Select
+                                                value={selectedAttrValue}
+                                                onValueChange={(val) => {
+                                                    if (val === 'Custom_Value_Option') {
+                                                        setSelectedAttrValue('Custom') // Logic to show input
+                                                    } else {
+                                                        setSelectedAttrValue(val)
+                                                    }
+                                                }}
+                                            >
+                                                <SelectTrigger className="h-9 bg-white border-blue-200">
+                                                    <SelectValue placeholder="Value" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {PRESET_ATTRIBUTES[selectedAttrType as keyof typeof PRESET_ATTRIBUTES].map(opt => (
+                                                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                                    ))}
+                                                    <SelectItem value="Custom">+ Custom Value</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        ) : (
+                                            <div className="h-9 flex items-center text-xs text-gray-400 italic px-2 border border-transparent">
+                                                Select Type first
+                                            </div>
+                                        )}
+
+                                        {(selectedAttrValue === 'Custom' || selectedAttrType === 'Custom') && (
+                                            <Input
+                                                placeholder="e.g. Silk"
+                                                value={customAttrValue}
+                                                onChange={e => setCustomAttrValue(e.target.value)}
+                                                className="h-9 mt-1"
+                                            />
+                                        )}
+                                    </div>
+                                </div>
+
+                                <Button
+                                    type="button"
+                                    onClick={handleAddAttribute}
+                                    variant="secondary"
+                                    className="w-full h-9 bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                >
+                                    Add Attribute
+                                </Button>
+
+                                {/* Selected Attributes Chips */}
+                                <div className="flex flex-wrap gap-2 pt-2">
                                     {Object.entries(formData.attributes).map(([key, value]) => (
-                                        <Badge key={key} className="bg-pink-100 text-pink-700 text-sm py-1.5 px-3">
-                                            {key}: {value}
+                                        <Badge key={key} className="bg-white border border-blue-200 text-blue-800 pointer-events-none pl-2 pr-1 py-1 h-7 flex items-center gap-1">
+                                            <span>{key}: <span className="font-bold">{value}</span></span>
                                             <button
-                                                type="button"
-                                                onClick={() => handleRemoveAttribute(key)}
-                                                className="ml-2 hover:text-red-600"
+                                                onClick={(e) => { e.preventDefault(); handleRemoveAttribute(key); }}
+                                                className="pointer-events-auto h-5 w-5 rounded-full hover:bg-red-50 hover:text-red-500 flex items-center justify-center ml-1 transition-colors"
                                             >
                                                 <X className="h-3 w-3" />
                                             </button>
                                         </Badge>
                                     ))}
+                                    {Object.keys(formData.attributes).length === 0 && (
+                                        <div className="text-xs text-gray-400 italic text-center w-full">No attributes added yet</div>
+                                    )}
                                 </div>
-                            )}
-
-                            {/* Preset Attributes */}
-                            <div className="space-y-3">
-                                {Object.entries(PRESET_ATTRIBUTES).map(([type, options]) => {
-                                    const hasThisType = type in formData.attributes
-                                    return (
-                                        <div key={type} className="space-y-2">
-                                            <Label className="text-xs font-medium text-gray-700 flex items-center gap-2">
-                                                {type}
-                                                {hasThisType && <Badge variant="outline" className="text-xs">Selected</Badge>}
-                                            </Label>
-                                            <div className="flex flex-wrap gap-2">
-                                                {options.map(value => {
-                                                    const isSelected = formData.attributes[type] === value
-                                                    return (
-                                                        <button
-                                                            key={value}
-                                                            type="button"
-                                                            onClick={() => handleAddPresetAttribute(type, value)}
-                                                            className={`text-xs py-2 px-3 rounded-md border transition-all whitespace-nowrap min-w-[60px] ${isSelected
-                                                                ? 'bg-pink-500 text-white border-pink-600 shadow-sm'
-                                                                : 'bg-white text-gray-700 border-gray-300 hover:border-pink-300 hover:bg-pink-50'
-                                                                }`}
-                                                        >
-                                                            {value}
-                                                        </button>
-                                                    )
-                                                })}
-                                            </div>
-                                        </div>
-                                    )
-                                })}
                             </div>
 
-                            {/* Custom Attribute */}
-                            <div className="pt-3 border-t">
-                                <Label className="text-xs font-medium text-gray-700 mb-2 block">
-                                    Or Add Custom Attribute
-                                </Label>
-                                <div className="flex flex-col sm:flex-row gap-2">
+                            {/* Basic Details */}
+                            <div className="space-y-4">
+                                <Label className="text-sm font-bold text-gray-900">2. Variant Details</Label>
+
+                                <div>
+                                    <Label className="text-xs font-medium text-gray-600">Variant Name</Label>
                                     <Input
-                                        type="text"
-                                        placeholder="Type (e.g., Pattern)"
-                                        value={customAttributeKey}
-                                        onChange={(e) => setCustomAttributeKey(e.target.value)}
-                                        className="w-full sm:flex-1 h-9 text-sm"
+                                        value={formData.name}
+                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                        className="mt-1"
+                                        placeholder="e.g. Red - Large"
                                     />
-                                    <div className="flex gap-2 w-full sm:flex-1">
-                                        <Input
-                                            type="text"
-                                            placeholder="Value (e.g., Striped)"
-                                            value={customAttributeValue}
-                                            onChange={(e) => setCustomAttributeValue(e.target.value)}
-                                            className="flex-1 h-9 text-sm"
-                                        />
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={handleAddCustomAttribute}
-                                            className="h-9 px-3 bg-pink-50 hover:bg-pink-100 border-pink-200"
-                                            disabled={!customAttributeKey.trim() || !customAttributeValue.trim()}
-                                        >
-                                            <Plus className="h-4 w-4 text-pink-600" />
-                                        </Button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label className="text-xs font-medium text-gray-600">SKU</Label>
+                                        <div className="flex gap-2 mt-1">
+                                            <Input
+                                                value={formData.sku}
+                                                onChange={e => setFormData({ ...formData, sku: e.target.value })}
+                                                placeholder="Auto-generated"
+                                                className="font-mono text-xs"
+                                            />
+                                            <Button type="button" variant="outline" size="icon" onClick={() => setFormData({ ...formData, sku: generateSKUSuggestion() })} title="Regenerate SKU">
+                                                <Sparkles className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </div>
+                                    <div>
+                                        <Label className="text-xs font-medium text-gray-600">Stock</Label>
+                                        <Input
+                                            type="number"
+                                            value={formData.stock}
+                                            onChange={e => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
+                                            className="mt-1"
+                                            min="0"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <Label className="text-xs font-medium text-gray-600">Price Override (Optional)</Label>
+                                    <div className="relative mt-1">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">{currency}</span>
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            value={formData.priceOverride ?? ''}
+                                            onChange={e => setFormData({ ...formData, priceOverride: e.target.value ? parseFloat(e.target.value) : null })}
+                                            className="pl-12"
+                                            placeholder={`Default: ${basePrice}`}
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 mt-1">Leave empty to use base product price ({currency} {basePrice})</p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Right Column: Details & Image */}
+                        {/* RIGHT COLUMN: Images */}
                         <div className="space-y-6">
-                            {/* Variant Image */}
-                            <div>
-                                <Label className="text-sm font-semibold flex items-center gap-2 mb-3">
-                                    <ImageIcon className="h-4 w-4 text-pink-500" />
-                                    Variant Images
-                                </Label>
+                            <Label className="text-sm font-bold text-gray-900">3. Variant Images</Label>
 
-                                <div className="space-y-4">
-                                    {/* Image Grid */}
-                                    {(formData.images && formData.images.length > 0) && (
-                                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                                            {formData.images.map((url, index) => (
-                                                <div key={index} className="relative aspect-square group rounded-lg overflow-hidden border border-gray-200">
-                                                    <Image
-                                                        src={url}
-                                                        alt={`Variant ${index + 1}`}
-                                                        fill
-                                                        className="object-cover"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemoveVariantImage(index)}
-                                                        className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    >
-                                                        <Trash2 className="h-3 w-3" />
-                                                    </button>
-                                                    {index === 0 && (
-                                                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-[10px] text-white py-0.5 text-center">
-                                                            Primary
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {/* Upload Button */}
-                                    <div className="flex items-center gap-4">
+                            <Tabs defaultValue="upload" className="w-full">
+                                <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="upload">Upload New</TabsTrigger>
+                                    <TabsTrigger value="existing">Select Existing</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="upload" className="mt-4">
+                                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:bg-gray-50 transition-colors">
                                         <input
                                             type="file"
                                             id="variant-image-upload"
@@ -548,131 +583,78 @@ export function ProductVariants({
                                             onChange={handleUploadImage}
                                             disabled={uploading}
                                         />
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            className="w-full h-24 border-dashed border-2 flex flex-col items-center justify-center gap-2 hover:border-pink-400 hover:bg-pink-50/50 transition-all"
-                                            onClick={() => document.getElementById('variant-image-upload')?.click()}
-                                            disabled={uploading}
-                                        >
+                                        <label htmlFor="variant-image-upload" className="cursor-pointer flex flex-col items-center gap-2">
                                             {uploading ? (
-                                                <div className="flex flex-col items-center gap-2">
-                                                    <Loader2 className="h-6 w-6 animate-spin text-pink-500" />
-                                                    <span className="text-xs font-medium text-gray-500">Uploading...</span>
-                                                </div>
+                                                <Loader2 className="h-8 w-8 animate-spin text-pink-500" />
                                             ) : (
-                                                <>
-                                                    <Upload className="h-6 w-6 text-pink-500" />
-                                                    <span className="text-xs font-medium text-gray-700">Add Images</span>
-                                                </>
+                                                <div className="h-10 w-10 rounded-full bg-pink-50 flex items-center justify-center text-pink-500">
+                                                    <Upload className="h-5 w-5" />
+                                                </div>
                                             )}
-                                        </Button>
+                                            <p className="text-sm font-medium text-gray-900">Click to upload images</p>
+                                            <p className="text-xs text-gray-500">JPG, PNG, WebP up to 5MB</p>
+                                        </label>
                                     </div>
+                                </TabsContent>
+                                <TabsContent value="existing" className="mt-4">
+                                    {existingImages.length > 0 ? (
+                                        <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1">
+                                            {existingImages.map((img, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    type="button"
+                                                    onClick={() => handleSelectExistingImage(img.url)}
+                                                    className="relative aspect-square border rounded-md overflow-hidden hover:ring-2 hover:ring-pink-500 focus:outline-none"
+                                                >
+                                                    <Image src={img.url} alt="Product" fill className="object-cover" />
+                                                    {formData.images?.includes(img.url) && (
+                                                        <div className="absolute inset-0 bg-pink-500/20 flex items-center justify-center">
+                                                            <div className="bg-pink-500 text-white rounded-full p-0.5"><Check className="h-3 w-3" /></div>
+                                                        </div>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-gray-500 text-center py-8">No main product images available</p>
+                                    )}
+                                </TabsContent>
+                            </Tabs>
 
-                                    <p className="text-[11px] text-gray-500 italic">
-                                        Tip: You can upload multiple images. The first image will be used as primary.
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Details */}
-                            <div className="space-y-4">
-                                <div>
-                                    <Label htmlFor="variant-sku" className="text-sm">
-                                        SKU * <span className="text-gray-400">(Unique Identifier)</span>
-                                    </Label>
-                                    <div className="flex gap-2 mt-1.5">
-                                        <Input
-                                            id="variant-sku"
-                                            type="text"
-                                            placeholder="e.g., TSHIRT-RED-L"
-                                            value={formData.sku}
-                                            onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                                            className="flex-1"
-                                        />
-                                        {Object.keys(formData.attributes).length > 0 && (
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => setFormData({ ...formData, sku: generateSKUSuggestion() })}
-                                                title="Auto-generate SKU"
-                                            >
-                                                <Sparkles className="h-4 w-4" />
-                                            </Button>
-                                        )}
+                            {/* Selected Images Grid */}
+                            <div className="space-y-2">
+                                <Label className="text-xs font-medium text-gray-600">Selected Images ({formData.images?.length || 0})</Label>
+                                {formData.images && formData.images.length > 0 ? (
+                                    <div className="grid grid-cols-4 gap-3">
+                                        {formData.images.map((url, idx) => (
+                                            <div key={idx} className="group relative aspect-square rounded-lg overflow-hidden border border-gray-200">
+                                                <Image src={url} alt="Variant" fill className="object-cover" />
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                                                <button
+                                                    onClick={() => handleRemoveVariantImage(idx)}
+                                                    className="absolute top-1 right-1 h-5 w-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110"
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </button>
+                                                {idx === 0 && (
+                                                    <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] text-center py-0.5">Primary</div>
+                                                )}
+                                            </div>
+                                        ))}
                                     </div>
-                                </div>
-
-                                <div>
-                                    <Label htmlFor="variant-name" className="text-sm">
-                                        Variant Name * <span className="text-gray-400">(Display Name)</span>
-                                    </Label>
-                                    <Input
-                                        id="variant-name"
-                                        type="text"
-                                        placeholder="Auto-generated from attributes"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        className="mt-1.5"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <Label htmlFor="variant-price" className="text-sm">
-                                            Price Override
-                                        </Label>
-                                        <Input
-                                            id="variant-price"
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            placeholder={`Base: ${currency} ${basePrice.toLocaleString()}`}
-                                            value={formData.priceOverride || ''}
-                                            onChange={(e) => setFormData({
-                                                ...formData,
-                                                priceOverride: e.target.value ? parseFloat(e.target.value) : null
-                                            })}
-                                            className="mt-1.5"
-                                        />
+                                ) : (
+                                    <div className="h-20 bg-gray-50 rounded-lg flex items-center justify-center text-xs text-gray-400 border border-dashed border-gray-200">
+                                        No images selected
                                     </div>
-
-                                    <div>
-                                        <Label htmlFor="variant-stock" className="text-sm">
-                                            Stock Count *
-                                        </Label>
-                                        <Input
-                                            id="variant-stock"
-                                            type="number"
-                                            min="0"
-                                            placeholder="0"
-                                            value={formData.stock}
-                                            onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
-                                            className="mt-1.5"
-                                        />
-                                    </div>
-                                </div>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleCancelForm}
-                            className="w-full sm:w-auto"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="button"
-                            onClick={handleSaveVariant}
-                            className="w-full sm:w-auto bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold"
-                        >
-                            {editingIndex !== null ? 'Update Variant' : 'Add Variant'}
+                    <div className="p-4 bg-gray-50 border-t flex items-center justify-end gap-3">
+                        <Button variant="outline" onClick={handleCancelForm} type="button">Cancel</Button>
+                        <Button onClick={handleSaveVariant} type="button" className="bg-pink-600 hover:bg-pink-700 text-white">
+                            {editingIndex !== null ? 'Update Variant' : 'Save Variant'}
                         </Button>
                     </div>
                 </Card>
@@ -680,26 +662,40 @@ export function ProductVariants({
 
             {/* Empty State */}
             {variants.length === 0 && !showForm && (
-                <Card className="p-8 text-center border-dashed border-2 bg-gray-50">
-                    <svg className="h-12 w-12 text-gray-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                    </svg>
-                    <p className="text-gray-600 font-medium mb-1">No variants yet</p>
-                    <p className="text-sm text-gray-500 mb-4">
-                        Add variants to offer different options like colors, sizes, or materials
-                    </p>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowForm(true)}
-                        className="bg-gradient-to-r from-pink-50 to-yellow-50"
-                    >
+                <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                    <div className="h-12 w-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+                        <PackageIcon className="h-6 w-6 text-gray-400" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-gray-900">No Variants Added</h3>
+                    <p className="text-xs text-gray-500 max-w-xs mx-auto mt-1 mb-4">Create variants to offer different options like colors, sizes, or materials for this product.</p>
+                    <Button onClick={() => setShowForm(true)} variant="outline">
                         <Plus className="h-4 w-4 mr-2" />
-                        Create First Variant
+                        Add First Variant
                     </Button>
-                </Card>
+                </div>
             )}
         </div>
+    )
+}
+
+function PackageIcon(props: any) {
+    return (
+        <svg
+            {...props}
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="m7.5 4.27 9 5.15" />
+            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+            <path d="m3.3 7 8.7 5 8.7-5" />
+            <path d="M12 22v-10" />
+        </svg>
     )
 }

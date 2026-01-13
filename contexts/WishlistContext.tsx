@@ -6,7 +6,10 @@ import { useAuth } from './AuthContext'
 export interface WishlistItem {
   id: string
   productId: string
+  variantId?: string | null  // Add variant support
   name: string
+  variantName?: string  // e.g., "Pink - Classic"
+  variantAttributes?: Record<string, string>  // e.g., { Color: "Pink", Style: "Classic" }
   price: number
   currency: string
   image?: string
@@ -18,8 +21,8 @@ export interface WishlistItem {
 interface WishlistContextType {
   items: WishlistItem[]
   addItem: (item: Omit<WishlistItem, 'id' | 'addedAt'>) => void
-  removeItem: (productId: string) => void
-  isInWishlist: (productId: string) => boolean
+  removeItem: (productId: string, variantId?: string) => void  // Add optional variantId parameter
+  isInWishlist: (productId: string, variantId?: string) => boolean  // Add optional variantId parameter
   clearWishlist: () => void
   totalItems: number
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void
@@ -80,7 +83,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   }
 
   // Add item to server wishlist
-  const addItemToServer = useCallback(async (productId: string) => {
+  const addItemToServer = useCallback(async (productId: string, variantId?: string) => {
     if (!user) return
 
     try {
@@ -93,7 +96,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ productId })
+        body: JSON.stringify({ productId, variantId })
       })
     } catch (error) {
       console.error('Failed to add to server wishlist:', error)
@@ -101,14 +104,17 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   }, [user, getAuthToken])
 
   // Remove item from server wishlist
-  const removeItemFromServer = useCallback(async (productId: string) => {
+  const removeItemFromServer = useCallback(async (productId: string, variantId?: string) => {
     if (!user) return
 
     try {
       const token = await getAuthToken()
       if (!token) return
 
-      await fetch(`/api/wishlist?productId=${productId}`, {
+      const params = new URLSearchParams({ productId })
+      if (variantId) params.append('variantId', variantId)
+
+      await fetch(`/api/wishlist?${params.toString()}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -217,8 +223,9 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const addItem = useCallback((newItem: Omit<WishlistItem, 'id' | 'addedAt'>) => {
-    if (isInWishlist(newItem.productId)) {
-      showToast(`${newItem.name} is already in your wishlist!`, 'info')
+    if (isInWishlist(newItem.productId, newItem.variantId || undefined)) {
+      const itemName = newItem.variantName ? `${newItem.name} (${newItem.variantName})` : newItem.name
+      showToast(`${itemName} is already in your wishlist!`, 'info')
       return
     }
 
@@ -229,24 +236,39 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     }
 
     setItems(prev => [...prev, wishlistItem])
-    showToast(`${newItem.name} added to wishlist!`, 'success')
+    const itemName = newItem.variantName ? `${newItem.name} (${newItem.variantName})` : newItem.name
+    showToast(`${itemName} added to wishlist!`, 'success')
 
     // Add to server for logged-in users
-    addItemToServer(newItem.productId)
+    addItemToServer(newItem.productId, newItem.variantId || undefined)
   }, [items, addItemToServer])
 
-  const removeItem = useCallback((productId: string) => {
-    const itemToRemove = items.find(item => item.productId === productId)
-    setItems(prev => prev.filter(item => item.productId !== productId))
+  const removeItem = useCallback((productId: string, variantId?: string) => {
+    const itemToRemove = items.find(item =>
+      item.productId === productId &&
+      (variantId ? item.variantId === variantId : true)
+    )
+
+    setItems(prev => prev.filter(item => {
+      if (item.productId !== productId) return true
+      if (variantId && item.variantId !== variantId) return true
+      return false
+    }))
+
     if (itemToRemove) {
-      showToast(`${itemToRemove.name} removed from wishlist`, 'info')
+      const itemName = itemToRemove.variantName ? `${itemToRemove.name} (${itemToRemove.variantName})` : itemToRemove.name
+      showToast(`${itemName} removed from wishlist`, 'info')
       // Remove from server for logged-in users
-      removeItemFromServer(productId)
+      removeItemFromServer(productId, variantId)
     }
   }, [items, removeItemFromServer])
 
-  const isInWishlist = useCallback((productId: string) => {
-    return items.some(item => item.productId === productId)
+  const isInWishlist = useCallback((productId: string, variantId?: string) => {
+    return items.some(item => {
+      if (item.productId !== productId) return false
+      if (variantId) return item.variantId === variantId
+      return true
+    })
   }, [items])
 
   const clearWishlist = useCallback(() => {

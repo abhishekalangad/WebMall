@@ -38,6 +38,16 @@ export async function GET(request: NextRequest) {
                                     select: { name: true }
                                 }
                             }
+                        },
+                        variant: {
+                            select: {
+                                id: true,
+                                sku: true,
+                                name: true,
+                                attributes: true,
+                                priceOverride: true,
+                                image: true
+                            }
                         }
                     }
                 }
@@ -78,6 +88,16 @@ export async function GET(request: NextRequest) {
                                         select: { name: true }
                                     }
                                 }
+                            },
+                            variant: {
+                                select: {
+                                    id: true,
+                                    sku: true,
+                                    name: true,
+                                    attributes: true,
+                                    priceOverride: true,
+                                    image: true
+                                }
                             }
                         }
                     }
@@ -86,17 +106,28 @@ export async function GET(request: NextRequest) {
         }
 
         // Transform to WishlistItem format expected by frontend
-        const wishlistItems = wishlist.items.map(item => ({
-            id: item.id,
-            productId: item.productId!,
-            name: item.product?.name || 'Unknown Product',
-            price: Number(item.product?.price || 0),
-            currency: item.product?.currency || 'LKR',
-            image: item.product?.images[0]?.url,
-            slug: item.product?.slug || '',
-            category: item.product?.category?.name || 'Uncategorized',
-            addedAt: item.createdAt.toISOString()
-        }))
+        const wishlistItems = wishlist.items.map(item => {
+            const variant = item.variant
+            const variantName = variant ? variant.name : undefined
+            const variantAttributes = variant ? (variant.attributes as Record<string, string>) : undefined
+            const price = variant?.priceOverride ? Number(variant.priceOverride) : Number(item.product?.price || 0)
+            const image = variant?.image || item.product?.images[0]?.url
+
+            return {
+                id: item.id,
+                productId: item.productId!,
+                variantId: item.variantId,
+                name: item.product?.name || 'Unknown Product',
+                variantName,
+                variantAttributes,
+                price,
+                currency: item.product?.currency || 'LKR',
+                image,
+                slug: item.product?.slug || '',
+                category: item.product?.category?.name || 'Uncategorized',
+                addedAt: item.createdAt.toISOString()
+            }
+        })
 
         return NextResponse.json({ items: wishlistItems })
     } catch (error: any) {
@@ -121,7 +152,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { productId } = body
+        const { productId, variantId } = body
 
         // Find or create wishlist
         let wishlist = await prisma.wishlist.findFirst({
@@ -144,11 +175,12 @@ export async function POST(request: NextRequest) {
             })
         }
 
-        // Check if item already exists
+        // Check if item already exists (considering variant)
         const existingItem = await prisma.wishlistItem.findFirst({
             where: {
                 wishlistId: wishlist.id,
-                productId: productId
+                productId: productId,
+                variantId: variantId || null
             }
         })
 
@@ -162,7 +194,8 @@ export async function POST(request: NextRequest) {
         await prisma.wishlistItem.create({
             data: {
                 wishlistId: wishlist.id,
-                productId: productId
+                productId: productId,
+                variantId: variantId || null
             }
         })
 
@@ -190,6 +223,7 @@ export async function DELETE(request: NextRequest) {
 
         const { searchParams } = new URL(request.url)
         const productId = searchParams.get('productId')
+        const variantId = searchParams.get('variantId')
 
         const wishlist = await prisma.wishlist.findFirst({
             where: { user: { supabaseId: user.id } }
@@ -200,11 +234,12 @@ export async function DELETE(request: NextRequest) {
         }
 
         if (productId) {
-            // Remove specific item
+            // Remove specific item (considering variant)
             await prisma.wishlistItem.deleteMany({
                 where: {
                     wishlistId: wishlist.id,
-                    productId: productId
+                    productId: productId,
+                    variantId: variantId || null
                 }
             })
         } else {

@@ -48,7 +48,6 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
     // Local quantity
     const [quantity, setQuantity] = useState(1)
     const [activeTab, setActiveTab] = useState('Description')
-    const [selectedVariant, setSelectedVariant] = useState<any>(null)
 
     // Review state
     const [rating, setRating] = useState(0)
@@ -56,42 +55,211 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
     const [isSubmittingReview, setIsSubmittingReview] = useState(false)
     const [reviews, setReviews] = useState<any[]>(initialProduct.reviews || [])
 
-    // Auto-switch image when variant is selected
+    // State for selected attributes (allows partial selection)
+    const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({})
+    const [selectedVariant, setSelectedVariant] = useState<any>(null)
+
+    // Reset state when product changes
     useEffect(() => {
-        if (selectedVariant) {
-            // Priority 1: If variant has multiple images, show the first one
-            if (selectedVariant.images && selectedVariant.images.length > 0) {
-                setManualImageOverride(selectedVariant.images[0])
-                return
+        setSelectedAttributes({})
+        setSelectedVariant(null)
+        setQuantity(1)
+        setSelectedImage(0)
+        setManualImageOverride(null)
+    }, [initialProduct.id])
+
+    // Auto-select first variant on load
+    useEffect(() => {
+        if (initialProduct.variants && initialProduct.variants.length > 0) {
+            // Get the first variant
+            const firstVariant = initialProduct.variants[0]
+
+            // Auto-select its attributes
+            if (firstVariant.attributes && Object.keys(firstVariant.attributes).length > 0) {
+                setSelectedAttributes(firstVariant.attributes)
+            }
+        }
+    }, [initialProduct.id]) // Only run when product changes
+
+    // Update selectedVariant when attributes change
+    useEffect(() => {
+        if (!initialProduct.variants || initialProduct.variants.length === 0) {
+            setSelectedVariant(null)
+            return
+        }
+
+        // Find variants where all of THEIR attributes match the current selection
+        // We do NOT require the selection to contain ONLY the variant's attributes
+        // This allows selecting "Gray" (no style) even if "Style: Classic" was previously selected
+        const matches = initialProduct.variants.filter((v: any) => {
+            const variantKeys = Object.keys(v.attributes)
+            if (variantKeys.length === 0) return false
+
+            return variantKeys.every(key => selectedAttributes[key] === v.attributes[key])
+        })
+
+        // If multiple matches found, prioritize the one with the most attributes (most specific)
+        // e.g. favor {Color: Red, Size: L} over {Color: Red} if both technically match
+        if (matches.length > 0) {
+            matches.sort((a: any, b: any) =>
+                Object.keys(b.attributes).length - Object.keys(a.attributes).length
+            )
+            setSelectedVariant(matches[0])
+        } else {
+            setSelectedVariant(null)
+        }
+    }, [selectedAttributes, initialProduct.variants])
+
+
+    // Auto-switch image when attributes change (even partially)
+    useEffect(() => {
+        // Try to find a variant that matches current selections to show relevant image
+        // e.g. If Color: Pink is selected, find a Pink variant to show its image
+        const relevantVariant = initialProduct.variants?.find((v: any) => {
+            return Object.entries(selectedAttributes).every(([key, value]) => v.attributes[key] === value)
+        })
+
+        if (relevantVariant) {
+            let targetImageUrl: string | null = null
+
+            // Determine the best image URL for this variant
+            if (relevantVariant.images && relevantVariant.images.length > 0) {
+                // Check if it's an array of strings or objects, handle both
+                const firstImg = relevantVariant.images[0]
+                targetImageUrl = typeof firstImg === 'string' ? firstImg : firstImg.url
+            } else if (relevantVariant.image) {
+                targetImageUrl = relevantVariant.image
             }
 
-            // Priority 2: If variant has its own specific single image, show it (backward compatible)
-            if (selectedVariant.image) {
-                setManualImageOverride(selectedVariant.image)
-                return
+            if (targetImageUrl) {
+                setManualImageOverride(targetImageUrl)
             }
 
-            // Priority 3: Reset override if no specific image
-            setManualImageOverride(null)
+            // Sync the thumbnail selection logic to match the Render Loop logic
+            // This ensures that "Selecting a variant" highlights the SAME thumbnail that "Clicking that thumbnail" would select
+            if (initialProduct.images && initialProduct.images.length > 0) {
+                // Helper to normalize URLs
+                const normalizeUrl = (urlInput: any) => {
+                    const urlStr = typeof urlInput === 'string' ? urlInput : urlInput?.url
+                    if (!urlStr) return ''
+                    return urlStr.split('?')[0].replace(/\/$/, '')
+                }
+                const targetNorm = targetImageUrl ? normalizeUrl(targetImageUrl) : ''
 
-            // Priority 3: Try to find mapping in main images (existing logic)
-            if (initialProduct.variants && initialProduct.images &&
-                initialProduct.variants.length === initialProduct.images.length) {
+                // Find the image index that maps to this variant
+                const matchingIndex = initialProduct.images.findIndex((img: any, idx: number) => {
+                    const imgUrl = normalizeUrl(img)
 
-                const variantIndex = initialProduct.variants.findIndex((v: any) => v.id === selectedVariant.id)
+                    // A. Check for explicit URL match
+                    // Does this image url match the target variant's image?
+                    if (targetNorm && imgUrl === targetNorm) {
+                        return true
+                    }
 
-                if (variantIndex !== -1) {
-                    setSelectedImage(variantIndex)
-                    return
+                    // B. Check Fallback Index Logic (MUST match Render Loop exactly)
+                    // If no explicit link logic in render matches this to ANOTHER variant, and indices align...
+                    if (initialProduct.variants && initialProduct.variants.length === initialProduct.images.length) {
+
+                        // Check if this image matches ANY variant by URL (piority check)
+                        const exactUrlMatchVariant = initialProduct.variants.find((v: any) => {
+                            const vImg = v.image || (v.images && v.images[0])
+                            return normalizeUrl(vImg) === imgUrl
+                        })
+
+                        // If this image belongs to another variant via URL, we can't claim it via index
+                        if (exactUrlMatchVariant && exactUrlMatchVariant.id !== relevantVariant.id) {
+                            return false
+                        }
+
+                        // If no URL conflict, and indices match, it's ours
+                        const variantAtIndex = initialProduct.variants[idx]
+                        if (variantAtIndex && variantAtIndex.id === relevantVariant.id) {
+                            return true
+                        }
+                    }
+                    return false
+                })
+
+                if (matchingIndex !== -1) {
+                    setSelectedImage(matchingIndex)
                 }
             }
+        }
 
-            // Don't reset selectedImage to 0 if we just don't have a mapping, 
-            // user might be looking at a specific image.
-        } else {
+        // If we deselected everything, potentially reset? 
+        // For now, keeping the last view is fine, or reset if fully empty.
+        if (Object.keys(selectedAttributes).length === 0) {
             setManualImageOverride(null)
         }
-    }, [selectedVariant, initialProduct])
+
+    }, [selectedAttributes, initialProduct])
+
+    // Cleanup incompatible attributes
+    // e.g. If User selects "Color: Pink" + "Style: Classic", then switches to "Color: Gray" (which has no Style),
+    // we should remove "Style: Classic" from selection to avoid confusion.
+    useEffect(() => {
+        if (selectedVariant && Object.keys(selectedAttributes).length > Object.keys(selectedVariant.attributes).length) {
+            const variantKeys = Object.keys(selectedVariant.attributes)
+            const selectedKeys = Object.keys(selectedAttributes)
+
+            // Find keys that are selected but not in the variant
+            const extraKeys = selectedKeys.filter(k => !variantKeys.includes(k))
+
+            if (extraKeys.length > 0) {
+                setSelectedAttributes(prev => {
+                    const next = { ...prev }
+                    extraKeys.forEach(k => delete next[k])
+                    return next
+                })
+            }
+        }
+    }, [selectedVariant, selectedAttributes])
+
+    // Auto-select single available options
+    // e.g. If "Pink" is selected, and the only available size is "M", auto-select "M".
+    useEffect(() => {
+        if (!initialProduct.variants) return
+
+        const allAttributeTypes = new Set<string>()
+        initialProduct.variants.forEach((v: any) => {
+            Object.keys(v.attributes).forEach(key => allAttributeTypes.add(key))
+        })
+        const requiredAttributes = Array.from(allAttributeTypes)
+
+        // Only run if we have some selection but not full selection
+        if (Object.keys(selectedAttributes).length > 0 && Object.keys(selectedAttributes).length < requiredAttributes.length) {
+
+            const updates: Record<string, string> = {}
+            let hasUpdates = false
+
+            requiredAttributes.forEach(attr => {
+                // If this attribute is already selected, skip
+                if (selectedAttributes[attr]) return
+
+                // Find all possible values for this attribute GIVEN existing selections
+                const possibleValues = new Set<string>()
+                initialProduct.variants.forEach((v: any) => {
+                    // Check if this variant matches ALL currently selected attributes
+                    const isCompatible = Object.entries(selectedAttributes).every(([key, val]) => v.attributes[key] === val)
+
+                    if (isCompatible && v.stock > 0 && v.attributes[attr]) {
+                        possibleValues.add(v.attributes[attr])
+                    }
+                })
+
+                // If only one valid option exists, assume user wants it
+                if (possibleValues.size === 1) {
+                    updates[attr] = Array.from(possibleValues)[0]
+                    hasUpdates = true
+                }
+            })
+
+            if (hasUpdates) {
+                setSelectedAttributes(prev => ({ ...prev, ...updates }))
+            }
+        }
+    }, [selectedAttributes, initialProduct.variants])
+
 
     // Load reviews
     useEffect(() => {
@@ -107,6 +275,10 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
     // or use passed in calculated fields.
     const { settings } = useSiteConfig()
 
+    // Calculate effective price based on variant selection
+    const effectivePrice = selectedVariant?.priceOverride || initialProduct.price || 0
+    const maxStock = selectedVariant ? selectedVariant.stock : (initialProduct.stock || 0)
+
     // Transform product data with normalization
     const product = {
         ...initialProduct,
@@ -120,7 +292,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
         inStock: selectedVariant
             ? selectedVariant.stock > 0
             : initialProduct.status === 'active' && initialProduct.stock > 0,
-        stockCount: selectedVariant ? selectedVariant.stock : initialProduct.stock || 0,
+        stockCount: maxStock,
         // Dynamic features based on real data
         features: [
             initialProduct.category?.name ? `Category: ${initialProduct.category.name}` : null,
@@ -133,7 +305,9 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
             ...(initialProduct.subcategory ? { 'Subcategory': initialProduct.subcategory.name } : {})
         },
         shipping: {
-            free: settings ? initialProduct.price >= settings.freeShippingThreshold : false,
+            free: settings && settings.freeShippingThreshold > 0
+                ? effectivePrice >= settings.freeShippingThreshold
+                : false, // If threshold is 0 or undefined, assume not free unless explicitly 0 means always free? Usually 0 means disabled or always free. Let's assume > 0 is the check.
             estimatedDays: '2-3 business days', // Could be dynamic if added to settings
             returnPolicy: '7 days' // Standard policy
         },
@@ -143,9 +317,19 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
         longDescription: initialProduct.description
     }
 
-    // Calculate effective price based on variant selection
-    const effectivePrice = selectedVariant?.priceOverride || product.price
-    const maxStock = selectedVariant ? selectedVariant.stock : product.stockCount
+    const handleSelectAttribute = (attrType: string, value: string) => {
+        setSelectedAttributes(prev => {
+            const isSelected = prev[attrType] === value
+            if (isSelected) {
+                // Deselect
+                const { [attrType]: removed, ...rest } = prev
+                return rest
+            } else {
+                // Select
+                return { ...prev, [attrType]: value }
+            }
+        })
+    }
 
     const handleAddToCart = () => {
         if (!user) {
@@ -157,7 +341,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
         if (product.variants.length > 0 && !selectedVariant) {
             toast({
                 title: "Selection Required",
-                description: "Please select product options before adding to cart",
+                description: "Please select all product options before adding to cart",
                 variant: "destructive"
             })
             return
@@ -229,15 +413,32 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
             router.push('/login')
             return
         }
-        if (isInWishlist(product.id)) {
-            removeFromWishlist(product.id)
+
+        const currentVariantId = selectedVariant?.id || null
+        const isCurrentlyWishlisted = isInWishlist(product.id, currentVariantId || undefined)
+
+        if (isCurrentlyWishlisted) {
+            removeFromWishlist(product.id, currentVariantId || undefined)
         } else {
+            // Prepare variant display name
+            const variantName = selectedVariant ? selectedVariant.name : undefined
+            const variantAttributes = selectedVariant ? selectedVariant.attributes : undefined
+
+            // Determine the image to use
+            const wishlistImage = selectedVariant?.image
+                || (selectedVariant?.images && selectedVariant.images.length > 0 ? selectedVariant.images[0] : null)
+                || product.images[selectedImage]?.url
+                || product.images[0]?.url
+
             addToWishlist({
                 productId: product.id,
+                variantId: currentVariantId,
                 name: product.name,
-                price: product.price,
+                variantName,
+                variantAttributes,
+                price: effectivePrice,
                 currency: product.currency,
-                image: product.images[0]?.url,
+                image: wishlistImage,
                 slug: product.slug,
                 category: product.category?.name || 'Uncategorized'
             })
@@ -330,13 +531,43 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                 priority
                             />
                         </div>
+
+
                         {product.images.length > 1 && (
                             <div className="grid grid-cols-4 gap-3">
                                 {product.images.map((img: any, i: number) => {
-                                    // Link image to variant if same number of images and variants
-                                    const linkedVariant = product.variants && product.variants.length === product.images.length
-                                        ? product.variants[i]
-                                        : null
+                                    // Link image to variant by URL matching
+                                    const imgUrl = typeof img === 'string' ? img : img.url
+
+                                    // 1. Try to match by explicit Image URL
+                                    let linkedVariant = product.variants.find((v: any) => {
+                                        // Compare main variant image
+                                        if (v.image && getValidImageUrl(v.image, '') === imgUrl) return true
+
+                                        // Compare first image in variant gallery
+                                        if (v.images && v.images.length > 0) {
+                                            const vFirstImgRaw = typeof v.images[0] === 'string' ? v.images[0] : v.images[0].url
+                                            if (getValidImageUrl(vFirstImgRaw, '') === imgUrl) return true
+                                        }
+                                        return false
+                                    })
+
+                                    // 2. Fallback: Force 1:1 mapping if counts match and no explicit link found
+                                    // This assumes that if you have 3 images and 3 variants, they are in the same order
+                                    if (!linkedVariant && product.variants.length === product.images.length) {
+                                        linkedVariant = product.variants[i]
+                                    }
+
+                                    // Determine Label: Prioritize Color, then first attribute
+                                    let badgeLabel = ''
+                                    if (linkedVariant) {
+                                        const colorKey = Object.keys(linkedVariant.attributes).find(k => k.toLowerCase().includes('color') || k.toLowerCase().includes('colour'))
+                                        if (colorKey) {
+                                            badgeLabel = linkedVariant.attributes[colorKey]
+                                        } else if (Object.values(linkedVariant.attributes).length > 0) {
+                                            badgeLabel = Object.values(linkedVariant.attributes)[0] as string
+                                        }
+                                    }
 
                                     return (
                                         <button
@@ -346,7 +577,8 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                 setManualImageOverride(null)
                                                 // If this image is linked to a variant, select it
                                                 if (linkedVariant) {
-                                                    setSelectedVariant(linkedVariant)
+                                                    // Add the variant's attributes to selection (merging with existing could be tricky, resetting is safer for "switching views")
+                                                    setSelectedAttributes(linkedVariant.attributes)
                                                 }
                                             }}
                                             className={`relative aspect-square rounded-lg border-2 overflow-hidden transition-all ${selectedImage === i
@@ -355,19 +587,20 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                 }`}
                                         >
                                             <Image
-                                                src={getValidImageUrl(img.url, '/placeholder.png')}
+                                                src={getValidImageUrl(imgUrl, '/placeholder.png')}
                                                 alt={`Product view ${i + 1}`}
                                                 width={100}
                                                 height={100}
                                                 className="w-full h-full object-cover"
                                                 onError={handleImageError}
                                             />
-                                            {/* Show variant badge if linked */}
-                                            {linkedVariant && (
+                                            {/* Show variant badge if linked - REMOVED per user request
+                                            {badgeLabel && (
                                                 <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[10px] px-1 py-0.5 text-center truncate">
-                                                    {Object.values(linkedVariant.attributes)[0] as string}
+                                                    {badgeLabel}
                                                 </div>
                                             )}
+                                            */}
                                             {/* Active indicator */}
                                             {selectedImage === i && (
                                                 <div className="absolute top-1 right-1 bg-pink-500 rounded-full p-1">
@@ -416,9 +649,13 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                     <div className="space-y-6">
                                         <div className="flex items-center justify-between mb-4">
                                             <h3 className="text-xl font-bold text-gray-900">Choose Options</h3>
-                                            {selectedVariant && (
+                                            {selectedVariant ? (
                                                 <span className="text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
                                                     ✓ Selected
+                                                </span>
+                                            ) : (
+                                                <span className="text-sm font-medium text-amber-600 bg-amber-50 px-3 py-1 rounded-full animate-pulse">
+                                                    Select options
                                                 </span>
                                             )}
                                         </div>
@@ -449,9 +686,9 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                             {isColorAttr && <div className="w-3 h-3 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full" />}
                                                             {isSizeAttr && <span className="text-pink-500">📏</span>}
                                                             {attrType}
-                                                            {selectedVariant?.attributes[attrType] && (
+                                                            {selectedAttributes[attrType] && (
                                                                 <span className="text-sm font-normal text-gray-600">
-                                                                    : {selectedVariant.attributes[attrType]}
+                                                                    : {selectedAttributes[attrType]}
                                                                 </span>
                                                             )}
                                                         </Label>
@@ -462,31 +699,35 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                                 ? 'grid-cols-3 sm:grid-cols-5 md:grid-cols-6'
                                                                 : 'grid-cols-2 sm:grid-cols-3'}`}>
                                                             {Array.from(attrValues).map(value => {
-                                                                const selectedAttr = selectedVariant?.attributes[attrType]
-                                                                const isSelected = selectedAttr === value
+                                                                const isSelected = selectedAttributes[attrType] === value
 
-                                                                // Find variants with this attribute value
-                                                                const variantsWithThisValue = product.variants.filter((v: any) =>
-                                                                    v.attributes[attrType] === value
-                                                                )
+                                                                // Find variants with this attribute value AND matching other current selections
+                                                                // This calculates dynamic stock "drilling down"
+                                                                const otherSelections = { ...selectedAttributes }
+                                                                delete otherSelections[attrType]
+
+                                                                const variantsWithThisValue = product.variants.filter((v: any) => {
+                                                                    const matchesThis = v.attributes[attrType] === value
+                                                                    const matchesOthers = Object.entries(otherSelections).every(([k, val]) => v.attributes[k] === val)
+                                                                    return matchesThis && matchesOthers
+                                                                })
+
                                                                 const hasStock = variantsWithThisValue.some((v: any) => v.stock > 0)
                                                                 const totalStock = variantsWithThisValue.reduce((sum: number, v: any) => sum + v.stock, 0)
+                                                                // If no combination explicitly matches, fallback to checking if *any* variant has this value (relaxed check for disabled state)
+                                                                const anyVariantWithThisValue = product.variants.filter((v: any) => v.attributes[attrType] === value)
+                                                                const isActuallyAvailable = variantsWithThisValue.length > 0 ? hasStock : anyVariantWithThisValue.some((v: any) => v.stock > 0)
+
 
                                                                 return isColorAttr ? (
                                                                     <button
                                                                         key={value}
-                                                                        onClick={() => {
-                                                                            const matchingVariant = product.variants.find((v: any) =>
-                                                                                v.attributes[attrType] === value && v.stock > 0
-                                                                            ) || variantsWithThisValue[0]
-                                                                            setSelectedVariant(matchingVariant)
-                                                                        }}
-                                                                        disabled={!hasStock}
+                                                                        onClick={() => handleSelectAttribute(attrType, value)}
                                                                         className={`group relative p-4 border-3 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${isSelected
                                                                             ? 'border-pink-500 bg-pink-50 ring-4 ring-pink-100 scale-105 shadow-lg'
                                                                             : 'border-gray-200 hover:border-pink-300 hover:shadow-md hover:scale-102'
                                                                             }`}
-                                                                        title={`${value} ${hasStock ? `(${totalStock} available)` : '(Out of stock)'}`}
+                                                                        title={`${value} ${isSelected ? '(Click to remove)' : ''}`}
                                                                     >
                                                                         <div className="flex flex-col items-center gap-2">
                                                                             {/* Color Swatch */}
@@ -504,22 +745,27 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                                                 {value}
                                                                             </span>
                                                                             {/* Stock Badge */}
-                                                                            {hasStock && (
+                                                                            {isActuallyAvailable && (
                                                                                 <span className="text-[10px] text-green-600 font-medium">
-                                                                                    {totalStock} left
+                                                                                    {totalStock > 0 ? `${totalStock} left` : 'Available'}
                                                                                 </span>
                                                                             )}
                                                                         </div>
 
-                                                                        {/* Selection Checkmark */}
+                                                                        {/* Selection Icons */}
                                                                         {isSelected && (
-                                                                            <div className="absolute -top-2 -right-2 bg-pink-500 rounded-full p-1 shadow-md">
-                                                                                <Check className="h-4 w-4 text-white" />
-                                                                            </div>
+                                                                            <>
+                                                                                <div className="absolute -top-2 -right-2 bg-pink-500 rounded-full p-1 shadow-md group-hover:hidden transition-all">
+                                                                                    <Check className="h-4 w-4 text-white" />
+                                                                                </div>
+                                                                                <div className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 shadow-md hidden group-hover:flex transition-all z-10">
+                                                                                    <X className="h-4 w-4 text-white" />
+                                                                                </div>
+                                                                            </>
                                                                         )}
 
                                                                         {/* Out of Stock Overlay */}
-                                                                        {!hasStock && (
+                                                                        {!isActuallyAvailable && (
                                                                             <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-xl backdrop-blur-sm">
                                                                                 <div className="text-center">
                                                                                     <X className="h-6 w-6 text-red-500 mx-auto mb-1" />
@@ -531,35 +777,34 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                                 ) : (
                                                                     <button
                                                                         key={value}
-                                                                        onClick={() => {
-                                                                            const matchingVariant = product.variants.find((v: any) =>
-                                                                                v.attributes[attrType] === value && v.stock > 0
-                                                                            ) || variantsWithThisValue[0]
-                                                                            setSelectedVariant(matchingVariant)
-                                                                        }}
-                                                                        disabled={!hasStock}
+                                                                        onClick={() => handleSelectAttribute(attrType, value)}
                                                                         className={`group relative py-2 px-3 sm:py-3 sm:px-4 border-2 rounded-xl text-center font-semibold transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${isSelected
                                                                             ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-pink-100 text-pink-700 ring-4 ring-pink-100 shadow-lg scale-105'
                                                                             : 'border-gray-200 bg-white hover:border-pink-300 hover:bg-pink-50 hover:shadow-md'
                                                                             }`}
-                                                                        title={`${value} ${hasStock ? `(${totalStock} available)` : '(Out of stock)'}`}
+                                                                        title={`${value} ${isSelected ? '(Click to remove)' : ''}`}
                                                                     >
                                                                         <div className="flex flex-col items-center gap-1">
                                                                             <span className="text-sm uppercase tracking-wide">{value}</span>
-                                                                            {hasStock && (
+                                                                            {isActuallyAvailable && (
                                                                                 <span className="text-[10px] text-green-600 font-medium">
-                                                                                    {totalStock} left
+                                                                                    {totalStock > 0 ? `${totalStock} left` : 'Available'}
                                                                                 </span>
                                                                             )}
                                                                         </div>
 
                                                                         {isSelected && (
-                                                                            <div className="absolute -top-2 -right-2 bg-pink-500 rounded-full p-1 shadow-md">
-                                                                                <Check className="h-4 w-4 text-white" />
-                                                                            </div>
+                                                                            <>
+                                                                                <div className="absolute -top-2 -right-2 bg-pink-500 rounded-full p-1 shadow-md group-hover:hidden transition-all">
+                                                                                    <Check className="h-4 w-4 text-white" />
+                                                                                </div>
+                                                                                <div className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 shadow-md hidden group-hover:flex transition-all z-10">
+                                                                                    <X className="h-4 w-4 text-white" />
+                                                                                </div>
+                                                                            </>
                                                                         )}
 
-                                                                        {!hasStock && (
+                                                                        {!isActuallyAvailable && (
                                                                             <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-xl backdrop-blur-sm">
                                                                                 <div className="text-center">
                                                                                     <X className="h-5 w-5 text-red-500 mx-auto mb-1" />
@@ -637,8 +882,8 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                 <Button onClick={handleAddToCart} disabled={!product.inStock} className="flex-1 bg-gradient-to-r from-pink-300 to-yellow-300 text-gray-900 font-semibold h-12">
                                     <ShoppingBag className="mr-2 h-5 w-5" /> Add to Cart
                                 </Button>
-                                <Button variant="outline" onClick={handleWishlist} className={`h-12 w-12 ${isInWishlist(product.id) ? 'text-red-500' : ''}`}>
-                                    <Heart className={`h-5 w-5 ${isInWishlist(product.id) ? 'fill-current' : ''}`} />
+                                <Button variant="outline" onClick={handleWishlist} className={`h-12 w-12 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'text-red-500' : ''}`}>
+                                    <Heart className={`h-5 w-5 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'fill-current' : ''}`} />
                                 </Button>
                             </div>
                         </div>
@@ -667,12 +912,25 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                         )}
                         {activeTab === 'Specifications' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Show product base specifications */}
                                 {Object.entries(product.specifications).map(([k, v]) => (
                                     <div key={k} className="flex justify-between py-2 border-b">
                                         <span className="font-medium text-gray-700">{k}</span>
                                         <span className="text-gray-600">{v as string}</span>
                                     </div>
                                 ))}
+
+                                {/* Show selected variant attributes */}
+                                {selectedVariant && selectedVariant.attributes && Object.keys(selectedVariant.attributes).length > 0 && (
+                                    <>
+                                        {Object.entries(selectedVariant.attributes).map(([k, v]) => (
+                                            <div key={`variant-${k}`} className="flex justify-between py-2 border-b bg-pink-50 px-3 rounded-lg">
+                                                <span className="font-medium text-pink-700 capitalize">{k}</span>
+                                                <span className="text-pink-900 font-semibold">{v as string}</span>
+                                            </div>
+                                        ))}
+                                    </>
+                                )}
                             </div>
                         )}
                         {activeTab === 'Reviews' && (

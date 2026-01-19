@@ -20,6 +20,7 @@ interface Product {
     images: { url: string; alt?: string | null }[]
     category: { name: string } | null | undefined
     description?: string
+    variants?: any[]
 }
 
 interface ProductsViewProps {

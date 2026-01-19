@@ -121,7 +121,7 @@ export function CartView() {
                     {/* Header Content */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
-                            <h1 className="text-4xl font-playfair font-bold text-gray-900 mb-2">
+                            <h1 className="text-3xl sm:text-4xl font-playfair font-bold text-gray-900 mb-2">
                                 Shopping Cart
                             </h1>
                             <p className="text-gray-600 flex items-center gap-2">
@@ -192,12 +192,12 @@ export function CartView() {
                                     transition={{ duration: 0.3 }}
                                     className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-100"
                                 >
-                                    <div className="p-6">
-                                        <div className="flex gap-4">
+                                    <div className="p-4 sm:p-6">
+                                        <div className="flex flex-col sm:flex-row gap-4">
                                             {/* Product Image */}
                                             <Link
                                                 href={`/products/${item.slug}`}
-                                                className="relative w-24 h-24 sm:w-28 sm:h-28 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 group"
+                                                className="relative w-full sm:w-24 h-40 sm:h-24 md:w-28 md:h-28 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 group"
                                             >
                                                 <Image
                                                     src={getValidImageUrl(item.image, '/placeholder.png')}
@@ -210,11 +210,11 @@ export function CartView() {
                                             </Link>
 
                                             {/* Content */}
-                                            <div className="flex-1 flex flex-col justify-between">
+                                            <div className="flex-1 flex flex-col justify-between min-w-0">
                                                 <div>
                                                     <Link
                                                         href={`/products/${item.slug}`}
-                                                        className="text-lg font-semibold text-gray-900 hover:text-pink-600 transition-colors block mb-1"
+                                                        className="text-base sm:text-lg font-semibold text-gray-900 hover:text-pink-600 transition-colors block mb-1 line-clamp-2"
                                                     >
                                                         {item.name}
                                                     </Link>
@@ -222,7 +222,7 @@ export function CartView() {
                                                     {/* Variant Details */}
                                                     {item.variantName && (
                                                         <div className="mb-2">
-                                                            <p className="text-sm text-gray-600 font-medium mb-1">
+                                                            <p className="text-xs sm:text-sm text-gray-600 font-medium mb-1 truncate">
                                                                 {item.variantName}
                                                             </p>
                                                             {item.variantAttributes && (
@@ -237,43 +237,43 @@ export function CartView() {
                                                         </div>
                                                     )}
 
-                                                    <p className="text-pink-600 font-bold text-lg">
+                                                    <p className="text-pink-600 font-bold text-base sm:text-lg">
                                                         LKR {item.price.toLocaleString()}
                                                     </p>
                                                 </div>
 
-                                                {/* Controls */}
-                                                <div className="flex items-center justify-between mt-4">
+                                                {/* Controls - Mobile Optimized */}
+                                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-4">
                                                     {/* Quantity Controls */}
-                                                    <div className="flex items-center border-2 border-gray-200 rounded-lg overflow-hidden">
+                                                    <div className="flex items-center border-2 border-gray-200 rounded-lg overflow-hidden w-full sm:w-auto">
                                                         <button
                                                             onClick={() => updateQuantity(item.productId, item.quantity - 1, item.variantId)}
-                                                            className="p-2 hover:bg-pink-50 transition-colors"
+                                                            className="p-2 sm:p-2.5 hover:bg-pink-50 transition-colors flex-1 sm:flex-none"
                                                         >
-                                                            <Minus className="h-4 w-4 text-gray-600" />
+                                                            <Minus className="h-4 w-4 text-gray-600 mx-auto" />
                                                         </button>
-                                                        <span className="px-4 py-2 font-semibold text-gray-900 min-w-[40px] text-center">
+                                                        <span className="px-4 py-2 font-semibold text-gray-900 min-w-[60px] text-center">
                                                             {item.quantity}
                                                         </span>
                                                         <button
                                                             onClick={() => updateQuantity(item.productId, item.quantity + 1, item.variantId)}
-                                                            className="p-2 hover:bg-pink-50 transition-colors"
+                                                            className="p-2 sm:p-2.5 hover:bg-pink-50 transition-colors flex-1 sm:flex-none"
                                                         >
-                                                            <Plus className="h-4 w-4 text-gray-600" />
+                                                            <Plus className="h-4 w-4 text-gray-600 mx-auto" />
                                                         </button>
                                                     </div>
 
                                                     {/* Item Total & Remove */}
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="text-right">
+                                                    <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+                                                        <div className="text-left sm:text-right">
                                                             <p className="text-xs text-gray-500">Total</p>
-                                                            <p className="text-xl font-bold text-gray-900">
+                                                            <p className="text-lg sm:text-xl font-bold text-gray-900">
                                                                 LKR {(item.price * item.quantity).toLocaleString()}
                                                             </p>
                                                         </div>
                                                         <button
                                                             onClick={() => handleRemoveItem(item.productId, item.variantId)}
-                                                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                            className="p-2.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
                                                         >
                                                             <Trash2 className="h-5 w-5" />
                                                         </button>

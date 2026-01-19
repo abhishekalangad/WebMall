@@ -133,6 +133,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Load cart when component mounts or user changes
   useEffect(() => {
     const loadCart = async () => {
+      // SECURITY: Clear all other users' carts from localStorage
+      if (user) {
+        const allCartKeys = Object.keys(localStorage).filter(key => key.startsWith('webmall-cart-'))
+        const currentCartKey = getCartKey()
+        allCartKeys.forEach(key => {
+          if (key !== currentCartKey) {
+            localStorage.removeItem(key)
+          }
+        })
+      }
+
       setIsLoadingCart(true)
 
       if (user) {

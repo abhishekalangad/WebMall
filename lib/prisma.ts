@@ -5,25 +5,36 @@ import { PrismaClient } from '@prisma/client'
 // Using a versioned key to force re-instantiation when schema changes
 const prismaClientSingleton = () => {
   const isPoolerUrl = process.env.DATABASE_URL?.includes('pooler.supabase.com')
+  const isTransactionPort = process.env.DATABASE_URL?.includes(':6543')
 
   // Configure connection string with appropriate pool settings
   let connectionUrl = process.env.DATABASE_URL || ''
 
-  if (isPoolerUrl) {
-    // For Supabase Pooler (Transaction mode)
-    if (!connectionUrl.includes('pgbouncer=true')) {
+  if (connectionUrl) {
+    // Add sslmode=require if not present
+    if (!connectionUrl.includes('sslmode=')) {
       connectionUrl += connectionUrl.includes('?') ? '&' : '?'
-      // In dev, use a reasonable pool size to handle concurrent requests (metadata + page fetch)
-      // In prod (serverless), allow more connections
-      const limit = process.env.NODE_ENV === 'development' ? 5 : 10
-      connectionUrl += `pgbouncer=true&connection_limit=${limit}`
+      connectionUrl += 'sslmode=require'
     }
-  } else {
-    // For direct connections
-    if (!connectionUrl.includes('connection_limit')) {
+
+    if (isPoolerUrl && isTransactionPort) {
+      // For Supabase Pooler (Transaction mode) - Only on port 6543
+      if (!connectionUrl.includes('pgbouncer=true')) {
+        connectionUrl += connectionUrl.includes('?') ? '&' : '?'
+        const limit = process.env.NODE_ENV === 'development' ? 5 : 10
+        connectionUrl += `pgbouncer=true&connection_limit=${limit}`
+      }
+    } else if (!connectionUrl.includes('connection_limit')) {
+      // For Direct connections or Session mode
       connectionUrl += connectionUrl.includes('?') ? '&' : '?'
       const limit = process.env.NODE_ENV === 'development' ? 5 : 5
       connectionUrl += `connection_limit=${limit}`
+    }
+
+    // Log the connection URL (obfuscated) to help debug reachability issues
+    if (process.env.NODE_ENV === 'development') {
+      const obfuscated = connectionUrl.replace(/:([^:@]+)@/, ':****@')
+      console.log(`[Prisma] Connecting to: ${obfuscated}`)
     }
   }
 

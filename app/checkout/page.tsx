@@ -369,7 +369,7 @@ export default function CheckoutPage() {
               <h2 className="text-2xl font-semibold mb-6">Order Summary</h2>
               <div className="space-y-4 mb-6">
                 {items.map((item) => (
-                  <div key={item.productId} className="flex items-center gap-3">
+                  <div key={`${item.productId}-${item.variantId || 'default'}`} className="flex items-center gap-3">
                     <img
                       src={item.image}
                       alt={item.name}

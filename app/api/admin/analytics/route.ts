@@ -85,13 +85,16 @@ export async function GET(request: NextRequest) {
 
         // Fetch message stats from contact API
         // Get message stats directly from DB
-        const totalMessages = await prisma.message.count()
-        const newMessages = await prisma.message.count({ where: { adminReply: null } })
-        const repliedMessages = await prisma.message.count({ where: { adminReply: { not: null } } })
+        const [totalMessages, newMessages, readMessages, repliedMessages] = await Promise.all([
+            prisma.message.count(),
+            prisma.message.count({ where: { status: 'new' } }),
+            prisma.message.count({ where: { status: 'read' } }),
+            prisma.message.count({ where: { status: 'replied' } })
+        ])
 
         const messageStats = {
             new: newMessages,
-            read: 0, // Assuming read logic matches new mostly for dashboard
+            read: readMessages,
             replied: repliedMessages,
             total: totalMessages
         }

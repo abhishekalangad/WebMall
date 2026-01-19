@@ -1,5 +1,6 @@
 import React from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { ShoppingBag, Heart, Minus, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ interface Product {
   avgRating?: number
   reviewCount?: number
   stock?: number
+  variants?: any[]
 }
 
 interface ProductCardProps {
@@ -42,10 +44,22 @@ export function ProductCard({
   const primaryImage = getValidImageUrl(product.images[0]?.url, '/placeholder.png')
   const { isInWishlist, addItem: addToWishlist, removeItem: removeFromWishlist } = useWishlist()
   const { items, updateQuantity } = useCart()
+  const router = useRouter()
 
   const isWishlisted = isInWishlist(product.id)
   const cartItem = items.find(item => item.productId === product.id)
   const quantity = cartItem ? cartItem.quantity : 0
+
+  const prices = [product.price, ...(product.variants?.map((v: any) => v.priceOverride).filter(Boolean) || [])].map(p => Number(p))
+  const minPrice = Math.min(...prices)
+  const maxPrice = Math.max(...prices)
+  const hasPriceRange = minPrice !== maxPrice
+  const hasDiscount = maxPrice > minPrice
+  const discountPercent = hasDiscount ? Math.round(((maxPrice - minPrice) / maxPrice) * 100) : 0
+
+  // Find the variant with the min price to show its specification
+  const minPriceVariant = product.variants?.find((v: any) => Number(v.priceOverride) === minPrice)
+  const minPriceSpec = minPriceVariant ? Object.values(minPriceVariant.attributes || {}).join(', ') : null
 
   const handleWishlistToggle = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -57,7 +71,7 @@ export function ProductCard({
       addToWishlist({
         productId: product.id,
         name: product.name,
-        price: product.price,
+        price: minPrice,
         currency: product.currency,
         image: product.images[0]?.url,
         slug: product.slug,
@@ -88,7 +102,7 @@ export function ProductCard({
     return (
       <Link
         href={`/products/${product.slug}`}
-        className="block group relative bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-row h-48 sm:h-56 cursor-pointer"
+        className="group relative bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-row h-48 sm:h-56 cursor-pointer"
       >
         {/* Product Image - Fixed Width */}
         <div className="relative w-1/3 sm:w-48 md:w-56 overflow-hidden bg-gray-100 flex-shrink-0">
@@ -147,33 +161,84 @@ export function ProductCard({
 
           <div className="flex items-end justify-between">
             <div className="flex flex-col">
-              <span className="text-sm text-gray-500 font-medium">LKR</span>
-              <span className="text-xl font-bold text-gray-900 leading-tight">
-                {product.price.toLocaleString()}
-              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-sm text-gray-500 font-medium">{product.currency}</span>
+                {hasPriceRange && !hasDiscount && <span className="text-xs text-pink-600 font-medium whitespace-nowrap">From</span>}
+                <span className="text-xl font-bold text-gray-900 leading-tight">
+                  {minPrice.toLocaleString()}
+                </span>
+                {minPriceSpec && (
+                  <span className="text-[10px] text-gray-400 bg-gray-50 border border-gray-100 px-1 rounded uppercase font-bold tracking-tighter">
+                    {minPriceSpec}
+                  </span>
+                )}
+              </div>
+              {hasDiscount && (
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-sm text-gray-400 line-through">
+                    {product.currency} {maxPrice.toLocaleString()}
+                  </span>
+                  <span className="text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+                    {discountPercent}% OFF
+                  </span>
+                </div>
+              )}
             </div>
 
             {showAddToCart && (
-              <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                {/* Buy Now Button - Using div to avoid nested <a> tags */}
+                <div
+                  className="bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500 text-white font-semibold px-4 sm:px-6 py-2 text-sm rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    router.push(`/products/${product.slug}`)
+                  }}
+                >
+                  Buy Now
+                </div>
+
+                {/* Add to Cart Icon Button */}
                 {quantity > 0 ? (
-                  <div className="flex items-center bg-pink-50 rounded-full p-1 border border-pink-100 shadow-sm">
-                    <button onClick={handleDecreaseQuantity} className="p-1.5 hover:bg-white rounded-full text-pink-600">
+                  <div className="flex items-center bg-pink-50 rounded-lg p-1.5 border border-pink-200 shadow-sm">
+                    <button
+                      onClick={handleDecreaseQuantity}
+                      className="p-1.5 hover:bg-pink-100 rounded text-pink-600 transition-all"
+                    >
                       <Minus className="h-4 w-4" />
                     </button>
-                    <span className="w-8 text-center font-bold text-gray-900 text-sm">{quantity}</span>
-                    <button onClick={handleIncreaseQuantity} className="p-1.5 hover:bg-white rounded-full text-pink-600">
+                    <span className="w-8 text-center font-bold text-gray-900 text-sm">
+                      {quantity}
+                    </span>
+                    <button
+                      onClick={handleIncreaseQuantity}
+                      className="p-1.5 hover:bg-pink-100 rounded text-pink-600 transition-all"
+                    >
                       <Plus className="h-4 w-4" />
                     </button>
                   </div>
                 ) : (
-                  <Button
-                    size="sm"
+                  <button
                     onClick={handleAddClick}
-                    className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold px-6 rounded-full"
+                    className="p-2 bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 rounded-lg shadow-sm transition-all"
+                    title="Add to Cart"
                   >
-                    Add to Cart
-                  </Button>
+                    <ShoppingBag className="h-5 w-5" />
+                  </button>
                 )}
+
+                {/* Wishlist Icon Button */}
+                <button
+                  onClick={handleWishlistToggle}
+                  className={`p-2 rounded-lg shadow-sm transition-all ${isWishlisted
+                    ? 'bg-pink-500 text-white'
+                    : 'bg-pink-100 hover:bg-pink-200 text-pink-600'
+                    }`}
+                  title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                >
+                  <Heart className={`h-5 w-5 ${isWishlisted ? 'fill-current' : ''}`} />
+                </button>
               </div>
             )}
           </div>
@@ -198,7 +263,7 @@ export function ProductCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-10 opacity-transition duration-300 sm:group-hover:opacity-10"></div>
 
-        {/* Wishlist Button */}
+        {/* Wishlist Button - Top Right */}
         {showWishlist && (
           <button
             onClick={handleWishlistToggle}
@@ -247,47 +312,90 @@ export function ProductCard({
           </div>
         )}
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex flex-col">
-            <span className="text-sm text-gray-500 font-medium">LKR</span>
-            <span className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
-              {product.price.toLocaleString()}
-            </span>
-          </div>
-
-          {showAddToCart && (
-            <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
-              {quantity > 0 ? (
-                <div className="flex items-center bg-pink-50 rounded-full p-1 border border-pink-100 shadow-sm animate-fade-in">
-                  <button
-                    onClick={handleDecreaseQuantity}
-                    className="p-1.5 hover:bg-white rounded-full text-pink-600 transition-all active:scale-95"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <span className="w-8 text-center font-bold text-gray-900 text-sm">
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={handleIncreaseQuantity}
-                    className="p-1.5 hover:bg-white rounded-full text-pink-600 transition-all active:scale-95"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <Button
-                  size="sm"
-                  onClick={handleAddClick}
-                  className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold px-3 sm:px-4 text-xs sm:text-sm h-8 rounded-full shadow-sm hover:shadow active:scale-95 transition-all"
-                >
-                  <ShoppingBag className="h-4 w-4 mr-1.5" />
-                  Add
-                </Button>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-sm text-gray-500 font-medium">{product.currency}</span>
+              {hasPriceRange && !hasDiscount && <span className="text-xs text-pink-600 font-medium">From</span>}
+              <span className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
+                {minPrice.toLocaleString()}
+              </span>
+              {minPriceSpec && (
+                <span className="text-[10px] text-gray-400 bg-gray-50 border border-gray-100 px-1 rounded uppercase font-bold tracking-tighter">
+                  {minPriceSpec}
+                </span>
               )}
             </div>
-          )}
+            {hasDiscount && (
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xs text-gray-400 line-through">
+                  {product.currency} {maxPrice.toLocaleString()}
+                </span>
+                <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1 rounded">
+                  {discountPercent}% OFF
+                </span>
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Buy Now Section */}
+        {showAddToCart && (
+          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            {/* Buy Now Button - Using div instead of Link to avoid nested <a> tags */}
+            <div
+              className="flex-1 bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500 text-white font-semibold px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                router.push(`/products/${product.slug}`)
+              }}
+            >
+              Buy Now
+            </div>
+
+            {/* Add to Cart Icon Button */}
+            {quantity > 0 ? (
+              <div className="flex items-center bg-pink-50 rounded-lg p-1.5 border border-pink-200 shadow-sm">
+                <button
+                  onClick={handleDecreaseQuantity}
+                  className="p-1 hover:bg-pink-100 rounded text-pink-600 transition-all"
+                >
+                  <Minus className="h-3 w-3" />
+                </button>
+                <span className="w-6 text-center font-bold text-gray-900 text-xs">
+                  {quantity}
+                </span>
+                <button
+                  onClick={handleIncreaseQuantity}
+                  className="p-1 hover:bg-pink-100 rounded text-pink-600 transition-all"
+                >
+                  <Plus className="h-3 w-3" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleAddClick}
+                className="p-2 bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 rounded-lg shadow-sm transition-all"
+                title="Add to Cart"
+              >
+                <ShoppingBag className="h-4 w-4" />
+              </button>
+            )}
+
+            {/* Wishlist Icon Button (duplicate for bottom) */}
+            <button
+              onClick={handleWishlistToggle}
+              className={`p-2 rounded-lg shadow-sm transition-all lg:hidden ${isWishlisted
+                ? 'bg-pink-500 text-white'
+                : 'bg-pink-100 hover:bg-pink-200 text-pink-600'
+                }`}
+              title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+            >
+              <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
+            </button>
+          </div>
+        )}
       </div>
     </Link>
   )

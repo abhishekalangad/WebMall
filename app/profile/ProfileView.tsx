@@ -65,7 +65,7 @@ interface OrderDetails {
 }
 
 export function ProfileView() {
-    const { user, signOut, loading: authLoading, updateUser, accessToken } = useAuth()
+    const { user, signOut, loading: authLoading, updateUser, accessToken, refreshUser } = useAuth()
     const { totalItems: cartCount, addItem: addToCart } = useCart()
     const { items: wishlistItems, removeItem, clearWishlist } = useWishlist()
     const { toast } = useToast()
@@ -118,6 +118,11 @@ export function ProfileView() {
             })
         }
     }, [user])
+
+    // Debug: Log when profileImage changes
+    useEffect(() => {
+        console.log('🖼️ Profile image changed:', user?.profileImage)
+    }, [user?.profileImage])
 
     const handleSave = async () => {
         setIsSaving(true)
@@ -189,8 +194,17 @@ export function ProfileView() {
                 throw new Error(data.error || 'Upload failed')
             }
 
+            console.log('✅ Upload successful, image URL:', data.imageUrl)
+
             // Update user profile with the new image URL
             await updateUser({ profileImage: data.imageUrl })
+
+            console.log('✅ User profile updated in database')
+
+            // Force refresh the user data to update the UI immediately
+            await refreshUser()
+
+            console.log('✅ User data refreshed, new user state:', user)
 
             toast({
                 title: "Profile Picture Updated",
@@ -398,7 +412,12 @@ export function ProfileView() {
                         <div className="relative">
                             <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-slate-100 flex items-center justify-center text-3xl font-semibold text-slate-900 border border-slate-200 overflow-hidden shadow-sm">
                                 {user.profileImage ? (
-                                    <img src={user.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                                    <img
+                                        src={`${user.profileImage}?t=${Date.now()}`}
+                                        alt="Profile"
+                                        className="w-full h-full object-cover"
+                                        key={user.profileImage}
+                                    />
                                 ) : (
                                     <div className="w-full h-full bg-gradient-to-br from-pink-300 to-yellow-300 flex items-center justify-center">
                                         {user.name?.charAt(0)}

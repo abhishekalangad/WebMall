@@ -70,7 +70,8 @@ export default async function ProductsPage() {
           images: {
             orderBy: { position: 'asc' },
             take: 1
-          }
+          },
+          variants: true
         },
         orderBy: { name: 'asc' }
       }),

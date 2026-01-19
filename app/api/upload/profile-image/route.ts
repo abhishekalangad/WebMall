@@ -73,6 +73,47 @@ export async function POST(request: NextRequest) {
             )
         }
 
+        // 🧹 CLEANUP: Delete old profile image if exists
+        // Fetch user's current profile image from database
+        const { prisma } = await import('@/lib/prisma')
+        const dbUser = await prisma.user.findUnique({
+            where: { supabaseId: userId },
+            select: { profileImage: true }
+        })
+
+        if (dbUser?.profileImage) {
+            console.log('🗑️ Deleting old profile image:', dbUser.profileImage)
+
+            try {
+                // Extract bucket name and file path from the old image URL
+                const oldImageUrl = new URL(dbUser.profileImage)
+                const pathParts = oldImageUrl.pathname.split('/')
+
+                // Expected format: /storage/v1/object/public/{bucket}/{path...}
+                const publicIndex = pathParts.indexOf('public')
+                if (publicIndex !== -1 && pathParts.length > publicIndex + 2) {
+                    const oldBucketName = pathParts[publicIndex + 1]
+                    const oldFilePath = pathParts.slice(publicIndex + 2).join('/')
+
+                    // Delete the old file from storage
+                    const { error: deleteError } = await supabaseAdmin
+                        .storage
+                        .from(oldBucketName)
+                        .remove([oldFilePath])
+
+                    if (deleteError) {
+                        console.warn('⚠️ Failed to delete old image:', deleteError.message)
+                        // Don't fail the upload if deletion fails
+                    } else {
+                        console.log('✅ Old profile image deleted successfully')
+                    }
+                }
+            } catch (deleteErr) {
+                console.warn('⚠️ Error during old image cleanup:', deleteErr)
+                // Don't fail the upload if cleanup fails
+            }
+        }
+
         // Create unique filename path: profiles/{userId}/{timestamp}.{ext}
         // Grouping by userId keeps the bucket organized
         const timestamp = Date.now()

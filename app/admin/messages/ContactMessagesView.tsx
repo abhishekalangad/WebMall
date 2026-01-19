@@ -20,17 +20,25 @@ export default function ContactMessagesView() {
     const { toast } = useToast()
     const { accessToken } = useAuth()
     const [messages, setMessages] = useState<ContactMessage[]>([])
-    const [stats, setStats] = useState({ new: 0, read: 0, replied: 0 })
+    const [stats, setStats] = useState({ new: 0, read: 0, replied: 0, total: 0 })
     const [isLoading, setIsLoading] = useState(true)
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
     const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null)
     const [replyText, setReplyText] = useState('')
     const [isSendingReply, setIsSendingReply] = useState(false)
     const [filter, setFilter] = useState<'all' | 'new' | 'read' | 'replied'>('all')
+    const [page, setPage] = useState(1)
+    const [hasMore, setHasMore] = useState(false)
 
-    const fetchMessages = async () => {
-        setIsLoading(true)
+    const fetchMessages = async (pageNum: number = 1, append: boolean = false) => {
+        if (append) setIsLoadingMore(true)
+        else setIsLoading(true)
+
         try {
-            const url = filter === 'all' ? '/api/contact' : `/api/contact?status=${filter}`
+            const url = filter === 'all'
+                ? `/api/contact?page=${pageNum}&limit=10`
+                : `/api/contact?status=${filter}&page=${pageNum}&limit=10`
+
             const token = await accessToken()
             const response = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -38,8 +46,14 @@ export default function ContactMessagesView() {
             const data = await response.json()
 
             if (response.ok) {
-                setMessages(data.messages || [])
-                setStats(data.stats || { new: 0, read: 0, replied: 0 })
+                if (append) {
+                    setMessages(prev => [...prev, ...(data.messages || [])])
+                } else {
+                    setMessages(data.messages || [])
+                }
+                setStats(data.stats ? { ...data.stats, total: data.total } : { new: 0, read: 0, replied: 0, total: 0 })
+                setHasMore(data.pagination?.hasMore || false)
+                setPage(pageNum)
             }
         } catch (error) {
             console.error('Error fetching messages:', error)
@@ -50,12 +64,20 @@ export default function ContactMessagesView() {
             })
         } finally {
             setIsLoading(false)
+            setIsLoadingMore(false)
         }
     }
 
     useEffect(() => {
-        fetchMessages()
+        setPage(1)
+        fetchMessages(1, false)
     }, [filter])
+
+    const handleLoadMore = () => {
+        if (!isLoadingMore && hasMore) {
+            fetchMessages(page + 1, true)
+        }
+    }
 
     const handleMarkAsRead = async (id: string) => {
         try {
@@ -70,7 +92,8 @@ export default function ContactMessagesView() {
             })
             // Update local state to reflect change immediately (optimistic update)
             setMessages(prev => prev.map(m => m.id === id ? { ...m, status: 'read' } : m))
-            // Also update stats if we want to be precise, or just wait for next fetch
+
+            // Update stats immediately to reflect the count change
             setStats(prev => ({
                 ...prev,
                 new: prev.new > 0 ? prev.new - 1 : 0,
@@ -120,9 +143,21 @@ export default function ContactMessagesView() {
                     title: 'Reply Sent!',
                     description: 'Your reply has been sent successfully.',
                 })
+
+                // Update stats locally for immediate feedback
+                if (selectedMessage.status !== 'replied') {
+                    setStats(prev => ({
+                        ...prev,
+                        replied: prev.replied + 1,
+                        read: selectedMessage.status === 'read' ? (prev.read > 0 ? prev.read - 1 : 0) : prev.read,
+                        new: selectedMessage.status === 'new' ? (prev.new > 0 ? prev.new - 1 : 0) : prev.new
+                    }))
+                }
+
                 setSelectedMessage(null)
                 setReplyText('')
-                fetchMessages()
+                // Fetch to sync complete state
+                fetchMessages(1, false)
             } else {
                 throw new Error(data.error)
             }
@@ -192,7 +227,7 @@ export default function ContactMessagesView() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-gray-600">Total Messages</p>
-                                <p className="text-2xl font-bold text-gray-900">{messages.length}</p>
+                                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
                             </div>
                             <Mail className="h-8 w-8 text-gray-400" />
                         </div>
@@ -241,7 +276,7 @@ export default function ContactMessagesView() {
                         </button>
                     ))}
                     <button
-                        onClick={fetchMessages}
+                        onClick={() => fetchMessages()}
                         className="ml-auto px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors flex items-center gap-2"
                     >
                         <RefreshCcw className="h-4 w-4" />
@@ -282,6 +317,23 @@ export default function ContactMessagesView() {
                                     <p className="text-sm text-gray-600 line-clamp-2">{message.message}</p>
                                 </div>
                             ))}
+                            {hasMore && (
+                                <div className="p-4 border-t border-gray-100 flex justify-center">
+                                    <Button
+                                        variant="outline"
+                                        onClick={handleLoadMore}
+                                        disabled={isLoadingMore}
+                                        className="rounded-xl min-w-[150px]"
+                                    >
+                                        {isLoadingMore ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Loading...
+                                            </>
+                                        ) : 'Load More'}
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

@@ -137,36 +137,35 @@ export async function GET(request: NextRequest) {
         const token = authHeader.split(' ')[1]
         const user = await verifyAuthToken(token)
 
-        if (!user) {
+        if (!user || user.role !== 'admin') {
             return NextResponse.json(
                 { error: 'Unauthorized - Invalid token' },
                 { status: 401 }
             )
         }
 
-        if (user.role !== 'admin') {
-            return NextResponse.json(
-                { error: 'Forbidden - Admin access required' },
-                { status: 403 }
-            )
-        }
-
         const { searchParams } = new URL(request.url)
         const status = searchParams.get('status')
+        const page = parseInt(searchParams.get('page') || '1')
+        const limit = parseInt(searchParams.get('limit') || '10')
+        const skip = (page - 1) * limit
 
         // Build filter
         let where: any = {}
-        if (status === 'replied') {
-            where.adminReply = { not: null }
-        } else if (status === 'new') {
-            where.adminReply = null
+        if (status && status !== 'all') {
+            where.status = status
         }
-        // 'all' or 'read' (treating read similar to new for now)
 
-        const messages = await prisma.message.findMany({
-            where,
-            orderBy: { createdAt: 'desc' }
-        })
+        // Fetch messages with pagination
+        const [messages, totalCount] = await Promise.all([
+            prisma.message.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: limit
+            }),
+            prisma.message.count({ where })
+        ])
 
         // Map Prisma model to ContactMessage interface
         const mappedMessages = messages.map(msg => ({
@@ -175,7 +174,7 @@ export async function GET(request: NextRequest) {
             email: msg.email,
             subject: msg.subject || 'No Subject',
             message: msg.message,
-            status: msg.adminReply ? 'replied' : 'new',
+            status: msg.status as 'new' | 'read' | 'replied',
             reply: msg.adminReply || undefined,
             repliedAt: msg.replyAt?.toISOString(),
             createdAt: msg.createdAt.toISOString(),
@@ -183,21 +182,22 @@ export async function GET(request: NextRequest) {
         }))
 
         // Calculate stats using the 'status' field for accuracy
-        const total = await prisma.message.count()
-        const newCount = await prisma.message.count({ where: { status: 'new' } })
-        const readCount = await prisma.message.count({ where: { status: 'read' } })
-        const repliedCount = await prisma.message.count({
-            where: {
-                OR: [
-                    { status: 'replied' },
-                    { adminReply: { not: null } }
-                ]
-            }
-        })
+        const [total, newCount, readCount, repliedCount] = await Promise.all([
+            prisma.message.count(),
+            prisma.message.count({ where: { status: 'new' } }),
+            prisma.message.count({ where: { status: 'read' } }),
+            prisma.message.count({ where: { status: 'replied' } })
+        ])
 
         return NextResponse.json({
             messages: mappedMessages,
             total,
+            pagination: {
+                page,
+                limit,
+                totalPages: Math.ceil(totalCount / limit),
+                hasMore: page * limit < totalCount
+            },
             stats: {
                 new: newCount,
                 read: readCount,

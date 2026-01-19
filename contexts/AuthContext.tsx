@@ -144,6 +144,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleSignOut = async () => {
     setLoading(true)
     try {
+      // Clear all cart data from localStorage before signing out
+      const cartKeys = Object.keys(localStorage).filter(key => key.startsWith('webmall-cart-'))
+      cartKeys.forEach(key => localStorage.removeItem(key))
+
       await supabase.auth.signOut()
       setUser(null)
       setSupabaseUser(null)

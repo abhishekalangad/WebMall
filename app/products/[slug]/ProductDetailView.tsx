@@ -275,8 +275,12 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
     // or use passed in calculated fields.
     const { settings } = useSiteConfig()
 
-    // Calculate effective price based on variant selection
+    // Calculate effective price and min price for "Starting from" display
     const effectivePrice = selectedVariant?.priceOverride || initialProduct.price || 0
+    const prices = [initialProduct.price, ...(initialProduct.variants?.map((v: any) => v.priceOverride).filter(Boolean) || [])]
+    const minPrice = Math.min(...prices)
+    const hasPriceRange = prices.some(p => p !== initialProduct.price)
+
     const maxStock = selectedVariant ? selectedVariant.stock : (initialProduct.stock || 0)
 
     // Transform product data with normalization
@@ -443,6 +447,65 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                 category: product.category?.name || 'Uncategorized'
             })
         }
+    }
+
+    const handleBuyNow = () => {
+        if (!user) {
+            router.push('/login?redirect=/products/' + product.slug)
+            return
+        }
+
+        // Validate variant selection if product has variants
+        if (product.variants.length > 0 && !selectedVariant) {
+            toast({
+                title: "Selection Required",
+                description: "Please select all product options before proceeding",
+                variant: "destructive"
+            })
+            return
+        }
+
+        // Validate stock availability
+        const availableStock = selectedVariant ? selectedVariant.stock : product.stockCount
+        if (availableStock <= 0) {
+            toast({
+                title: "Out of Stock",
+                description: "This product is currently unavailable",
+                variant: "destructive"
+            })
+            return
+        }
+
+        // Check if quantity exceeds stock
+        if (quantity > availableStock) {
+            toast({
+                title: "Stock Limit",
+                description: `Only ${availableStock} units available`,
+                variant: "destructive"
+            })
+            return
+        }
+
+        // Create a temporary cart item for checkout
+        const buyNowItem = {
+            productId: product.id,
+            variantId: selectedVariant?.id,
+            name: product.name,
+            price: effectivePrice,
+            quantity: quantity,
+            image: (selectedVariant?.images && selectedVariant.images.length > 0)
+                ? selectedVariant.images[0]
+                : (selectedVariant?.image || product.images[selectedImage]?.url || product.images[0]?.url),
+            slug: product.slug,
+            variantName: selectedVariant?.name,
+            variantAttributes: selectedVariant?.attributes
+        }
+
+        // Store in localStorage for checkout page to access
+        localStorage.setItem('buyNowItem', JSON.stringify(buyNowItem))
+
+        // Redirect to checkout
+        router.push('/checkout?buyNow=true')
     }
 
     const handleSubmitReview = async () => {
@@ -632,11 +695,23 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                         <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
 
                         {/* Price */}
-                        <div className="flex items-center space-x-2">
-                            <span className="text-3xl font-bold">{product.currency} {effectivePrice.toLocaleString()}</span>
-                            {selectedVariant && selectedVariant.priceOverride && (
-                                <span className="text-lg text-gray-500 line-through">{product.currency} {product.price.toLocaleString()}</span>
+                        <div className="flex flex-col space-y-1">
+                            {!selectedVariant && hasPriceRange && (
+                                <span className="text-sm font-medium text-pink-600">Starting at</span>
                             )}
+                            <div className="flex items-center space-x-3">
+                                <span className="text-3xl font-bold text-gray-900">
+                                    {product.currency} {(!selectedVariant && hasPriceRange ? minPrice : effectivePrice).toLocaleString()}
+                                </span>
+                                {selectedVariant && selectedVariant.priceOverride && product.price > effectivePrice && (
+                                    <div className="flex items-center space-x-2">
+                                        <span className="text-lg text-gray-400 line-through font-normal">{product.currency} {product.price.toLocaleString()}</span>
+                                        <Badge className="bg-green-100 text-green-700 border-none font-bold">
+                                            {Math.round(((product.price - effectivePrice) / product.price) * 100)}% OFF
+                                        </Badge>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <p className="text-gray-600">{product.description}</p>
@@ -682,7 +757,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
 
                                                 return (
                                                     <div key={attrType} className="bg-white rounded-2xl p-5 border-2 border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                                                        <Label className="text-base font-bold text-gray-900 capitalize mb-3 block flex items-center gap-2">
+                                                        <Label className="text-base font-bold text-gray-900 capitalize mb-3 flex items-center gap-2">
                                                             {isColorAttr && <div className="w-3 h-3 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full" />}
                                                             {isSizeAttr && <span className="text-pink-500">📏</span>}
                                                             {attrType}
@@ -843,6 +918,14 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                         <p className="text-xs text-gray-600 mb-1">Price</p>
                                                         <p className="text-2xl font-bold text-pink-600">
                                                             {product.currency} {effectivePrice.toLocaleString()}
+                                                            {selectedVariant && selectedVariant.priceOverride && product.price > effectivePrice && (
+                                                                <div className="flex items-center space-x-2 mt-1">
+                                                                    <span className="text-sm text-gray-400 line-through font-normal">{product.currency} {product.price.toLocaleString()}</span>
+                                                                    <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px] py-0 h-4">
+                                                                        {Math.round(((product.price - effectivePrice) / product.price) * 100)}% OFF
+                                                                    </Badge>
+                                                                </div>
+                                                            )}
                                                         </p>
                                                         <div className="mt-2">
                                                             {selectedVariant.stock > 10 ? (
@@ -878,12 +961,16 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                     <Button variant="ghost" size="sm" onClick={() => setQuantity(Math.min(maxStock, quantity + 1))}><Plus className="h-4 w-4" /></Button>
                                 </div>
                             </div>
-                            <div className="flex space-x-3">
-                                <Button onClick={handleAddToCart} disabled={!product.inStock} className="flex-1 bg-gradient-to-r from-pink-300 to-yellow-300 text-gray-900 font-semibold h-12">
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <Button onClick={handleAddToCart} disabled={!product.inStock} className="flex-1 bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold h-12 sm:h-14 text-base shadow-lg hover:shadow-xl transition-all">
                                     <ShoppingBag className="mr-2 h-5 w-5" /> Add to Cart
                                 </Button>
-                                <Button variant="outline" onClick={handleWishlist} className={`h-12 w-12 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'text-red-500' : ''}`}>
+                                <Button onClick={handleBuyNow} disabled={!product.inStock} className="flex-1 bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500 text-white font-semibold h-12 sm:h-14 text-base shadow-lg hover:shadow-xl transition-all">
+                                    <Truck className="mr-2 h-5 w-5" /> Buy Now
+                                </Button>
+                                <Button variant="outline" onClick={handleWishlist} className={`h-12 sm:h-14 w-full sm:w-14 border-2 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'text-red-500 border-red-300 bg-red-50' : 'border-gray-300 hover:border-red-300 hover:bg-red-50'}`}>
                                     <Heart className={`h-5 w-5 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'fill-current' : ''}`} />
+                                    <span className="ml-2 sm:hidden">Wishlist</span>
                                 </Button>
                             </div>
                         </div>

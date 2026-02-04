@@ -79,7 +79,14 @@ export default async function ProductsPage() {
         orderBy: { name: 'asc' }
       })
     ])
-    products = fetchedProducts.map(p => ({ ...p, price: Number(p.price) }))
+    products = fetchedProducts.map(p => ({
+      ...p,
+      price: Number(p.price),
+      variants: p.variants.map(v => ({
+        ...v,
+        priceOverride: v.priceOverride ? Number(v.priceOverride) : null
+      }))
+    }))
     categories = fetchedCategories
   } catch (error) {
     console.warn('Failed to fetch products page data:', error)

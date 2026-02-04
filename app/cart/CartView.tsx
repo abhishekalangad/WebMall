@@ -12,20 +12,24 @@ import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { getValidImageUrl, handleImageError } from '@/lib/image-utils'
 
+import { useSiteConfig } from '@/contexts/SiteConfigContext'
+
 export function CartView() {
+    const { settings } = useSiteConfig()
     const { items, updateQuantity, removeItem, clearCart, totalItems, totalPrice } = useCart()
     const { toast } = useToast()
     const [promoCode, setPromoCode] = useState('')
     const [discount, setDiscount] = useState(0)
     const [removingItem, setRemovingItem] = useState<string | null>(null)
 
-    // Calculate free shipping progress and costs
-    const freeShippingThreshold = 5000
-    const shippingRatePerItem = 350
+    // Calculate free shipping progress and costs using site settings
+    const freeShippingThreshold = settings?.freeShippingThreshold || 5000
+    const shippingBaseRate = settings?.shippingBaseRate || 350
+
     const isFreeShipping = totalPrice >= freeShippingThreshold
 
-    // Shipping logic: Per item charge if under threshold
-    const shippingCost = isFreeShipping ? 0 : (totalItems * shippingRatePerItem)
+    // Shipping logic: Flat rate as configured in admin
+    const shippingCost = isFreeShipping ? 0 : shippingBaseRate
 
     const shippingProgress = Math.min((totalPrice / freeShippingThreshold) * 100, 100)
     const amountToFreeShipping = Math.max(freeShippingThreshold - totalPrice, 0)

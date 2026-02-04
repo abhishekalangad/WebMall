@@ -10,11 +10,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card } from '@/components/ui/card'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { useSiteConfig } from '@/contexts/SiteConfigContext'
 import { supabase } from '@/lib/supabase'
 
 export default function CheckoutPage() {
+  const { settings } = useSiteConfig()
   const { items, totalPrice, clearCart } = useCart()
   const { user } = useAuth()
+
+  // Calculate shipping cost based on settings
+  const freeShippingThreshold = settings?.freeShippingThreshold || 5000
+  const shippingBaseRate = settings?.shippingBaseRate || 350
+
+  const isFreeShipping = totalPrice >= freeShippingThreshold
+  const shippingCost = isFreeShipping ? 0 : shippingBaseRate
+
   const [loading, setLoading] = useState(false)
   const [orderComplete, setOrderComplete] = useState(false)
   const [couponCode, setCouponCode] = useState('')
@@ -81,7 +91,7 @@ export default function CheckoutPage() {
 
   const subtotal = totalPrice
   const discount = appliedCoupon?.discountAmount || 0
-  const finalTotal = appliedCoupon?.finalTotal || totalPrice
+  const finalTotal = (appliedCoupon?.finalTotal || totalPrice) + shippingCost
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -441,6 +451,10 @@ export default function CheckoutPage() {
                 <div className="flex justify-between items-center text-gray-600">
                   <span>Subtotal:</span>
                   <span>{subtotal.toLocaleString('en-LK')} LKR</span>
+                </div>
+                <div className="flex justify-between items-center text-gray-600">
+                  <span>Shipping:</span>
+                  <span>{isFreeShipping ? 'FREE' : `${shippingCost.toLocaleString('en-LK')} LKR`}</span>
                 </div>
                 {discount > 0 && (
                   <div className="flex justify-between items-center text-green-600">

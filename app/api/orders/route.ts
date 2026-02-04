@@ -21,6 +21,8 @@ const orderSchema = z.object({
   }),
   paymentMethod: z.enum(['cod', 'cash', 'card']).default('cod'),
   notes: z.string().optional().nullable(),
+  discountAmount: z.number().optional().default(0),
+  couponCode: z.string().optional().nullable(),
 })
 
 export async function GET(request: NextRequest) {
@@ -128,7 +130,12 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const { items, shippingAddress, notes, paymentMethod } = parseResult.data
+    const { items, shippingAddress, notes, paymentMethod, discountAmount, couponCode } = parseResult.data
+
+    // Fetch site settings for shipping logic
+    const settings = await prisma.siteSettings.findUnique({ where: { id: 'default' } })
+    const freeShippingThreshold = settings?.freeShippingThreshold || 5000
+    const shippingBaseRate = settings?.shippingBaseRate || 350
 
     // Calculate totals simple way; production should validate prices
     const productIds = items.map((i: any) => i.productId)
@@ -145,6 +152,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Validate stock and calculate items with prices
     const itemsWithPrices = items.map((i: any) => {
       const p = products.find(pr => pr.id === i.productId)
       if (!p) throw new Error('Invalid product')
@@ -152,7 +160,16 @@ export async function POST(request: NextRequest) {
       const total = price * i.quantity
       return { productId: i.productId, quantity: i.quantity, price, total }
     })
-    const totalAmount = itemsWithPrices.reduce((s: number, i: any) => s + i.total, 0)
+
+    // Calculate subtotal
+    const subtotal = itemsWithPrices.reduce((s: number, i: any) => s + i.total, 0)
+
+    // Apply shipping logic
+    const isFreeShipping = subtotal >= freeShippingThreshold
+    const shippingCost = isFreeShipping ? 0 : shippingBaseRate
+
+    // Final total amount
+    const totalAmount = subtotal - (discountAmount || 0) + shippingCost
 
     // 🔧 FIX: Ensure user exists in public.users before creating order
     // This handles cases where Supabase auth user hasn't been synced yet

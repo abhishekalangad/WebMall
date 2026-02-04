@@ -292,6 +292,8 @@ model HeroBanner {
   ctaLink     String?  @default("/products") @map("cta_link")
   position    Int      @default(0) @map("position")
   isActive    Boolean  @default(true) @map("is_active")
+  showBadge   Boolean  @default(true) @map("show_badge")
+  showTopRated Boolean @default(true) @map("show_top_rated")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

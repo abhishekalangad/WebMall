@@ -28,6 +28,9 @@ interface HeroBanner {
     ctaText: string | null
     ctaLink: string | null
     position: number
+    isActive: boolean
+    showBadge: boolean
+    showTopRated: boolean
 }
 
 interface Category {

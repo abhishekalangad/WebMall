@@ -16,7 +16,10 @@ import {
     Truck,
     Menu,
     X,
-    GripVertical
+    GripVertical,
+    Plus,
+    Trash2,
+    Image as ImageIcon
 } from 'lucide-react'
 import { ImageUpload } from '@/components/admin/ImageUpload'
 import { Button } from '@/components/ui/button'
@@ -36,6 +39,20 @@ interface NavItem {
     id: string
     label: string
     path: string
+}
+
+interface BannerItem {
+    id: string
+    title: string
+    subtitle: string
+    imageUrl: string
+    ctaText: string
+    ctaLink: string
+    position: number
+    isActive: boolean
+    showBadge: boolean
+    showTopRated: boolean
+    isNew?: boolean
 }
 
 // Sortable navigation item component
@@ -145,6 +162,9 @@ export default function AdminSettingsPage() {
         customerNavigation: DEFAULT_CUSTOMER_TABS
     })
 
+    const [banners, setBanners] = useState<BannerItem[]>([])
+    const [isSavingBanners, setIsSavingBanners] = useState(false)
+
     // Load settings on mount
     useEffect(() => {
         const fetchSettings = async () => {
@@ -178,6 +198,15 @@ export default function AdminSettingsPage() {
                         }
                         setSettings(prev => ({ ...prev, ...consolidatedSettings }))
                     }
+                }
+
+                // Fetch banners
+                const bannersRes = await fetch('/api/admin/hero-banners', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                if (bannersRes.ok) {
+                    const bannersData = await bannersRes.json()
+                    setBanners(bannersData)
                 }
             } catch (error) {
                 console.error('[Settings Load] Error:', error)
@@ -238,7 +267,7 @@ export default function AdminSettingsPage() {
         const { name, value, type } = e.target
         setSettings(prev => ({
             ...prev,
-            [name]: type === 'number' ? parseFloat(value) : value
+            [name]: type === 'number' ? (value === '' ? '' : value) : value
         }))
     }
 
@@ -581,6 +610,292 @@ export default function AdminSettingsPage() {
                         </div>
                     </Card>
 
+                    {/* Hero Banners */}
+                    <Card className="p-8 border-none shadow-sm">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center space-x-3">
+                                <div className="p-2 bg-pink-100 rounded-lg text-pink-600">
+                                    <ImageIcon className="w-5 h-5" />
+                                </div>
+                                <h2 className="text-xl font-bold text-gray-900">Hero Banners</h2>
+                            </div>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                    const newBanner: BannerItem = {
+                                        id: generateId(),
+                                        title: 'New Featured Collection',
+                                        subtitle: 'Discover our latest arrivals',
+                                        imageUrl: '',
+                                        ctaText: 'Shop Now',
+                                        ctaLink: '/products',
+                                        position: banners.length,
+                                        isActive: true,
+                                        showBadge: true,
+                                        showTopRated: true,
+                                        isNew: true
+                                    }
+                                    setBanners([...banners, newBanner])
+                                }}
+                                className="flex items-center gap-2"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add Banner
+                            </Button>
+                        </div>
+
+                        <div className="space-y-8">
+                            {banners.length === 0 && (
+                                <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                                    <ImageIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                                    <p className="text-gray-500">No hero banners configured yet.</p>
+                                </div>
+                            )}
+
+                            <Reorder.Group
+                                axis="y"
+                                values={banners}
+                                onReorder={setBanners}
+                                className="space-y-6"
+                            >
+                                {banners.map((banner, index) => {
+                                    return (
+                                        <Reorder.Item
+                                            key={banner.id}
+                                            value={banner}
+                                            className="bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow relative group"
+                                        >
+                                            <div className="p-6">
+                                                <div className="flex gap-6">
+                                                    {/* Drag Handle */}
+                                                    <div className="flex items-center cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-600">
+                                                        <GripVertical className="w-6 h-6" />
+                                                    </div>
+
+                                                    {/* Image Preview / Upload */}
+                                                    <div className="w-48 space-y-2">
+                                                        <ImageUpload
+                                                            currentImageUrl={banner.imageUrl}
+                                                            onUploadComplete={(url) => {
+                                                                const newBanners = [...banners]
+                                                                newBanners[index].imageUrl = url
+                                                                setBanners(newBanners)
+                                                            }}
+                                                            bucket="site-assets"
+                                                        />
+                                                    </div>
+
+                                                    {/* Form Fields */}
+                                                    <div className="flex-1 grid grid-cols-2 gap-4">
+                                                        <div className="col-span-2 space-y-1">
+                                                            <label className="text-xs font-bold text-gray-500 uppercase">Banner Title</label>
+                                                            <Input
+                                                                value={banner.title}
+                                                                onChange={(e) => {
+                                                                    const newBanners = [...banners]
+                                                                    newBanners[index].title = e.target.value
+                                                                    setBanners(newBanners)
+                                                                }}
+                                                                placeholder="Main headline"
+                                                            />
+                                                        </div>
+                                                        <div className="col-span-2 space-y-1">
+                                                            <label className="text-xs font-bold text-gray-500 uppercase">Subtitle / Description</label>
+                                                            <Input
+                                                                value={banner.subtitle}
+                                                                onChange={(e) => {
+                                                                    const newBanners = [...banners]
+                                                                    newBanners[index].subtitle = e.target.value
+                                                                    setBanners(newBanners)
+                                                                }}
+                                                                placeholder="Secondary text"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <label className="text-xs font-bold text-gray-500 uppercase">Button Text</label>
+                                                            <Input
+                                                                value={banner.ctaText}
+                                                                onChange={(e) => {
+                                                                    const newBanners = [...banners]
+                                                                    newBanners[index].ctaText = e.target.value
+                                                                    setBanners(newBanners)
+                                                                }}
+                                                                placeholder="e.g. Shop Now"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <label className="text-xs font-bold text-gray-500 uppercase">Button URL</label>
+                                                            <Input
+                                                                value={banner.ctaLink}
+                                                                onChange={(e) => {
+                                                                    const newBanners = [...banners]
+                                                                    newBanners[index].ctaLink = e.target.value
+                                                                    setBanners(newBanners)
+                                                                }}
+                                                                placeholder="e.g. /products"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Actions & Toggles */}
+                                                    <div className="flex flex-col gap-4 min-w-[140px]">
+                                                        {/* Status Toggle (isActive) */}
+                                                        <div className="space-y-1.5">
+                                                            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Banner Status</label>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const newBanners = [...banners]
+                                                                    newBanners[index].isActive = !newBanners[index].isActive
+                                                                    setBanners(newBanners)
+                                                                }}
+                                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${banner.isActive ? 'bg-green-500' : 'bg-gray-200'}`}
+                                                            >
+                                                                <span className="sr-only">Toggle Status</span>
+                                                                <span
+                                                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${banner.isActive ? 'translate-x-6' : 'translate-x-1'}`}
+                                                                />
+                                                                <span className="absolute right-1 text-[8px] font-bold text-white uppercase pr-1.5 select-none">{banner.isActive ? 'ON' : ''}</span>
+                                                                <span className="absolute left-1 text-[8px] font-bold text-gray-400 uppercase pl-1.5 select-none">{!banner.isActive ? 'OFF' : ''}</span>
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Badge Toggle */}
+                                                        <div className="space-y-1.5">
+                                                            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Craft Badge</label>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const newBanners = [...banners]
+                                                                    newBanners[index].showBadge = !newBanners[index].showBadge
+                                                                    setBanners(newBanners)
+                                                                }}
+                                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${banner.showBadge ? 'bg-pink-500' : 'bg-gray-200'}`}
+                                                            >
+                                                                <span className="sr-only">Toggle Badge</span>
+                                                                <span
+                                                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${banner.showBadge ? 'translate-x-6' : 'translate-x-1'}`}
+                                                                />
+                                                                <span className="absolute right-1 text-[8px] font-bold text-white uppercase pr-1.5 select-none">{banner.showBadge ? 'ON' : ''}</span>
+                                                                <span className="absolute left-1 text-[8px] font-bold text-gray-400 uppercase pl-1.5 select-none">{!banner.showBadge ? 'OFF' : ''}</span>
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Top Rated Toggle */}
+                                                        <div className="space-y-1.5">
+                                                            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Top Rated Card</label>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const newBanners = [...banners]
+                                                                    newBanners[index].showTopRated = !newBanners[index].showTopRated
+                                                                    setBanners(newBanners)
+                                                                }}
+                                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${banner.showTopRated ? 'bg-indigo-500' : 'bg-gray-200'}`}
+                                                            >
+                                                                <span className="sr-only">Toggle Top Rated</span>
+                                                                <span
+                                                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${banner.showTopRated ? 'translate-x-6' : 'translate-x-1'}`}
+                                                                />
+                                                                <span className="absolute right-1 text-[8px] font-bold text-white uppercase pr-1.5 select-none">{banner.showTopRated ? 'ON' : ''}</span>
+                                                                <span className="absolute left-1 text-[8px] font-bold text-gray-400 uppercase pl-1.5 select-none">{!banner.showTopRated ? 'OFF' : ''}</span>
+                                                            </button>
+                                                        </div>
+
+                                                        <div className="pt-2 border-t mt-1">
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="text-red-500 hover:bg-red-50 w-full justify-start p-0 h-8"
+                                                                onClick={async () => {
+                                                                    if (!banner.isNew) {
+                                                                        if (!confirm('Permanently delete this banner?')) return
+                                                                        try {
+                                                                            const token = await accessToken()
+                                                                            await fetch(`/api/admin/hero-banners/${banner.id}`, {
+                                                                                method: 'DELETE',
+                                                                                headers: { 'Authorization': `Bearer ${token}` }
+                                                                            })
+                                                                        } catch (err) {
+                                                                            console.error(err)
+                                                                        }
+                                                                    }
+                                                                    setBanners(banners.filter(b => b.id !== banner.id))
+                                                                }}
+                                                            >
+                                                                <Trash2 className="w-4 h-4 mr-2" />
+                                                                Delete
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Reorder.Item>
+                                    )
+                                })}
+                            </Reorder.Group>
+
+                            {banners.length > 0 && (
+                                <div className="flex justify-end pt-4 border-t">
+                                    <Button
+                                        type="button"
+                                        onClick={async () => {
+                                            setIsSavingBanners(true)
+                                            try {
+                                                const token = await accessToken()
+                                                // Save all banners sequentially or in parallel
+                                                await Promise.all(banners.map(async (banner, index) => {
+                                                    const payload = { ...banner, position: index }
+                                                    const method = banner.isNew ? 'POST' : 'PUT'
+                                                    const url = banner.isNew ? '/api/admin/hero-banners' : `/api/admin/hero-banners/${banner.id}`
+
+                                                    const res = await fetch(url, {
+                                                        method,
+                                                        headers: {
+                                                            'Content-Type': 'application/json',
+                                                            'Authorization': `Bearer ${token}`
+                                                        },
+                                                        body: JSON.stringify(payload)
+                                                    })
+                                                    return res.json()
+                                                }))
+
+                                                await refreshConfig()
+                                                toast({
+                                                    title: "Banners Saved",
+                                                    description: "Hero banners have been synchronized."
+                                                })
+
+                                                // Refresh banners to get permanent IDs
+                                                const bannersRes = await fetch('/api/admin/hero-banners', {
+                                                    headers: { 'Authorization': `Bearer ${token}` }
+                                                })
+                                                if (bannersRes.ok) {
+                                                    setBanners(await bannersRes.json())
+                                                }
+                                            } catch (error) {
+                                                console.error(error)
+                                                toast({
+                                                    title: "Save Failed",
+                                                    description: "Could not save banners.",
+                                                    variant: "destructive"
+                                                })
+                                            } finally {
+                                                setIsSavingBanners(false)
+                                            }
+                                        }}
+                                        disabled={isSavingBanners}
+                                        className="bg-pink-600 hover:bg-pink-700 text-white"
+                                    >
+                                        {isSavingBanners ? "Synchronizing..." : "Save Banner Configuration"}
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    </Card>
+
                     {/* Shipping Settings */}
                     <Card className="p-8 border-none shadow-sm">
                         <div className="flex items-center space-x-3 mb-6">
@@ -595,7 +910,7 @@ export default function AdminSettingsPage() {
                                 <Input
                                     name="shippingBaseRate"
                                     type="number"
-                                    value={settings.shippingBaseRate}
+                                    value={settings.shippingBaseRate ?? ''}
                                     onChange={handleChange}
                                 />
                             </div>
@@ -604,7 +919,7 @@ export default function AdminSettingsPage() {
                                 <Input
                                     name="freeShippingThreshold"
                                     type="number"
-                                    value={settings.freeShippingThreshold}
+                                    value={settings.freeShippingThreshold ?? ''}
                                     onChange={handleChange}
                                 />
                             </div>
@@ -632,6 +947,6 @@ export default function AdminSettingsPage() {
                     </div>
                 </form>
             </div>
-        </div>
+        </div >
     )
 }

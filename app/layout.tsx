@@ -116,6 +116,8 @@ export const metadata: Metadata = {
   },
 }
 
+import { ScrollbarHandler } from '@/components/layout/ScrollbarHandler'
+
 export default function RootLayout({
   children,
 }: {
@@ -124,6 +126,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable} ${dancingScript.variable} ${greatVibes.variable}`}>
       <body className={inter.className} suppressHydrationWarning>
+        <ScrollbarHandler />
         <ErrorBoundary>
           <AuthProvider>
             <SiteConfigProvider>

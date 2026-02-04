@@ -3,7 +3,8 @@
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight, Sparkles, Shield, Truck, Star } from 'lucide-react'
+import { ArrowRight, Sparkles, Shield, Truck, Star, ChevronLeft, ChevronRight } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { ProductCard } from '@/components/products/ProductCard'
 import { InstagramShowcase } from '@/components/home/InstagramShowcase'
@@ -22,6 +23,19 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
     const { addItem: addToCart } = useCart()
     const { addItem: addToWishlist } = useWishlist()
     const { banners, settings } = useSiteConfig()
+    const [currentSlide, setCurrentSlide] = React.useState(0)
+
+    React.useEffect(() => {
+        if (banners.length > 1) {
+            const timer = setInterval(() => {
+                setCurrentSlide((prev) => (prev + 1) % banners.length)
+            }, 5000)
+            return () => clearInterval(timer)
+        }
+    }, [banners.length])
+
+    const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % banners.length)
+    const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + banners.length) % banners.length)
 
     const handleAddToCart = (product: any) => {
         if (!user) {
@@ -56,90 +70,150 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
 
     return (
         <div className="min-h-screen">
-            {/* Hero Section */}
-            <section className="relative bg-gradient-to-br from-pink-50 via-yellow-50 to-green-50 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-pink-100/20 to-yellow-100/20"></div>
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-24">
-                    {banners.length > 0 ? (
-                        <div className="space-y-12">
-                            {banners.map((banner, index) => (
-                                <div key={banner.id} className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${index > 0 ? 'mt-24 pt-24 border-t border-gray-100' : ''}`}>
-                                    <div className={index % 2 === 1 ? 'lg:order-2' : ''}>
-                                        <h1 className="text-4xl md:text-6xl font-playfair font-bold text-gray-900 mb-6 leading-tight">
-                                            {banner.title}
+            <section className="relative min-h-[600px] lg:h-[800px] bg-[#fffcf9] overflow-hidden flex items-center">
+                {/* Decorative Background Elements */}
+                <div className="absolute top-0 right-0 w-1/2 h-full bg-[#fdf2f8]/50 skew-x-[-12deg] translate-x-32 z-0" />
+                <div className="absolute top-[10%] left-[5%] w-64 h-64 bg-pink-100/40 rounded-full blur-3xl z-0 animate-pulse" />
+                <div className="absolute bottom-[10%] right-[15%] w-96 h-96 bg-yellow-50/60 rounded-full blur-3xl z-0" />
+
+                {banners.length > 0 ? (
+                    <div className="relative w-full max-w-7xl mx-auto px-6 lg:px-12 z-10">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={banners[currentSlide].id}
+                                className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center"
+                            >
+                                {/* Text Content Side */}
+                                <div className="order-2 lg:order-1 text-center lg:text-left">
+                                    <motion.div
+                                        initial={{ y: 20, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        exit={{ y: -20, opacity: 0 }}
+                                        transition={{ duration: 0.6 }}
+                                    >
+                                        <span className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 text-xs font-bold tracking-[0.2em] uppercase text-pink-500 bg-pink-50 rounded-full">
+                                            <Sparkles className="w-3.5 h-3.5" />
+                                            New Arrival
+                                        </span>
+
+                                        <h1 className="text-5xl md:text-7xl font-playfair font-bold text-gray-900 mb-8 leading-[1.1]">
+                                            {banners[currentSlide].title.split(' ').map((word, i) => (
+                                                <motion.span
+                                                    key={i}
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: 0.2 + (i * 0.1) }}
+                                                    className="inline-block mr-3"
+                                                >
+                                                    {word}
+                                                </motion.span>
+                                            ))}
                                         </h1>
-                                        {banner.subtitle && (
-                                            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                                                {banner.subtitle}
-                                            </p>
+
+                                        <motion.p
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 0.7 }}
+                                            transition={{ delay: 0.5 }}
+                                            className="text-lg md:text-xl text-gray-600 mb-10 max-w-lg mx-auto lg:mx-0 leading-relaxed"
+                                        >
+                                            {banners[currentSlide].subtitle}
+                                        </motion.p>
+
+                                        <motion.div
+                                            initial={{ scale: 0.9, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            transition={{ delay: 0.7 }}
+                                            className="flex flex-col sm:flex-row items-center gap-6 justify-center lg:justify-start"
+                                        >
+                                            <Link href={banners[currentSlide].ctaLink || '/products'}>
+                                                <Button size="lg" className="h-14 px-10 rounded-full bg-gray-900 text-white hover:bg-black hover:scale-105 transition-all duration-300 font-bold shadow-xl">
+                                                    {banners[currentSlide].ctaText || 'Shop Now'}
+                                                    <ArrowRight className="ml-2 h-5 w-5" />
+                                                </Button>
+                                            </Link>
+
+                                            <Link href="/products" className="text-gray-900 font-semibold border-b-2 border-pink-200 hover:border-pink-400 transition-all py-1">
+                                                View Collection
+                                            </Link>
+                                        </motion.div>
+                                    </motion.div>
+                                </div>
+
+                                {/* Image Side - Editorial Frame */}
+                                <div className="order-1 lg:order-2 relative">
+                                    <motion.div
+                                        initial={{ scale: 0.8, opacity: 0, rotate: 5 }}
+                                        animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                                        exit={{ scale: 0.8, opacity: 0 }}
+                                        transition={{ duration: 0.8, ease: "circOut" }}
+                                        className="relative aspect-[4/5] md:aspect-square lg:aspect-[4/5] rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.1)] group"
+                                    >
+                                        <Image
+                                            src={banners[currentSlide].imageUrl}
+                                            alt={banners[currentSlide].title}
+                                            fill
+                                            className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                            priority
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-pink-500/10 to-transparent" />
+
+                                        {/* Floating Badge on Image */}
+                                        {banners[currentSlide].showBadge && (
+                                            <motion.div
+                                                animate={{ y: [0, -10, 0] }}
+                                                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                                                className="absolute top-8 right-8 w-24 h-24 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-center p-2 shadow-lg border border-white/20"
+                                            >
+                                                <span className="text-[10px] font-bold text-gray-900 leading-tight uppercase tracking-tighter">
+                                                    Authentic<br />Sri Lankan<br />Craft
+                                                </span>
+                                            </motion.div>
                                         )}
-                                        <div className="flex flex-col sm:flex-row gap-4">
-                                            {banner.ctaLink && (
-                                                <Link href={banner.ctaLink}>
-                                                    <Button size="lg" className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold px-8">
-                                                        {banner.ctaText || 'Shop Now'}
-                                                        <ArrowRight className="ml-2 h-5 w-5" />
-                                                    </Button>
-                                                </Link>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className={`relative ${index % 2 === 1 ? 'lg:order-1' : ''}`}>
-                                        <div className="absolute -inset-4 bg-gradient-to-r from-pink-200 to-yellow-200 rounded-3xl blur-2xl opacity-30"></div>
-                                        <div className="relative w-full h-[400px] md:h-[600px] rounded-3xl overflow-hidden shadow-2xl">
-                                            <Image
-                                                src={banner.imageUrl}
-                                                alt={banner.title}
-                                                fill
-                                                className="object-cover"
-                                                priority={index === 0}
-                                            />
-                                        </div>
-                                    </div>
+                                    </motion.div>
+
+                                    {/* Decorative Floating Card */}
+                                    {banners[currentSlide].showTopRated && (
+                                        <motion.div
+                                            initial={{ x: 50, opacity: 0 }}
+                                            animate={{ x: 0, opacity: 1 }}
+                                            transition={{ delay: 1 }}
+                                            className="absolute -bottom-6 -left-6 bg-white p-4 rounded-2xl shadow-xl hidden md:block"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center text-pink-500">
+                                                    <Star className="w-5 h-5 fill-current" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-bold text-gray-900">Top Rated</p>
+                                                    <p className="text-[10px] text-gray-500">Selected by customers</p>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
                                 </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                            <div>
-                                <h1 className="text-4xl md:text-5xl lg:text-6xl font-playfair font-bold text-gray-900 mb-6 leading-tight">
-                                    Discover
-                                    <span className="bg-gradient-to-r from-pink-400 to-yellow-400 bg-clip-text text-transparent"> Beautiful </span>
-                                    Accessories
-                                </h1>
-                                <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                                    Explore our curated collection of Sri Lankan fashion accessories.
-                                    From handcrafted jewelry to elegant bags, find pieces that tell your unique story.
-                                </p>
-                                <div className="flex flex-col sm:flex-row gap-4">
-                                    <Link href="/products">
-                                        <Button size="lg" className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold px-8 w-full sm:w-auto">
-                                            Shop Now
-                                            <ArrowRight className="ml-2 h-5 w-5" />
-                                        </Button>
-                                    </Link>
-                                    <Link href="/categories">
-                                        <Button variant="outline" size="lg" className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8 w-full sm:w-auto">
-                                            Browse Categories
-                                        </Button>
-                                    </Link>
+                            </motion.div>
+                        </AnimatePresence>
+
+                        {/* Pagination Progress Controls */}
+                        {banners.length > 1 && (
+                            <div className="absolute bottom-[-60px] lg:bottom-4 left-1/2 lg:left-0 -translate-x-1/2 lg:translate-x-0 flex items-center gap-4">
+                                <div className="flex gap-2">
+                                    {banners.map((_, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => setCurrentSlide(idx)}
+                                            className={`h-1 rounded-full transition-all duration-500 ${idx === currentSlide ? 'w-12 bg-gray-900' : 'w-4 bg-gray-200'}`}
+                                        />
+                                    ))}
+                                </div>
+                                <div className="hidden lg:flex gap-2 ml-4">
+                                    <button onClick={prevSlide} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><ChevronLeft className="w-5 h-5" /></button>
+                                    <button onClick={nextSlide} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><ChevronRight className="w-5 h-5" /></button>
                                 </div>
                             </div>
-                            <div className="relative">
-                                <div className="absolute -inset-4 bg-gradient-to-r from-pink-200 to-yellow-200 rounded-3xl blur-2xl opacity-30"></div>
-                                <div className="relative aspect-square rounded-3xl overflow-hidden shadow-2xl">
-                                    <Image
-                                        src="/hero/img1.png"
-                                        alt="Beautiful accessories"
-                                        fill
-                                        className="object-cover"
-                                        priority
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </div>
+                ) : null}
             </section>
 
 

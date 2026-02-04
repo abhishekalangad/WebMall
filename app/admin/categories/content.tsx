@@ -138,6 +138,10 @@ export default function AdminCategoriesContent() {
 
         try {
             const token = await accessToken()
+            if (!token) {
+                alert('Session expired. Please log in again.')
+                return
+            }
             const response = await fetch(`/api/categories/${editingCategory.id}`, {
                 method: 'PUT',
                 headers: {
@@ -153,10 +157,12 @@ export default function AdminCategoriesContent() {
                 setCategoryFormData({ name: '', slug: '', description: '', image: '' })
                 fetchCategories()
             } else {
-                alert('Failed to update category')
+                const errorData = await response.json().catch(() => ({}));
+                alert(`Failed to update category: ${errorData.error || response.statusText || 'Unknown error'}`)
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to update category:', error)
+            alert(`Failed to update category: ${error.message}`)
         }
     }
 

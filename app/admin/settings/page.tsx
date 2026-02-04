@@ -72,10 +72,10 @@ const SortableNavItem = ({
             value={item}
             dragListener={false}
             dragControls={controls}
-            className="grid grid-cols-12 gap-4 items-center group bg-white p-2 rounded-md border border-transparent hover:border-gray-200 transition-colors"
+            className="flex flex-col sm:grid sm:grid-cols-12 gap-3 sm:gap-4 items-start sm:items-center group bg-white p-3 sm:p-2 rounded-md border border-transparent hover:border-gray-200 transition-colors relative"
         >
-            {/* Drag Handle */}
-            <div className="col-span-1 flex justify-center">
+            {/* Drag Handle - Absolute on Mobile */}
+            <div className="absolute top-2 right-2 sm:static sm:col-span-1 flex justify-center w-full sm:w-auto h-auto">
                 <div
                     onPointerDown={(e) => controls.start(e)}
                     className="cursor-grab active:cursor-grabbing p-2 text-gray-300 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
@@ -85,7 +85,8 @@ const SortableNavItem = ({
             </div>
 
             {/* Label Input */}
-            <div className="col-span-4">
+            <div className="w-full sm:col-span-4 mt-8 sm:mt-0">
+                <label className="text-xs font-semibold text-gray-500 mb-1 block sm:hidden">Label</label>
                 <Input
                     value={item.label}
                     onChange={(e) => onChange('label', e.target.value)}
@@ -95,7 +96,8 @@ const SortableNavItem = ({
             </div>
 
             {/* Path Input */}
-            <div className="col-span-6">
+            <div className="w-full sm:col-span-6">
+                <label className="text-xs font-semibold text-gray-500 mb-1 block sm:hidden">Path</label>
                 <Input
                     value={item.path}
                     onChange={(e) => onChange('path', e.target.value)}
@@ -105,15 +107,16 @@ const SortableNavItem = ({
             </div>
 
             {/* Delete Button */}
-            <div className="col-span-1 flex justify-end">
+            <div className="w-full sm:col-span-1 flex justify-end sm:justify-end mt-2 sm:mt-0">
                 <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 h-9 w-9 p-0 rounded-full"
+                    className="text-red-400 hover:text-red-500 hover:bg-red-50 h-9 w-full sm:w-9 px-0 rounded-md sm:rounded-full flex items-center justify-center gap-2"
                     onClick={onRemove}
                 >
                     <X className="w-4 h-4" />
+                    <span className="sm:hidden text-sm">Remove Item</span>
                 </Button>
             </div>
         </Reorder.Item>
@@ -491,7 +494,7 @@ export default function AdminSettingsPage() {
                                 Customize the tabs that appear in the admin header. Drag handles to reorder.
                             </p>
 
-                            <div className="grid grid-cols-12 gap-4 mb-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            <div className="hidden sm:grid grid-cols-12 gap-4 mb-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                 <div className="col-span-1 text-center">Order</div>
                                 <div className="col-span-4">Label</div>
                                 <div className="col-span-6">Path</div>
@@ -557,7 +560,7 @@ export default function AdminSettingsPage() {
                                 Customize the tabs that appear in the customer header. Drag handles to reorder.
                             </p>
 
-                            <div className="grid grid-cols-12 gap-4 mb-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            <div className="hidden sm:grid grid-cols-12 gap-4 mb-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                 <div className="col-span-1 text-center">Order</div>
                                 <div className="col-span-4">Label</div>
                                 <div className="col-span-6">Path</div>
@@ -667,14 +670,14 @@ export default function AdminSettingsPage() {
                                             className="bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow relative group"
                                         >
                                             <div className="p-6">
-                                                <div className="flex gap-6">
+                                                <div className="flex flex-col lg:flex-row gap-6">
                                                     {/* Drag Handle */}
-                                                    <div className="flex items-center cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-600">
+                                                    <div className="absolute top-2 right-2 lg:static flex items-center cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-600 p-2 lg:p-0 z-10">
                                                         <GripVertical className="w-6 h-6" />
                                                     </div>
 
                                                     {/* Image Preview / Upload */}
-                                                    <div className="w-48 space-y-2">
+                                                    <div className="w-full sm:w-64 lg:w-48 mx-auto lg:mx-0 space-y-2">
                                                         <ImageUpload
                                                             currentImageUrl={banner.imageUrl}
                                                             onUploadComplete={(url) => {
@@ -687,7 +690,7 @@ export default function AdminSettingsPage() {
                                                     </div>
 
                                                     {/* Form Fields */}
-                                                    <div className="flex-1 grid grid-cols-2 gap-4">
+                                                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                         <div className="col-span-2 space-y-1">
                                                             <label className="text-xs font-bold text-gray-500 uppercase">Banner Title</label>
                                                             <Input
@@ -739,7 +742,7 @@ export default function AdminSettingsPage() {
                                                     </div>
 
                                                     {/* Actions & Toggles */}
-                                                    <div className="flex flex-col gap-4 min-w-[140px]">
+                                                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex lg:flex-col gap-4 lg:min-w-[140px] border-t lg:border-t-0 pt-4 lg:pt-0">
                                                         {/* Status Toggle (isActive) */}
                                                         <div className="space-y-1.5">
                                                             <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Banner Status</label>

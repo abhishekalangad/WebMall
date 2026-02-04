@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { code, discountType, discountValue, expiryDate, usageLimit, minimumOrder, status } = body
+        const { code, discountType, discountValue, expiryDate, usageLimit, minimumOrder, status, usageType, maxUsesPerUser } = body
 
         // Validate unique code
         const existing = await prisma.coupon.findUnique({
@@ -60,7 +60,9 @@ export async function POST(request: NextRequest) {
                 expiryDate: new Date(expiryDate),
                 usageLimit: usageLimit || 100,
                 minimumOrder: minimumOrder || 0,
-                status: status || 'active'
+                status: status || 'active',
+                usageType: usageType || 'one_per_user',
+                maxUsesPerUser: maxUsesPerUser || 1
             }
         })
 

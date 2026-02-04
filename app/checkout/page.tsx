@@ -57,9 +57,21 @@ export default function CheckoutPage() {
     setCouponError('')
 
     try {
+      // Get auth token
+      const { supabase } = await import('@/lib/supabase')
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        setCouponError('You must be logged in to use coupons')
+        return
+      }
+
       const response = await fetch('/api/coupons/validate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({
           code: couponCode.trim(),
           orderTotal: totalPrice

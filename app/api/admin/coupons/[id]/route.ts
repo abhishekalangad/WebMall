@@ -20,7 +20,7 @@ export async function PUT(
         }
 
         const body = await request.json()
-        const { code, discountType, discountValue, expiryDate, usageLimit, minimumOrder, status } = body
+        const { code, discountType, discountValue, expiryDate, usageLimit, minimumOrder, status, usageType, maxUsesPerUser } = body
         const { id } = await params
 
         const coupon = await prisma.coupon.update({
@@ -32,7 +32,9 @@ export async function PUT(
                 expiryDate: new Date(expiryDate),
                 usageLimit,
                 minimumOrder,
-                status
+                status,
+                usageType,
+                maxUsesPerUser
             }
         })
 

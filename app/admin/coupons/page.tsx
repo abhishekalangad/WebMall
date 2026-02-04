@@ -20,6 +20,8 @@ interface Coupon {
     timesUsed: number
     minimumOrder: number
     status: 'active' | 'inactive'
+    usageType: 'one_per_user' | 'unlimited' | 'user_specific'
+    maxUsesPerUser: number
     createdAt: string
     updatedAt: string
 }
@@ -38,7 +40,9 @@ export default function AdminCouponsPage() {
         expiryDate: '',
         usageLimit: 100,
         minimumOrder: 0,
-        status: 'active' as 'active' | 'inactive'
+        status: 'active' as 'active' | 'inactive',
+        usageType: 'one_per_user' as 'one_per_user' | 'unlimited' | 'user_specific',
+        maxUsesPerUser: 1
     })
 
     useEffect(() => {
@@ -137,7 +141,9 @@ export default function AdminCouponsPage() {
             expiryDate: coupon.expiryDate.split('T')[0],
             usageLimit: coupon.usageLimit,
             minimumOrder: coupon.minimumOrder,
-            status: coupon.status
+            status: coupon.status,
+            usageType: coupon.usageType || 'one_per_user',
+            maxUsesPerUser: coupon.maxUsesPerUser || 1
         })
         setShowForm(true)
     }
@@ -150,7 +156,9 @@ export default function AdminCouponsPage() {
             expiryDate: '',
             usageLimit: 100,
             minimumOrder: 0,
-            status: 'active'
+            status: 'active',
+            usageType: 'one_per_user',
+            maxUsesPerUser: 1
         })
         setEditingCoupon(null)
         setShowForm(false)
@@ -338,6 +346,35 @@ export default function AdminCouponsPage() {
                                         <option value="inactive">Inactive</option>
                                     </select>
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Usage Type *
+                                    </label>
+                                    <select
+                                        value={formData.usageType}
+                                        onChange={(e) => setFormData({ ...formData, usageType: e.target.value as any })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                        required
+                                    >
+                                        <option value="one_per_user">One Per User (Email Tracked)</option>
+                                        <option value="unlimited">Unlimited Uses Per User</option>
+                                        <option value="user_specific">Limited Uses Per User</option>
+                                    </select>
+                                </div>
+                                {formData.usageType !== 'unlimited' && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Max Uses Per User
+                                        </label>
+                                        <Input
+                                            type="number"
+                                            value={formData.maxUsesPerUser || 1}
+                                            onChange={(e) => setFormData({ ...formData, maxUsesPerUser: parseInt(e.target.value) || 1 })}
+                                            min="1"
+                                            disabled={formData.usageType === 'one_per_user'}
+                                        />
+                                    </div>
+                                )}
                             </div>
                             <div className="flex gap-3">
                                 <Button type="submit" className="bg-gray-900 text-white hover:bg-gray-800">

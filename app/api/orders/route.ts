@@ -202,7 +202,33 @@ export async function POST(request: NextRequest) {
         include: { items: true }
       })
 
-      // Update stock for each product
+      // Record coupon usage if a coupon was applied
+      if (couponCode && discountAmount && discountAmount > 0) {
+        // Find the coupon
+        const coupon = await tx.coupon.findUnique({
+          where: { code: couponCode.toUpperCase() }
+        })
+
+        if (coupon) {
+          // Create usage record with email tracking to prevent account deletion bypass
+          await tx.couponUsage.create({
+            data: {
+              couponId: coupon.id,
+              userId: dbUser.id,
+              userEmail: user.email,
+              orderId: order.id,
+              discountAmount: discountAmount
+            }
+          })
+
+          // Increment coupon usage count atomically
+          await tx.coupon.update({
+            where: { id: coupon.id },
+            data: { timesUsed: { increment: 1 } }
+          })
+        }
+      }
+
       // Update stock for each product with atomic check
       for (const item of itemsWithPrices) {
         // Use updateMany because it allows "where" with non-unique fields (though id is unique)

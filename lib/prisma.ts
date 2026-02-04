@@ -24,10 +24,17 @@ const prismaClientSingleton = () => {
         const limit = process.env.NODE_ENV === 'development' ? 5 : 10
         connectionUrl += `pgbouncer=true&connection_limit=${limit}`
       }
+    } else if (isPoolerUrl) {
+      // For Session mode pooler (port 5432) - Use minimal connections
+      if (!connectionUrl.includes('connection_limit')) {
+        connectionUrl += connectionUrl.includes('?') ? '&' : '?'
+        const limit = 1 // Session mode has strict limits, use 1 connection per instance
+        connectionUrl += `connection_limit=${limit}&pool_timeout=0&connect_timeout=10`
+      }
     } else if (!connectionUrl.includes('connection_limit')) {
-      // For Direct connections or Session mode
+      // For Direct connections
       connectionUrl += connectionUrl.includes('?') ? '&' : '?'
-      const limit = process.env.NODE_ENV === 'development' ? 5 : 5
+      const limit = process.env.NODE_ENV === 'development' ? 5 : 10
       connectionUrl += `connection_limit=${limit}`
     }
 

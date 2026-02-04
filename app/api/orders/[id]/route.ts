@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma-extended'
+import { prisma } from '@/lib/prisma'
 import { verifyAuthToken } from '@/lib/auth'
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

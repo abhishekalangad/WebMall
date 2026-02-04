@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma-extended'
+import { prisma } from '@/lib/prisma'
 import { verifyAuthToken } from '@/lib/auth-server'
 
 // GET all subcategories or filter by category

@@ -18,8 +18,6 @@ export function CartView() {
     const { settings } = useSiteConfig()
     const { items, updateQuantity, removeItem, clearCart, totalItems, totalPrice } = useCart()
     const { toast } = useToast()
-    const [promoCode, setPromoCode] = useState('')
-    const [discount, setDiscount] = useState(0)
     const [removingItem, setRemovingItem] = useState<string | null>(null)
 
     // Calculate free shipping progress and costs using site settings
@@ -35,29 +33,7 @@ export function CartView() {
     const amountToFreeShipping = Math.max(freeShippingThreshold - totalPrice, 0)
 
     // ... promo logic ...
-    const handleApplyPromo = () => {
-        // Demo promo codes
-        const promos: Record<string, number> = {
-            'SAVE10': 0.1,
-            'WELCOME': 0.15,
-            'SAVE20': 0.2
-        }
 
-        if (promos[promoCode.toUpperCase()]) {
-            const discountPercent = promos[promoCode.toUpperCase()]
-            setDiscount(discountPercent)
-            toast({
-                title: '✨ Promo Applied!',
-                description: `${(discountPercent * 100)}% discount added to your order`
-            })
-        } else {
-            toast({
-                title: 'Invalid Code',
-                description: 'Please check your promo code and try again',
-                variant: 'destructive'
-            })
-        }
-    }
 
     const handleRemoveItem = (productId: string, variantId?: string) => {
         setRemovingItem(productId)
@@ -71,7 +47,7 @@ export function CartView() {
         }, 300)
     }
 
-    const finalTotal = totalPrice - (totalPrice * discount) + shippingCost
+    const finalTotal = totalPrice + shippingCost
 
     // Estimated delivery date (3-5 business days from now)
     const estimatedDate = new Date()
@@ -241,9 +217,21 @@ export function CartView() {
                                                         </div>
                                                     )}
 
-                                                    <p className="text-pink-600 font-bold text-base sm:text-lg">
-                                                        LKR {item.price.toLocaleString()}
-                                                    </p>
+                                                    <div className="flex flex-col">
+                                                        <p className="text-pink-600 font-bold text-base sm:text-lg">
+                                                            LKR {item.price.toLocaleString()}
+                                                        </p>
+                                                        {item.originalPrice && item.originalPrice > item.price && (
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="text-xs text-gray-400 line-through">
+                                                                    LKR {item.originalPrice.toLocaleString()}
+                                                                </p>
+                                                                <Badge className="text-[10px] px-1.5 py-0 h-4 bg-green-100 text-green-700 hover:bg-green-100 border-none">
+                                                                    {Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% OFF
+                                                                </Badge>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
 
                                                 {/* Controls - Mobile Optimized */}
@@ -299,29 +287,7 @@ export function CartView() {
                                 Order Summary
                             </h2>
 
-                            {/* Promo Code */}
-                            <div className="mb-6">
-                                <label className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                                    <Tag className="h-4 w-4" />
-                                    Promo Code
-                                </label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        placeholder="Enter code"
-                                        value={promoCode}
-                                        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                                        className="flex-1"
-                                    />
-                                    <Button
-                                        onClick={handleApplyPromo}
-                                        variant="outline"
-                                        className="border-pink-200 text-pink-600 hover:bg-pink-50"
-                                    >
-                                        Apply
-                                    </Button>
-                                </div>
-                                <p className="text-xs text-gray-500 mt-1">Try: SAVE10, WELCOME, SAVE20</p>
-                            </div>
+
 
                             {/* Price Breakdown */}
                             <div className="space-y-3 mb-6 pb-6 border-b">
@@ -330,15 +296,7 @@ export function CartView() {
                                     <span className="font-medium">LKR {totalPrice.toLocaleString()}</span>
                                 </div>
 
-                                {discount > 0 && (
-                                    <div className="flex justify-between text-green-600">
-                                        <span className="flex items-center gap-1">
-                                            <Sparkles className="h-4 w-4" />
-                                            Discount ({(discount * 100)}%)
-                                        </span>
-                                        <span className="font-medium">- LKR {(totalPrice * discount).toLocaleString()}</span>
-                                    </div>
-                                )}
+
 
                                 <div className="flex justify-between text-gray-600">
                                     <span className="flex items-center gap-1">

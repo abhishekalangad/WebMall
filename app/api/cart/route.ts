@@ -37,11 +37,11 @@ export async function GET(request: NextRequest) {
                         },
                         variant: {
                             select: {
-                                id: true,
                                 name: true,
                                 attributes: true,
                                 image: true,
-                                images: true
+                                images: true,
+                                priceOverride: true
                             }
                         }
                     }
@@ -92,20 +92,27 @@ export async function GET(request: NextRequest) {
         }
 
         // Transform to CartItem format expected by frontend
-        const cartItems = cart.items.map(item => ({
-            id: item.id,
-            productId: item.productId!,
-            variantId: item.variantId || undefined,
-            name: item.product?.name || 'Unknown Product',
-            price: Number(item.product?.price || 0),
-            quantity: item.quantity,
-            image: (item.variant?.images && item.variant.images.length > 0)
-                ? item.variant.images[0]
-                : (item.variant?.image || item.product?.images[0]?.url),
-            slug: item.product?.slug || '',
-            variantName: item.variantName || undefined,
-            variantAttributes: item.variantAttributes as Record<string, string> || undefined
-        }))
+        const cartItems = cart.items.map(item => {
+            const productPrice = Number(item.product?.price || 0)
+            const variantPrice = item.variant?.priceOverride ? Number(item.variant.priceOverride) : null
+            const finalPrice = variantPrice !== null ? variantPrice : productPrice
+
+            return {
+                id: item.id,
+                productId: item.productId!,
+                variantId: item.variantId || undefined,
+                name: item.product?.name || 'Unknown Product',
+                price: finalPrice,
+                originalPrice: productPrice > finalPrice ? productPrice : undefined,
+                quantity: item.quantity,
+                image: (item.variant?.images && item.variant.images.length > 0)
+                    ? item.variant.images[0]
+                    : (item.variant?.image || item.product?.images[0]?.url),
+                slug: item.product?.slug || '',
+                variantName: item.variantName || undefined,
+                variantAttributes: item.variantAttributes as Record<string, string> || undefined
+            }
+        })
 
         return NextResponse.json({ items: cartItems })
     } catch (error: any) {
@@ -209,11 +216,11 @@ export async function POST(request: NextRequest) {
                         },
                         variant: {
                             select: {
-                                id: true,
                                 name: true,
                                 attributes: true,
                                 image: true,
-                                images: true
+                                images: true,
+                                priceOverride: true
                             }
                         }
                     }
@@ -222,20 +229,27 @@ export async function POST(request: NextRequest) {
         })
 
         // Transform to CartItem format
-        const cartItems = updatedCart!.items.map(item => ({
-            id: item.id,
-            productId: item.productId!,
-            variantId: item.variantId || undefined,
-            name: item.product?.name || 'Unknown Product',
-            price: Number(item.product?.price || 0),
-            quantity: item.quantity,
-            image: (item.variant?.images && item.variant.images.length > 0)
-                ? item.variant.images[0]
-                : (item.variant?.image || item.product?.images[0]?.url),
-            slug: item.product?.slug || '',
-            variantName: item.variantName || undefined,
-            variantAttributes: item.variantAttributes as Record<string, string> || undefined
-        }))
+        const cartItems = updatedCart!.items.map(item => {
+            const productPrice = Number(item.product?.price || 0)
+            const variantPrice = item.variant?.priceOverride ? Number(item.variant.priceOverride) : null
+            const finalPrice = variantPrice !== null ? variantPrice : productPrice
+
+            return {
+                id: item.id,
+                productId: item.productId!,
+                variantId: item.variantId || undefined,
+                name: item.product?.name || 'Unknown Product',
+                price: finalPrice,
+                originalPrice: productPrice > finalPrice ? productPrice : undefined,
+                quantity: item.quantity,
+                image: (item.variant?.images && item.variant.images.length > 0)
+                    ? item.variant.images[0]
+                    : (item.variant?.image || item.product?.images[0]?.url),
+                slug: item.product?.slug || '',
+                variantName: item.variantName || undefined,
+                variantAttributes: item.variantAttributes as Record<string, string> || undefined
+            }
+        })
 
         return NextResponse.json({ items: cartItems })
     } catch (error: any) {

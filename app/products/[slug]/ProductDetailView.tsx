@@ -403,7 +403,8 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                     : (selectedVariant?.image || product.images[selectedImage]?.url || product.images[0]?.url),
                 slug: product.slug,
                 variantName: selectedVariant?.name,
-                variantAttributes: selectedVariant?.attributes
+                variantAttributes: selectedVariant?.attributes,
+                originalPrice: product.price > effectivePrice ? product.price : undefined
             })
             toast({
                 title: "Added to Cart!",
@@ -498,7 +499,8 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                 : (selectedVariant?.image || product.images[selectedImage]?.url || product.images[0]?.url),
             slug: product.slug,
             variantName: selectedVariant?.name,
-            variantAttributes: selectedVariant?.attributes
+            variantAttributes: selectedVariant?.attributes,
+            originalPrice: product.price > effectivePrice ? product.price : undefined
         }
 
         // Store in localStorage for checkout page to access
@@ -703,7 +705,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                 <span className="text-3xl font-bold text-gray-900">
                                     {product.currency} {(!selectedVariant && hasPriceRange ? minPrice : effectivePrice).toLocaleString()}
                                 </span>
-                                {selectedVariant && selectedVariant.priceOverride && product.price > effectivePrice && (
+                                {product.price > effectivePrice && (
                                     <div className="flex items-center space-x-2">
                                         <span className="text-lg text-gray-400 line-through font-normal">{product.currency} {product.price.toLocaleString()}</span>
                                         <Badge className="bg-green-100 text-green-700 border-none font-bold">
@@ -916,9 +918,9 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                     </div>
                                                     <div className="text-left sm:text-right border-t sm:border-t-0 sm:border-l border-pink-200 pt-3 sm:pt-0 sm:pl-4">
                                                         <p className="text-xs text-gray-600 mb-1">Price</p>
-                                                        <p className="text-2xl font-bold text-pink-600">
+                                                        <div className="text-2xl font-bold text-pink-600">
                                                             {product.currency} {effectivePrice.toLocaleString()}
-                                                            {selectedVariant && selectedVariant.priceOverride && product.price > effectivePrice && (
+                                                            {product.price > effectivePrice && (
                                                                 <div className="flex items-center space-x-2 mt-1">
                                                                     <span className="text-sm text-gray-400 line-through font-normal">{product.currency} {product.price.toLocaleString()}</span>
                                                                     <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px] py-0 h-4">
@@ -926,7 +928,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                                     </Badge>
                                                                 </div>
                                                             )}
-                                                        </p>
+                                                        </div>
                                                         <div className="mt-2">
                                                             {selectedVariant.stock > 10 ? (
                                                                 <Badge className="bg-green-500 text-white">

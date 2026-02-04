@@ -15,6 +15,7 @@ export interface CartItem {
   slug: string
   variantName?: string
   variantAttributes?: Record<string, string>
+  originalPrice?: number
 }
 
 interface CartContextType {

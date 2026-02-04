@@ -7,6 +7,7 @@ import { z } from 'zod'
 const orderSchema = z.object({
   items: z.array(z.object({
     productId: z.string().min(1, 'Product ID is required'),
+    variantId: z.string().optional(),
     quantity: z.number().int().positive('Quantity must be positive'),
   })).min(1, 'Order must have at least one item'),
   shippingAddress: z.object({
@@ -44,7 +45,19 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit
 
     // Admin sees all orders, users see only their orders
-    const where = user.role === 'admin' ? {} : { userId: user.id }
+    let where: any = {}
+    if (user.role !== 'admin') {
+      const dbUser = await prisma.user.findUnique({
+        where: { supabaseId: user.id },
+        select: { id: true }
+      })
+
+      if (!dbUser) {
+        return NextResponse.json({ orders: [], pagination: { page, limit, totalCount: 0, totalPages: 0, hasNextPage: false, hasPrevPage: false } })
+      }
+
+      where = { userId: dbUser.id }
+    }
 
     // Get total count for pagination metadata
     const totalCount = await prisma.order.count({ where })
@@ -55,19 +68,39 @@ export async function GET(request: NextRequest) {
       skip,
       take: limit,
       include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true
+          }
+        },
         items: {
           include: {
             product: {
               select: {
                 id: true,
                 name: true,
+                price: true,
                 slug: true,
                 images: {
                   take: 1,
                   orderBy: { position: 'asc' }
                 }
               }
+            },
+            variant: {
+              select: {
+                name: true,
+                image: true
+              }
             }
+          }
+        },
+        couponUsage: {
+          include: {
+            coupon: true
           }
         }
       },
@@ -153,13 +186,45 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate stock and calculate items with prices
-    const itemsWithPrices = items.map((i: any) => {
+    const itemsWithPrices = await Promise.all(items.map(async (i: any) => {
       const p = products.find(pr => pr.id === i.productId)
       if (!p) throw new Error('Invalid product')
-      const price = Number(p.price)
+
+      let price = Number(p.price)
+      let variantName = null
+
+      // Handle variant logic if variantId is present
+      if (i.variantId) {
+        const variant = await prisma.productVariant.findUnique({
+          where: { id: i.variantId }
+        })
+
+        if (!variant) throw new Error(`Variant ${i.variantId} not found`)
+
+        // Check variant stock
+        if (variant.stock < i.quantity) {
+          throw new Error(`Insufficient stock for variant "${variant.name}". Available: ${variant.stock}`)
+        }
+
+        // Use variant price override if available
+        if (variant.priceOverride) {
+          price = Number(variant.priceOverride)
+        }
+
+        variantName = variant.name
+      }
+
       const total = price * i.quantity
-      return { productId: i.productId, quantity: i.quantity, price, total }
-    })
+      return {
+        productId: i.productId,
+        variantId: i.variantId,
+        variantName: variantName,
+        quantity: i.quantity,
+        price,
+        productName: p.name,
+        total
+      }
+    }))
 
     // Calculate subtotal
     const subtotal = itemsWithPrices.reduce((s: number, i: any) => s + i.total, 0)
@@ -186,20 +251,61 @@ export async function POST(request: NextRequest) {
 
     // Create order and update stock in a transaction for data consistency
     const created = await prisma.$transaction(async (tx) => {
+      // Generate sequential Order ID: ORD-YY-MM-XXXXXX
+      const now = new Date()
+      const year = now.getFullYear().toString().slice(-2)
+      const month = (now.getMonth() + 1).toString().padStart(2, '0')
+      const prefix = `ORD-${year}-${month}`
+
+      // Find the last order with this prefix to increment sequence
+      // Locking isn't strictly enforced here but unique constraint handles race conditions
+      const lastOrder = await tx.order.findFirst({
+        where: { orderNumber: { startsWith: prefix } },
+        orderBy: { orderNumber: 'desc' },
+        select: { orderNumber: true }
+      })
+
+      let sequence = 1
+      if (lastOrder && lastOrder.orderNumber) {
+        const parts = lastOrder.orderNumber.split('-')
+        const lastSeq = parseInt(parts[parts.length - 1])
+        if (!isNaN(lastSeq)) {
+          sequence = lastSeq + 1
+        }
+      }
+
+      const newOrderNumber = `${prefix}-${sequence.toString().padStart(6, '0')}`
+
       // Create the order
       const order = await tx.order.create({
         data: {
           userId: dbUser.id,
-          orderNumber: `ORD-${Date.now()}`,
+          orderNumber: newOrderNumber,
           status: 'pending',
           totalAmount,
           currency: 'LKR',
           paymentMethod,
           shippingAddress,
           notes: notes ?? null,
-          items: { create: itemsWithPrices }
+          items: {
+            create: itemsWithPrices.map(item => ({
+              productId: item.productId,
+              variantId: item.variantId,
+              variantName: item.variantName,
+              quantity: item.quantity,
+              price: item.price,
+              total: item.total
+            }))
+          }
         },
-        include: { items: true }
+        include: {
+          items: {
+            include: {
+              product: true,
+              variant: true
+            }
+          }
+        }
       })
 
       // Record coupon usage if a coupon was applied
@@ -229,20 +335,45 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Update stock for each product with atomic check
+      // Update stock for each product/variant with atomic check
       for (const item of itemsWithPrices) {
-        // Use updateMany because it allows "where" with non-unique fields (though id is unique)
-        // enabling the stock >= quantity check. Standard update() only allows unique where.
-        const result = await tx.product.updateMany({
-          where: {
-            id: item.productId,
-            stock: { gte: item.quantity } // Atomic check: stock must be >= quantity
-          },
-          data: { stock: { decrement: item.quantity } }
-        })
+        if (item.variantId) {
+          // Decrement variant stock
+          const variantResult = await tx.productVariant.updateMany({
+            where: {
+              id: item.variantId,
+              stock: { gte: item.quantity }
+            },
+            data: { stock: { decrement: item.quantity } }
+          })
 
-        if (result.count === 0) {
-          throw new Error(`Insufficient stock for product ID ${item.productId} during processing`)
+          if (variantResult.count === 0) {
+            throw new Error(`Insufficient stock for ${item.productName} (${item.variantName})`)
+          }
+
+          // Optionally decrement main product stock if you track aggregate stock there
+          // For now, assuming variants track their own stock and main product stock is just a cache or aggregate
+          // But to be safe, if product has stock, decrement it too? 
+          // Usually if variants exist, product.stock is sum of variants. 
+          // I will decrement product stock as well to keep them in sync if that's the logic.
+          // Based on schema, Product has stock and Variant has stock. 
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { decrement: item.quantity } }
+          })
+        } else {
+          // Standard product stock decrement
+          const result = await tx.product.updateMany({
+            where: {
+              id: item.productId,
+              stock: { gte: item.quantity }
+            },
+            data: { stock: { decrement: item.quantity } }
+          })
+
+          if (result.count === 0) {
+            throw new Error(`Insufficient stock for ${item.productName}`)
+          }
         }
       }
 

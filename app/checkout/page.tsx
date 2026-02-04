@@ -26,7 +26,7 @@ export default function CheckoutPage() {
   const shippingCost = isFreeShipping ? 0 : shippingBaseRate
 
   const [loading, setLoading] = useState(false)
-  const [orderComplete, setOrderComplete] = useState(false)
+  const [orderComplete, setOrderComplete] = useState<any>(null)
   const [couponCode, setCouponCode] = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
   const [couponLoading, setCouponLoading] = useState(false)
@@ -156,7 +156,7 @@ export default function CheckoutPage() {
 
       // Clear cart and show success
       clearCart()
-      setOrderComplete(true)
+      setOrderComplete(order) // Pass full order object
     } catch (error: any) {
       console.error('Checkout error:', error)
       alert(error.message || 'Failed to place order. Please try again.')
@@ -175,6 +175,9 @@ export default function CheckoutPage() {
           <h1 className="text-3xl font-playfair font-bold text-gray-900 mb-4">
             Order Confirmed!
           </h1>
+          <p className="text-xl font-bold text-pink-600 mb-2">
+            Order #: {orderComplete.orderNumber}
+          </p>
           <p className="text-gray-600 mb-8">
             Thank you for your purchase. Your order has been received and will be processed within 1-2 business days.
           </p>

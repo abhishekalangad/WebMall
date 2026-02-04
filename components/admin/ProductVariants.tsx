@@ -28,6 +28,7 @@ export interface ProductVariant {
     stock: number
     image?: string | null
     images?: string[]
+    discount?: number
 }
 
 interface ProductVariantsProps {
@@ -63,7 +64,8 @@ export function ProductVariants({
         priceOverride: null,
         stock: 0,
         image: null,
-        images: []
+        images: [],
+        discount: 0 // Local UI helper only
     })
 
     // For Attribute Selection
@@ -244,7 +246,14 @@ export function ProductVariants({
     }
 
     const handleEditVariant = (index: number) => {
-        setFormData(variants[index])
+        const variant = variants[index]
+        const currentPrice = variant.priceOverride ?? basePrice
+        const discount = basePrice > 0 ? Math.round(((basePrice - currentPrice) / basePrice) * 100) : 0
+
+        setFormData({
+            ...variant,
+            discount: discount > 0 ? discount : 0
+        })
         setEditingIndex(index)
         setShowForm(true)
     }
@@ -275,7 +284,8 @@ export function ProductVariants({
             priceOverride: null,
             stock: 0,
             image: null,
-            images: []
+            images: [],
+            discount: 0
         })
         setSelectedAttrType('')
         setSelectedAttrValue('')
@@ -545,21 +555,70 @@ export function ProductVariants({
                                     </div>
                                 </div>
 
-                                <div>
-                                    <Label className="text-xs font-medium text-gray-600">Price Override (Optional)</Label>
-                                    <div className="relative mt-1">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">{currency}</span>
-                                        <Input
-                                            type="number"
-                                            step="0.01"
-                                            value={formData.priceOverride ?? ''}
-                                            onChange={e => setFormData({ ...formData, priceOverride: e.target.value ? parseFloat(e.target.value) : null })}
-                                            className="pl-12"
-                                            placeholder={`Default: ${basePrice}`}
-                                        />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label className="text-xs font-medium text-gray-600">Price Override</Label>
+                                        <div className="relative mt-1">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">{currency}</span>
+                                            <Input
+                                                type="number"
+                                                step="1"
+                                                value={formData.priceOverride ?? ''}
+                                                onChange={e => {
+                                                    const val = e.target.value
+                                                    const newPrice = val ? parseFloat(val) : null
+                                                    let newDiscount = 0
+                                                    if (newPrice !== null && basePrice > 0 && newPrice < basePrice) {
+                                                        newDiscount = ((basePrice - newPrice) / basePrice) * 100
+                                                    }
+                                                    setFormData({
+                                                        ...formData,
+                                                        priceOverride: newPrice,
+                                                        discount: Math.round(newDiscount)
+                                                    })
+                                                }}
+                                                className="pl-12"
+                                                placeholder={`${basePrice}`}
+                                            />
+                                        </div>
                                     </div>
-                                    <p className="text-[10px] text-gray-500 mt-1">Leave empty to use base product price ({currency} {basePrice})</p>
+
+                                    <div>
+                                        <Label className="text-xs font-medium text-gray-600">Discount (%)</Label>
+                                        <div className="relative mt-1">
+                                            <Input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                value={formData.discount || ''}
+                                                onChange={e => {
+                                                    const val = e.target.value
+                                                    const newDiscount = val ? parseFloat(val) : 0
+                                                    let newPrice = null
+                                                    if (newDiscount > 0) {
+                                                        newPrice = Math.round(basePrice * (1 - newDiscount / 100))
+                                                    }
+                                                    setFormData({
+                                                        ...formData,
+                                                        discount: newDiscount,
+                                                        priceOverride: newPrice
+                                                    })
+                                                }}
+                                                placeholder="0%"
+                                                className="pr-8"
+                                            />
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">%</span>
+                                        </div>
+                                    </div>
                                 </div>
+                                <p className="text-[10px] text-gray-500 mt-1">
+                                    Base Price: {currency} {basePrice?.toLocaleString()}
+                                    {formData.priceOverride && formData.priceOverride < basePrice && (
+                                        <span className="text-green-600 ml-1 font-medium">
+                                            (Standard Save: {currency} {(basePrice - formData.priceOverride).toLocaleString()})
+                                        </span>
+                                    )}
+                                </p>
                             </div>
                         </div>
 

@@ -195,7 +195,13 @@ export function ProductCard({
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    router.push(`/products/${product.slug}`)
+                    const hasVariants = product.variants && product.variants.length > 0
+                    if (hasVariants) {
+                      router.push(`/products/${product.slug}`)
+                    } else {
+                      onAddToCart(product)
+                      router.push('/checkout')
+                    }
                   }}
                 >
                   Buy Now
@@ -350,7 +356,13 @@ export function ProductCard({
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                router.push(`/products/${product.slug}`)
+                const hasVariants = product.variants && product.variants.length > 0
+                if (hasVariants) {
+                  router.push(`/products/${product.slug}`)
+                } else {
+                  onAddToCart(product)
+                  router.push('/checkout')
+                }
               }}
             >
               Buy Now

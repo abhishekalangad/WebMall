@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/AuthContext'
+import { useSiteConfig } from '@/contexts/SiteConfigContext'
 
 // Types for API data
 interface OrderItem {
@@ -17,8 +18,14 @@ interface OrderItem {
         id: string
         name: string
         slug?: string
+        price?: number
         images?: Array<{ url: string }>
     }
+    variant?: {
+        name: string
+        image?: string
+    }
+    variantName?: string
     quantity: number
     price: number
     total: number
@@ -36,6 +43,14 @@ interface Order {
     createdAt: string
     updatedAt: string
     items: OrderItem[]
+    couponUsage?: {
+        discountAmount: number
+        coupon: {
+            code: string
+            discountType: string
+            discountValue: number
+        }
+    }
 }
 
 const statusColors = {
@@ -56,11 +71,13 @@ const statusLabels = {
 
 export function OrdersView() {
     const { user, loading: authLoading, accessToken } = useAuth()
+    const { settings } = useSiteConfig()
     const [orders, setOrders] = useState<Order[]>([])
     const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState('all')
     const [isLoadingOrders, setIsLoadingOrders] = useState(true)
+    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
     // Fetch orders from API
     useEffect(() => {
@@ -269,7 +286,11 @@ export function OrdersView() {
                                     </div>
 
                                     <div className="flex flex-col sm:flex-row gap-2">
-                                        <Button variant="outline" className="flex items-center gap-2">
+                                        <Button
+                                            variant="outline"
+                                            className="flex items-center gap-2"
+                                            onClick={() => setSelectedOrder(order)}
+                                        >
                                             <Eye className="h-4 w-4" />
                                             View Details
                                         </Button>
@@ -285,6 +306,202 @@ export function OrdersView() {
                         ))
                     )}
                 </div>
+
+                {/* Order Detail Modal Overlay */}
+                {selectedOrder && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
+                            <div className="p-6">
+                                <div className="flex justify-between items-start mb-6">
+                                    <div>
+                                        <h2 className="text-2xl font-bold font-playfair mb-1">Order Details</h2>
+                                        <p className="text-gray-500 text-sm">#{selectedOrder.orderNumber}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setSelectedOrder(null)}
+                                        className="text-gray-500 hover:text-gray-700"
+                                    >
+                                        <span className="sr-only">Close</span>
+                                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <div className="space-y-6">
+                                    {/* Order Status & Info */}
+                                    <div className="flex flex-wrap gap-4 items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+                                        <div className="space-y-1">
+                                            <div className="text-sm text-gray-500">Date Placed</div>
+                                            <div className="font-medium">
+                                                {new Date(selectedOrder.createdAt).toLocaleDateString()} {new Date(selectedOrder.createdAt).toLocaleTimeString()}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="text-sm text-gray-500">Status</div>
+                                            <Badge className={statusColors[selectedOrder.status as keyof typeof statusColors]}>
+                                                {statusLabels[selectedOrder.status as keyof typeof statusLabels]}
+                                            </Badge>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="text-sm text-gray-500">Payment Method</div>
+                                            <div className="font-medium capitalize">{selectedOrder.paymentMethod}</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Shipping Address */}
+                                    <div>
+                                        <h3 className="font-semibold mb-2 flex items-center gap-2">
+                                            <MapPin className="h-4 w-4" />
+                                            Shipping Information
+                                        </h3>
+                                        <div className="border rounded-lg p-4 text-sm space-y-1">
+                                            <div className="font-medium">
+                                                {selectedOrder.shippingAddress.firstName} {selectedOrder.shippingAddress.lastName}
+                                            </div>
+                                            <div>{selectedOrder.shippingAddress.address}</div>
+                                            <div>{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.postalCode}</div>
+                                            <div>{selectedOrder.shippingAddress.district}</div>
+                                            {selectedOrder.shippingAddress.phone && (
+                                                <div className="text-gray-500 mt-1">
+                                                    Phone: {selectedOrder.shippingAddress.phone}
+                                                </div>
+                                            )}
+                                            {selectedOrder.shippingAddress.email && (
+                                                <div className="text-gray-500">
+                                                    Email: {selectedOrder.shippingAddress.email}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Order Items */}
+                                    <div>
+                                        <h3 className="font-semibold mb-3 text-gray-900 border-b pb-2">Items Ordered</h3>
+                                        <div className="space-y-4">
+                                            {selectedOrder.items.map((item) => (
+                                                <div key={item.id} className="flex gap-4 items-start py-2">
+                                                    <div className="h-20 w-20 bg-gray-100 rounded-lg overflow-hidden shrink-0 border border-gray-200">
+                                                        {item.product.images?.[0]?.url ? (
+                                                            <img
+                                                                src={item.product.images[0].url}
+                                                                alt={item.product.name}
+                                                                className="h-full w-full object-cover"
+                                                                onError={(e) => {
+                                                                    (e.target as HTMLImageElement).src = '/placeholder.png'; // Fallback
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <div className="h-full w-full flex items-center justify-center bg-gray-50 text-gray-400">
+                                                                <Package className="h-8 w-8" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <div>
+                                                            <div className="font-medium text-gray-900 truncate text-base">
+                                                                {item.product.name}
+                                                                {(item.variantName || item.variant?.name) && (
+                                                                    <span className="ml-2 text-sm text-gray-500 font-normal">
+                                                                        ({item.variantName || item.variant?.name})
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {item.product.slug && (
+                                                                <Link
+                                                                    href={`/products/${item.product.slug}`}
+                                                                    className="text-xs text-blue-600 hover:text-blue-800 hover:underline mt-1 inline-flex items-center gap-1"
+                                                                    target="_blank"
+                                                                >
+                                                                    View Product <ArrowLeft className="h-3 w-3 rotate-180" />
+                                                                </Link>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex flex-col items-end gap-1">
+                                                            <div className="text-sm text-gray-500 flex items-center gap-2">
+                                                                <span className="font-medium text-gray-900">{item.quantity}</span> x
+                                                                <div className="flex flex-col items-end">
+                                                                    <span>{selectedOrder.currency} {Number(item.price).toLocaleString('en-LK')}</span>
+                                                                    {item.product.price && Number(item.price) < Number(item.product.price) && (
+                                                                        <span className="text-xs text-gray-400 line-through">
+                                                                            {selectedOrder.currency} {Number(item.product.price).toLocaleString('en-LK')}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            {item.product.price && Number(item.price) < Number(item.product.price) && (
+                                                                <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-medium">
+                                                                    Save {selectedOrder.currency} {(Number(item.product.price) - Number(item.price)).toLocaleString('en-LK')}
+                                                                </span>
+                                                            )}
+                                                            <div className="font-semibold text-gray-900 mt-1">
+                                                                {selectedOrder.currency} {Number(item.total).toLocaleString('en-LK')}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Order Summary */}
+                                    <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-6 space-y-3 text-sm border border-gray-100 dark:border-gray-700">
+                                        <h3 className="font-semibold mb-2 text-gray-900">Payment Summary</h3>
+
+                                        <div className="flex justify-between text-gray-600 dark:text-gray-300">
+                                            <span>Subtotal</span>
+                                            <span className="font-medium">
+                                                {selectedOrder.currency} {selectedOrder.items.reduce((acc, item) => acc + Number(item.total), 0).toLocaleString('en-LK')}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex justify-between text-gray-600 dark:text-gray-300">
+                                            <span>Processing & Delivery Charges</span>
+                                            <span className="flex gap-2">
+                                                {(() => {
+                                                    const subtotal = selectedOrder.items.reduce((acc, item) => acc + Number(item.total), 0)
+                                                    const discount = Number(selectedOrder.couponUsage?.discountAmount || 0)
+                                                    const shipping = Math.max(0, Number(selectedOrder.totalAmount) - (subtotal - discount))
+                                                    const shippingBaseRate = settings?.shippingBaseRate || 350
+
+                                                    if (shipping === 0) {
+                                                        return (
+                                                            <>
+                                                                <span className="line-through text-gray-400">
+                                                                    {selectedOrder.currency} {shippingBaseRate.toLocaleString('en-LK')}
+                                                                </span>
+                                                                <span className="text-green-600 font-bold">FREE</span>
+                                                            </>
+                                                        )
+                                                    }
+                                                    return <span className="font-medium">{selectedOrder.currency} {shipping.toLocaleString('en-LK')}</span>
+                                                })()}
+                                            </span>
+                                        </div>
+
+                                        {selectedOrder.couponUsage && (
+                                            <div className="flex justify-between text-green-600">
+                                                <span>Discount Applied ({selectedOrder.couponUsage.coupon.code})</span>
+                                                <span className="font-medium">- {selectedOrder.currency} {Number(selectedOrder.couponUsage.discountAmount).toLocaleString('en-LK')}</span>
+                                            </div>
+                                        )}
+
+                                        <div className="border-t border-gray-200 dark:border-gray-600 pt-3 mt-2 flex justify-between items-center">
+                                            <span className="font-bold text-lg text-gray-900 dark:text-white">Final Price</span>
+                                            <span className="font-bold text-xl text-gray-900 dark:text-white">
+                                                {selectedOrder.currency} {Number(selectedOrder.totalAmount).toLocaleString('en-LK')}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 pt-6 border-t flex justify-end">
+                                    <Button onClick={() => setSelectedOrder(null)}>Close</Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )

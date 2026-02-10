@@ -13,13 +13,16 @@ import {
     Twitter,
     Save,
     ArrowLeft,
+    ArrowRight,
     Truck,
     Menu,
     X,
     GripVertical,
     Plus,
     Trash2,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Upload,
+    ExternalLink
 } from 'lucide-react'
 import { ImageUpload } from '@/components/admin/ImageUpload'
 import { Button } from '@/components/ui/button'
@@ -162,7 +165,8 @@ export default function AdminSettingsPage() {
         shippingBaseRate: 500,
         freeShippingThreshold: 10000,
         headerNavigation: DEFAULT_ADMIN_TABS,
-        customerNavigation: DEFAULT_CUSTOMER_TABS
+        customerNavigation: DEFAULT_CUSTOMER_TABS,
+        aboutGalleryImages: [] as string[]
     })
 
     const [banners, setBanners] = useState<BannerItem[]>([])
@@ -332,7 +336,7 @@ export default function AdminSettingsPage() {
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <form onSubmit={handleSave} className="space-y-8">
                     {/* General Branding */}
-                    <Card className="p-8 border-none shadow-sm">
+                    <Card className="p-4 sm:p-6 lg:p-8 border-none shadow-sm overflow-hidden">
                         <div className="flex items-center space-x-3 mb-6">
                             <div className="p-2 bg-pink-100 rounded-lg text-pink-600">
                                 <Globe className="w-5 h-5" />
@@ -383,7 +387,7 @@ export default function AdminSettingsPage() {
                     </Card>
 
                     {/* Contact Information */}
-                    <Card className="p-8 border-none shadow-sm">
+                    <Card className="p-4 sm:p-6 lg:p-8 border-none shadow-sm overflow-hidden">
                         <div className="flex items-center space-x-3 mb-6">
                             <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
                                 <Mail className="w-5 h-5" />
@@ -432,7 +436,7 @@ export default function AdminSettingsPage() {
                     </Card>
 
                     {/* Social Media */}
-                    <Card className="p-8 border-none shadow-sm">
+                    <Card className="p-4 sm:p-6 lg:p-8 border-none shadow-sm overflow-hidden">
                         <div className="flex items-center space-x-3 mb-6">
                             <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
                                 <Facebook className="w-5 h-5" />
@@ -482,7 +486,7 @@ export default function AdminSettingsPage() {
                     </Card>
 
                     {/* Admin Header Navigation */}
-                    <Card className="p-8 border-none shadow-sm">
+                    <Card className="p-4 sm:p-6 lg:p-8 border-none shadow-sm overflow-hidden">
                         <div className="flex items-center space-x-3 mb-6">
                             <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
                                 <Menu className="w-5 h-5" />
@@ -548,7 +552,7 @@ export default function AdminSettingsPage() {
                     </Card>
 
                     {/* Customer Header Navigation */}
-                    <Card className="p-8 border-none shadow-sm">
+                    <Card className="p-4 sm:p-6 lg:p-8 border-none shadow-sm overflow-hidden">
                         <div className="flex items-center space-x-3 mb-6">
                             <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
                                 <Menu className="w-5 h-5" />
@@ -614,7 +618,7 @@ export default function AdminSettingsPage() {
                     </Card>
 
                     {/* Hero Banners */}
-                    <Card className="p-8 border-none shadow-sm">
+                    <Card className="p-4 sm:p-6 lg:p-8 border-none shadow-sm overflow-hidden">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center space-x-3">
                                 <div className="p-2 bg-pink-100 rounded-lg text-pink-600">
@@ -899,8 +903,166 @@ export default function AdminSettingsPage() {
                         </div>
                     </Card>
 
+                    {/* About Page Gallery */}
+                    <Card className="p-4 sm:p-6 lg:p-8 border-none shadow-sm overflow-hidden">
+                        <div className="flex items-center space-x-3 mb-6">
+                            <div className="p-2 bg-pink-100 rounded-lg text-pink-600">
+                                <ImageIcon className="w-5 h-5" />
+                            </div>
+                            <h2 className="text-xl font-bold text-gray-900">About Page Gallery Carousel</h2>
+                        </div>
+
+                        <div className="space-y-6">
+                            <p className="text-sm text-gray-500">
+                                Upload images to be displayed in the carousel on the About Us page.
+                                These images will replace the "Crafting Beautiful Memories" card.
+                            </p>
+
+                            {/* Gallery Grid */}
+                            {/* Manual Sort Grid */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 mb-8">
+                                {(settings.aboutGalleryImages || []).map((url, index) => (
+                                    <div
+                                        key={url}
+                                        className="bg-white border rounded-lg sm:rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow relative group flex flex-col"
+                                    >
+                                        <div className="relative aspect-video bg-gray-50 border-b isolate">
+                                            <img
+                                                src={url}
+                                                alt={`Gallery ${index}`}
+                                                className="absolute inset-0 w-full h-full object-cover bg-gray-100"
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                    e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center');
+                                                    const fallback = document.createElement('div');
+                                                    fallback.className = 'text-center p-4';
+                                                    fallback.innerHTML = `<div class="text-red-400 mb-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><span class="text-xs text-gray-500">Image not found</span>`;
+                                                    e.currentTarget.parentElement?.appendChild(fallback);
+                                                }}
+                                            />
+
+                                            {/* Overlay Actions */}
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-start justify-end p-1.5 sm:p-2 opacity-100 sm:opacity-0 group-hover:opacity-100 pointer-events-none sm:pointer-events-none">
+                                                <div className="flex gap-1 pointer-events-auto">
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
+                                                        size="icon"
+                                                        className="h-7 w-7 sm:h-8 sm:w-8 bg-white/90 hover:bg-white shadow-sm"
+                                                        onClick={() => window.open(url, '_blank')}
+                                                        title="View Full Image"
+                                                    >
+                                                        <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-700" />
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        variant="destructive"
+                                                        size="icon"
+                                                        className="h-7 w-7 sm:h-8 sm:w-8 shadow-sm"
+                                                        onClick={() => {
+                                                            const newImages = [...(settings.aboutGalleryImages || [])]
+                                                            newImages.splice(index, 1)
+                                                            setSettings(prev => ({ ...prev, aboutGalleryImages: newImages }))
+                                                        }}
+                                                        title="Remove Image"
+                                                    >
+                                                        <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-2 sm:p-3 bg-gray-50/50 flex items-center justify-between gap-2 sm:gap-3 text-[10px] sm:text-xs">
+                                            <div className="font-mono text-gray-400 truncate flex-1" title={url}>
+                                                Image #{index + 1}
+                                            </div>
+                                            <div className="flex items-center gap-0.5 sm:gap-1">
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-6 w-6 sm:h-7 sm:w-7"
+                                                    disabled={index === 0}
+                                                    onClick={() => {
+                                                        const newImages = [...(settings.aboutGalleryImages || [])]
+                                                        if (index > 0) {
+                                                            const temp = newImages[index]
+                                                            newImages[index] = newImages[index - 1]
+                                                            newImages[index - 1] = temp
+                                                            setSettings(prev => ({ ...prev, aboutGalleryImages: newImages }))
+                                                        }
+                                                    }}
+                                                    title="Move Backward"
+                                                >
+                                                    <ArrowLeft className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-6 w-6 sm:h-7 sm:w-7"
+                                                    disabled={index === (settings.aboutGalleryImages || []).length - 1}
+                                                    onClick={() => {
+                                                        const newImages = [...(settings.aboutGalleryImages || [])]
+                                                        if (index < newImages.length - 1) {
+                                                            const temp = newImages[index]
+                                                            newImages[index] = newImages[index + 1]
+                                                            newImages[index + 1] = temp
+                                                            setSettings(prev => ({ ...prev, aboutGalleryImages: newImages }))
+                                                        }
+                                                    }}
+                                                    title="Move Forward"
+                                                >
+                                                    <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Empty State */}
+                            {(settings.aboutGalleryImages || []).length === 0 && (
+                                <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 mb-8">
+                                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <ImageIcon className="w-8 h-8 text-gray-300" />
+                                    </div>
+                                    <h3 className="text-sm font-semibold text-gray-900 mb-1">No images yet</h3>
+                                    <p className="text-xs text-gray-500 max-w-xs mx-auto">
+                                        Upload photos to showcase your story in the carousel.
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="bg-gray-50/50 p-6 rounded-xl border border-gray-100">
+                                <h4 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                    <Upload className="w-4 h-4" />
+                                    Add New Image
+                                </h4>
+                                <div className="max-w-md">
+                                    <ImageUpload
+                                        currentImageUrl=""
+                                        bucket="about-photos"
+                                        autoReset={true}
+                                        onUploadComplete={(url) => {
+                                            if (url) {
+                                                setSettings(prev => ({
+                                                    ...prev,
+                                                    aboutGalleryImages: [...(prev.aboutGalleryImages || []), url]
+                                                }))
+                                            }
+                                        }}
+                                    />
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        Supported formats: JPG, PNG, WEBP.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+
                     {/* Shipping Settings */}
-                    <Card className="p-8 border-none shadow-sm">
+                    <Card className="p-4 sm:p-6 lg:p-8 border-none shadow-sm overflow-hidden">
                         <div className="flex items-center space-x-3 mb-6">
                             <div className="p-2 bg-yellow-100 rounded-lg text-yellow-600">
                                 <Truck className="w-5 h-5" />

@@ -4,12 +4,23 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Metadata } from 'next'
 
+import { prisma } from '@/lib/prisma'
+import { GalleryCarousel } from '@/components/about/GalleryCarousel'
+
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'About Us',
   description: 'Learn about WebMall, your destination for authentic Sri Lankan fashion accessories and handcrafted jewelry.',
 }
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const settings = await prisma.siteSettings.findUnique({
+    where: { id: 'default' }
+  })
+
+  const galleryImages = (settings as any)?.aboutGalleryImages || []
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
@@ -38,7 +49,7 @@ export default function AboutPage() {
               <div className="space-y-4 text-gray-600 leading-Relaxed">
                 <p>
                   WebMall was born from a passion to showcase the exceptional craftsmanship
-                  of Sri Lankan artisans to the world. Founded in 2024, we have been
+                  of Sri Lankan artisans to the world. Founded in 2021, we have been
                   curating and delivering beautiful fashion accessories that blend traditional
                   techniques with modern aesthetics.
                 </p>
@@ -56,14 +67,7 @@ export default function AboutPage() {
               </div>
             </div>
             <div className="relative">
-              <div className="aspect-video bg-gradient-to-br from-pink-200 to-yellow-200 rounded-2xl flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Heart className="h-12 w-12 text-pink-500" />
-                  </div>
-                  <p className="text-gray-700 font-medium">Crafting Beautiful Memories</p>
-                </div>
-              </div>
+              <GalleryCarousel images={galleryImages} />
             </div>
           </div>
         </div>

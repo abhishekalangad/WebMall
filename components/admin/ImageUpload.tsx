@@ -10,12 +10,14 @@ interface ImageUploadProps {
     onUploadComplete: (url: string) => void
     currentImageUrl?: string
     bucket?: string
+    autoReset?: boolean
 }
 
 export function ImageUpload({
     onUploadComplete,
     currentImageUrl,
-    bucket = 'products'
+    bucket = 'products',
+    autoReset = false
 }: ImageUploadProps) {
     const [uploading, setUploading] = useState(false)
     const [preview, setPreview] = useState<string | null>(currentImageUrl || null)
@@ -24,6 +26,15 @@ export function ImageUpload({
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
+
+        if (!['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(file.type)) {
+            toast({
+                title: 'Invalid file type',
+                description: 'Please upload a PNG, JPG or WEBP image (HEIC is not supported on the web)',
+                variant: 'destructive'
+            })
+            return
+        }
 
         // Preview
         const objectUrl = URL.createObjectURL(file)
@@ -53,6 +64,11 @@ export function ImageUpload({
                 title: 'Success',
                 description: 'Image uploaded successfully'
             })
+
+            if (autoReset) {
+                setPreview(null)
+                if (fileInputRef.current) fileInputRef.current.value = ''
+            }
         } catch (error: any) {
             console.error('Upload error:', error)
             toast({
@@ -129,7 +145,7 @@ export function ImageUpload({
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileSelect}
-                accept="image/*"
+                accept="image/png, image/jpeg, image/jpg, image/webp"
                 className="hidden"
             />
 

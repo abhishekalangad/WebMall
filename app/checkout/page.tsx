@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { ArrowLeft, CreditCard, MapPin, Package, Tag, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,8 +16,39 @@ import { supabase } from '@/lib/supabase'
 
 export default function CheckoutPage() {
   const { settings } = useSiteConfig()
-  const { items, totalPrice, clearCart } = useCart()
+  const { items: cartItems, totalPrice: cartTotalPrice, clearCart } = useCart()
   const { user } = useAuth()
+  const searchParams = useSearchParams()
+  const isBuyNow = searchParams.get('buyNow') === 'true'
+
+  const [buyNowItem, setBuyNowItem] = useState<any>(null)
+
+  useEffect(() => {
+    if (isBuyNow) {
+      const saved = localStorage.getItem('buyNowItem')
+      if (saved) {
+        try {
+          setBuyNowItem(JSON.parse(saved))
+        } catch (e) {
+          console.error("Failed to parse buyNowItem", e)
+        }
+      }
+    }
+  }, [isBuyNow])
+
+  const items = useMemo(() => {
+    if (isBuyNow && buyNowItem) {
+      return [buyNowItem]
+    }
+    return cartItems
+  }, [isBuyNow, buyNowItem, cartItems])
+
+  const totalPrice = useMemo(() => {
+    if (isBuyNow && buyNowItem) {
+      return buyNowItem.price * buyNowItem.quantity
+    }
+    return cartTotalPrice
+  }, [isBuyNow, buyNowItem, cartTotalPrice])
 
   // Calculate shipping cost based on settings
   const freeShippingThreshold = settings?.freeShippingThreshold || 5000
@@ -128,6 +160,7 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           items: items.map(item => ({
             productId: item.productId,
+            variantId: item.variantId,
             quantity: item.quantity
           })),
           shippingAddress: {
@@ -154,8 +187,13 @@ export default function CheckoutPage() {
 
       const order = await response.json()
 
-      // Clear cart and show success
-      clearCart()
+      // Handle post-order cleanup
+      if (isBuyNow) {
+        localStorage.removeItem('buyNowItem')
+      } else {
+        clearCart()
+      }
+
       setOrderComplete(order) // Pass full order object
     } catch (error: any) {
       console.error('Checkout error:', error)

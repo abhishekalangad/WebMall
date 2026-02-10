@@ -199,8 +199,19 @@ export function ProductCard({
                     if (hasVariants) {
                       router.push(`/products/${product.slug}`)
                     } else {
-                      onAddToCart(product)
-                      router.push('/checkout')
+                      const buyNowItem = {
+                        productId: product.id,
+                        name: product.name,
+                        price: product.price,
+                        quantity: 1,
+                        image: primaryImage,
+                        slug: product.slug,
+                        variantId: undefined,
+                        variantName: undefined,
+                        variantAttributes: undefined
+                      }
+                      localStorage.setItem('buyNowItem', JSON.stringify(buyNowItem))
+                      router.push('/checkout?buyNow=true')
                     }
                   }}
                 >
@@ -360,8 +371,19 @@ export function ProductCard({
                 if (hasVariants) {
                   router.push(`/products/${product.slug}`)
                 } else {
-                  onAddToCart(product)
-                  router.push('/checkout')
+                  const buyNowItem = {
+                    productId: product.id,
+                    name: product.name,
+                    price: product.price,
+                    quantity: 1,
+                    image: primaryImage,
+                    slug: product.slug,
+                    variantId: undefined,
+                    variantName: undefined,
+                    variantAttributes: undefined
+                  }
+                  localStorage.setItem('buyNowItem', JSON.stringify(buyNowItem))
+                  router.push('/checkout?buyNow=true')
                 }
               }}
             >

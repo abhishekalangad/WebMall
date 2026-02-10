@@ -51,7 +51,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             ...settings,
             headerNavigation: settings.headerNavigation ?? [],
-            customerNavigation: settings.customerNavigation ?? []
+            customerNavigation: settings.customerNavigation ?? [],
+            aboutGalleryImages: (settings as any).aboutGalleryImages ?? []
         })
 
     } catch (error: any) {
@@ -82,13 +83,70 @@ export async function POST(request: NextRequest) {
         try {
             console.log('[Admin Settings POST] Executing Upsert...')
 
-            // Ensure JSON fields are passed correctly (Prisma expects simple objects/arrays for Json types, not stringified)
-            // But we must clean them from undefined
-            const { id, ...updateData } = data
+            // 1. Fetch CURRENT settings to compare images
+            const currentSettings = await prisma.siteSettings.findUnique({
+                where: { id: 'default' },
+                select: { aboutGalleryImages: true } as any
+            })
 
-            // Clean up navigation fields if they are strings (some legacy behavior might do this)
-            // though standard fetch sends them as objects. 
-            // Prisma will handle them as Json Inputs.
+            const oldImages: string[] = ((currentSettings as any)?.aboutGalleryImages as string[]) || []
+            const newImages: string[] = (data.aboutGalleryImages as string[]) || []
+
+            // 2. Identify images to delete (present in old but not in new)
+            const imagesToDelete: string[] = oldImages.filter((img: string) => !newImages.includes(img))
+
+            if (imagesToDelete.length > 0) {
+                console.log('[Admin Settings POST] Deleting removed images from Supabase:', imagesToDelete)
+
+                // We need to import supabaseAdmin or create a client here. 
+                // Since this is server-side, we should use a service role if possible, 
+                // but standard client might work if RLS allows or we use the right keys.
+                // Assuming we can use the same pattern as in other routes.
+                const { createClient } = require('@supabase/supabase-js')
+                const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+                // Use Service Role Key for deletion if available to bypass RLS, or Anon if user is authorized context
+                // For safety/simplicity in this context let's try with the verified user context or just public deletion if policy allows.
+                // NOTE: Best practice is using Service Role for admin actions.
+                const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+                const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+                    auth: {
+                        autoRefreshToken: false,
+                        persistSession: false
+                    }
+                })
+
+                // Extract file paths from URLs
+                // URL format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[filename]
+                // We need just [filename] or [folder/filename]
+
+                const pathsToDelete = imagesToDelete.map((url: string) => {
+                    try {
+                        // Split by bucket name 'about-photos'
+                        const parts = url.split('about-photos/')
+                        if (parts.length > 1) return parts[1]
+                        return null
+                    } catch (e) {
+                        return null
+                    }
+                }).filter(Boolean) as string[]
+
+                if (pathsToDelete.length > 0) {
+                    const { error: deleteError } = await supabaseAdmin
+                        .storage
+                        .from('about-photos')
+                        .remove(pathsToDelete)
+
+                    if (deleteError) {
+                        console.error('[Admin Settings POST] Failed to delete images from storage:', deleteError)
+                    } else {
+                        console.log('[Admin Settings POST] Successfully deleted images from storage')
+                    }
+                }
+            }
+
+            // Ensure JSON fields are passed correctly (Prisma expects simple objects/arrays for Json types, not stringified)
+            const { id, ...updateData } = data
 
             const settings = await prisma.siteSettings.upsert({
                 where: { id: 'default' },
@@ -108,7 +166,8 @@ export async function POST(request: NextRequest) {
                     freeShippingThreshold: Number(data.freeShippingThreshold),
                     headerNavigation: data.headerNavigation ?? [],
                     customerNavigation: data.customerNavigation ?? [],
-                },
+                    aboutGalleryImages: data.aboutGalleryImages ?? [],
+                } as any,
                 create: {
                     id: 'default',
                     storeName: data.storeName,
@@ -126,7 +185,8 @@ export async function POST(request: NextRequest) {
                     freeShippingThreshold: Number(data.freeShippingThreshold),
                     headerNavigation: data.headerNavigation ?? [],
                     customerNavigation: data.customerNavigation ?? [],
-                }
+                    aboutGalleryImages: data.aboutGalleryImages ?? [],
+                } as any
             })
 
             console.log('[Admin Settings POST] Upsert successful')

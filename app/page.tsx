@@ -37,26 +37,33 @@ export default async function HomePage() {
     // 2. Fetch Featured Products (Top Rated) using Raw SQL for performance
     // This avoids fetching ALL products to sort them in JS
     const featuredPromise = prisma.$queryRaw`
-      SELECT 
-        p.id,
-        p.name,
-        p.slug,
-        p.price,
-        p.currency,
-        p.stock,
-        p.status,
-        p.created_at as "createdAt", -- Map snake_case to camelCase
-        AVG(r.rating)::numeric(3,2) as "avgRating",
-        COUNT(r.id)::int as "reviewCount",
+      SELECT
+    p.id,
+      p.name,
+      p.slug,
+      p.price,
+      p.currency,
+      p.stock,
+      p.status,
+      p.created_at as "createdAt", --Map snake_case to camelCase
+    AVG(r.rating):: numeric(3, 2) as "avgRating",
+      COUNT(r.id):: int as "reviewCount",
         (
-          SELECT json_build_object('url', pi.url, 'alt', pi.alt)
+          SELECT COALESCE(SUM(oi.quantity), 0)
+          FROM order_items oi
+          JOIN orders o ON oi.order_id = o.id
+          WHERE oi.product_id = p.id
+          AND o.status != 'cancelled'
+        ) as "soldCount",
+      (
+        SELECT json_build_object('url', pi.url, 'alt', pi.alt)
           FROM product_images pi
           WHERE pi.product_id = p.id
           ORDER BY pi.position ASC
           LIMIT 1
         ) as "primaryImage",
-        (
-          SELECT json_build_object('name', c.name)
+      (
+        SELECT json_build_object('name', c.name)
           FROM categories c
           WHERE c.id = p.category_id
         ) as "category"
@@ -64,9 +71,9 @@ export default async function HomePage() {
       LEFT JOIN reviews r ON p.id = r.product_id
       WHERE p.status = 'active'
       GROUP BY p.id
-      ORDER BY "avgRating" DESC NULLS LAST, "reviewCount" DESC
+      ORDER BY "soldCount" DESC, "avgRating" DESC NULLS LAST, "reviewCount" DESC
       LIMIT 8
-    `
+      `
 
     const [fetchedCategories, rawFeatured] = await Promise.all([
       categoriesPromise,

@@ -11,8 +11,9 @@ async function requireAdmin(request: NextRequest) {
   return user
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const user = await requireAdmin(request)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -20,7 +21,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const { name, category, quantity, unit, lowStockAlert, costPerUnit, supplier, notes } = body
 
     const item = await prisma.inventoryItem.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(name !== undefined ? { name: name.trim() } : {}),
         ...(category !== undefined ? { category: category.trim() } : {}),
@@ -40,19 +41,20 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   // Quick quantity adjustment (restock / use)
   try {
+    const { id } = await params
     const user = await requireAdmin(request)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { delta } = await request.json() // positive = add, negative = use/consume
-    const current = await prisma.inventoryItem.findUnique({ where: { id: params.id } })
+    const current = await prisma.inventoryItem.findUnique({ where: { id } })
     if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     const newQty = Math.max(0, current.quantity + parseInt(delta))
     const item = await prisma.inventoryItem.update({
-      where: { id: params.id },
+      where: { id },
       data: { quantity: newQty }
     })
     return NextResponse.json(item)
@@ -62,12 +64,13 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const user = await requireAdmin(request)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    await prisma.inventoryItem.delete({ where: { id: params.id } })
+    await prisma.inventoryItem.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('[Inventory DELETE]', error)

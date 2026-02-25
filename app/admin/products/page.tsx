@@ -1273,7 +1273,7 @@ export default function AdminProductsPage() {
                         method: 'POST', headers,
                         body: JSON.stringify({
                           name: newCategoryForm.name.trim(),
-                          slug: newCategoryForm.slug.trim() || newCategoryForm.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+                          slug: newCategoryForm.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
                           description: newCategoryForm.description.trim() || null,
                           image: newCategoryForm.image || null
                         })

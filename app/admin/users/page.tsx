@@ -1,17 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import {
     Users,
     Search,
-    MoreHorizontal,
     Mail,
-    Calendar,
-    Shield,
     User as UserIcon,
-    ArrowLeft
+    ArrowLeft,
+    Loader2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,31 +28,65 @@ interface UserAccount {
     }
 }
 
+const LIMIT = 20
+
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<UserAccount[]>([])
+    const [totalCount, setTotalCount] = useState(0)
     const [loading, setLoading] = useState(true)
+    const [loadingMore, setLoadingMore] = useState(false)
+    const [hasMore, setHasMore] = useState(true)
+    const [page, setPage] = useState(1)
     const [searchTerm, setSearchTerm] = useState('')
     const { accessToken } = useAuth()
     const router = useRouter()
+    const sentinelRef = useRef<HTMLDivElement>(null)
 
+    // Initial fetch
     useEffect(() => {
         fetchUsers()
     }, [accessToken])
 
+    // IntersectionObserver for infinite scroll
+    useEffect(() => {
+        if (!sentinelRef.current) return
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+                    loadMore()
+                }
+            },
+            { threshold: 0.1 }
+        )
+        observer.observe(sentinelRef.current)
+        return () => observer.disconnect()
+    }, [hasMore, loadingMore, loading])
+
     const fetchUsers = async () => {
         try {
+            setLoading(true)
+            setPage(1)
+            setHasMore(true)
             const token = await accessToken()
             if (!token) return
 
-            const response = await fetch('/api/admin/users', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            const response = await fetch(`/api/admin/users?page=1&limit=${LIMIT}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             })
 
             if (response.ok) {
                 const data = await response.json()
-                setUsers(data)
+                // Support both old plain-array response and new paginated response
+                if (Array.isArray(data)) {
+                    setUsers(data)
+                    setTotalCount(data.length)
+                    setHasMore(false)
+                } else {
+                    setUsers(data.users || [])
+                    setTotalCount(data.pagination?.totalCount ?? 0)
+                    setHasMore(data.pagination?.hasNextPage ?? false)
+                    setPage(2)
+                }
             }
         } catch (error) {
             console.error('Failed to fetch users:', error)
@@ -62,6 +94,30 @@ export default function AdminUsersPage() {
             setLoading(false)
         }
     }
+
+    const loadMore = useCallback(async () => {
+        if (loadingMore || !hasMore) return
+        try {
+            setLoadingMore(true)
+            const token = await accessToken()
+            if (!token) return
+            const res = await fetch(`/api/admin/users?page=${page}&limit=${LIMIT}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            if (res.ok) {
+                const data = await res.json()
+                const newUsers = Array.isArray(data) ? data : (data.users || [])
+                const pagination = data.pagination
+                setUsers(prev => [...prev, ...newUsers])
+                setHasMore(pagination ? pagination.hasNextPage : false)
+                setPage(prev => prev + 1)
+            }
+        } catch (error) {
+            console.error('Failed to load more users:', error)
+        } finally {
+            setLoadingMore(false)
+        }
+    }, [page, hasMore, loadingMore, accessToken])
 
     const filteredUsers = users.filter(user =>
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -92,7 +148,11 @@ export default function AdminUsersPage() {
                         </div>
                         <div className="flex items-center space-x-2 text-sm text-gray-500">
                             <Users className="w-4 h-4" />
-                            <span>{users.length} Total Users</span>
+                            <span>
+                                {loading
+                                    ? 'Loading…'
+                                    : `${users.length}${hasMore ? '+' : ''} of ${totalCount || users.length} Users`}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -157,6 +217,24 @@ export default function AdminUsersPage() {
                             </div>
                         )}
                     </div>
+                )}
+
+                {/* Infinite Scroll Sentinel */}
+                <div ref={sentinelRef} className="py-2" />
+
+                {/* Loading More Spinner */}
+                {loadingMore && (
+                    <div className="flex items-center justify-center py-6 gap-3 text-gray-500">
+                        <Loader2 className="h-5 w-5 animate-spin text-pink-500" />
+                        <span className="text-sm font-medium">Loading more users…</span>
+                    </div>
+                )}
+
+                {/* End of list indicator */}
+                {!hasMore && users.length > 0 && !loading && (
+                    <p className="text-center text-xs text-gray-400 py-4">
+                        All {users.length} users loaded
+                    </p>
                 )}
             </div>
         </div>

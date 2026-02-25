@@ -27,7 +27,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, slug, description, image } = body
+    const { name, description, image } = body
+
+    // Auto-generate unique slug from name
+    const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    let slug = baseSlug
+    let counter = 1
+    while (await prisma.category.findFirst({ where: { slug } })) {
+      counter++
+      slug = `${baseSlug}-${counter}`
+    }
 
     const created = await prisma.category.create({ data: { name, slug, description, image } })
     return NextResponse.json(created, { status: 201 })

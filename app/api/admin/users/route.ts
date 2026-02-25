@@ -16,7 +16,19 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
+        // Pagination parameters
+        const { searchParams } = new URL(request.url)
+        const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+        const limitParam = searchParams.get('limit')
+        const limit = Math.min(500, Math.max(1, parseInt(limitParam || '20')))
+        const skip = (page - 1) * limit
+
+        // Total count for pagination metadata
+        const totalCount = await prisma.user.count()
+
         const users = await prisma.user.findMany({
+            skip,
+            take: limit,
             orderBy: { createdAt: 'desc' },
             select: {
                 id: true,
@@ -30,7 +42,19 @@ export async function GET(request: NextRequest) {
             }
         })
 
-        return NextResponse.json(users)
+        const totalPages = Math.ceil(totalCount / limit)
+
+        return NextResponse.json({
+            users,
+            pagination: {
+                page,
+                limit,
+                totalCount,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
+            }
+        })
     } catch (error: any) {
         console.error('Error fetching users:', error)
         return NextResponse.json({ error: error.message }, { status: 500 })

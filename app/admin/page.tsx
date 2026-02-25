@@ -23,7 +23,8 @@ import {
   RefreshCcw,
   Bell,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  Boxes
 } from 'lucide-react'
 
 export default function AdminDashboardPage() {
@@ -214,6 +215,15 @@ export default function AdminDashboardPage() {
       badge: 'Live',
       color: 'emerald'
     },
+    {
+      title: 'Inventory',
+      description: 'Track operational supplies like tape, boxes, business cards',
+      href: '/admin/inventory',
+      icon: Boxes,
+      count: dashboardData?.stats?.lowStockCount?.toString() ?? '—',
+      badge: 'Low Stock',
+      color: 'teal'
+    },
   ]
 
   const colorClasses = {
@@ -225,6 +235,7 @@ export default function AdminDashboardPage() {
     green: { text: 'text-green-600', bg: 'bg-green-50', hover: 'group-hover:bg-green-100', border: 'border-green-200' },
     gray: { text: 'text-gray-600', bg: 'bg-gray-50', hover: 'group-hover:bg-gray-100', border: 'border-gray-200' },
     emerald: { text: 'text-emerald-600', bg: 'bg-emerald-50', hover: 'group-hover:bg-emerald-100', border: 'border-emerald-200' },
+    teal: { text: 'text-teal-600', bg: 'bg-teal-50', hover: 'group-hover:bg-teal-100', border: 'border-teal-200' },
   }
 
   const containerVariants = {

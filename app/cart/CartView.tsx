@@ -348,7 +348,7 @@ export function CartView() {
                                     </div>
                                     <div>
                                         <p className="font-medium text-gray-900">Free Shipping</p>
-                                        <p className="text-xs">All orders across Sri Lanka</p>
+                                        <p className="text-xs">On orders over LKR {freeShippingThreshold.toLocaleString()}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3 text-sm text-gray-600">

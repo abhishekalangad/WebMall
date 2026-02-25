@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSiteConfig } from '@/contexts/SiteConfigContext'
 import { useRouter } from 'next/navigation'
@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Package2, Eye } from 'lucide-react'
+import { Package2, Eye, Loader2 } from 'lucide-react'
 
 interface OrderItem {
   id: string
@@ -64,6 +64,11 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [isOrderDetailOpen, setIsOrderDetailOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [page, setPage] = useState(1)
+  const LIMIT = 20
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   // Search State
   const [searchQuery, setSearchQuery] = useState('')
@@ -90,19 +95,58 @@ export default function AdminOrdersPage() {
     }
   }, [user, loading, router])
 
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    if (!sentinelRef.current) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+          loadMoreOrders()
+        }
+      },
+      { threshold: 0, rootMargin: '600px' }
+    )
+    observer.observe(sentinelRef.current)
+    return () => observer.disconnect()
+  }, [hasMore, loadingMore, loading])
+
   const fetchOrders = async () => {
     try {
+      setPage(1)
+      setHasMore(true)
       const token = await accessToken()
       const headers = (token ? { 'Authorization': `Bearer ${token}` } : {}) as HeadersInit
-      const response = await fetch('/api/orders', { headers })
+      const response = await fetch(`/api/orders?page=1&limit=${LIMIT}`, { headers })
       const data = await response.json()
       if (response.ok) {
         setOrders(data.orders || [])
+        setHasMore(data.pagination ? data.pagination.hasNextPage : false)
+        setPage(2)
       }
     } catch (error) {
       console.error('Failed to fetch orders:', error)
     }
   }
+
+  const loadMoreOrders = useCallback(async () => {
+    if (loadingMore || !hasMore) return
+    try {
+      setLoadingMore(true)
+      const token = await accessToken()
+      const headers = (token ? { 'Authorization': `Bearer ${token}` } : {}) as HeadersInit
+      const res = await fetch(`/api/orders?page=${page}&limit=${LIMIT}`, { headers })
+      const data = await res.json()
+      if (res.ok) {
+        setOrders(prev => [...prev, ...(data.orders || [])])
+        setHasMore(data.pagination ? data.pagination.hasNextPage : false)
+        setPage(prev => prev + 1)
+      }
+    } catch (error) {
+      console.error('Failed to load more orders:', error)
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [page, hasMore, loadingMore, accessToken])
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
@@ -285,6 +329,24 @@ export default function AdminOrdersPage() {
           </Card>
         ))}
       </div>
+
+      {/* Infinite Scroll Sentinel */}
+      <div ref={sentinelRef} className="py-2" />
+
+      {/* Loading More Spinner */}
+      {loadingMore && (
+        <div className="flex items-center justify-center py-6 gap-3 text-gray-500">
+          <Loader2 className="h-5 w-5 animate-spin text-pink-500" />
+          <span className="text-sm font-medium">Loading more orders…</span>
+        </div>
+      )}
+
+      {/* End of list indicator */}
+      {!hasMore && orders.length > 0 && !loading && (
+        <p className="text-center text-xs text-gray-400 py-4">
+          All {orders.length} orders loaded
+        </p>
+      )}
 
       {/* Order Detail Modal */}
       {selectedOrder && (

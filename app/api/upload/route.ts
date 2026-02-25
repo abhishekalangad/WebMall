@@ -25,14 +25,25 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'No file provided' }, { status: 400 })
         }
 
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
+        // Detect HEIC/HEIF by extension (iOS sometimes sends empty or generic MIME type)
+        const fileExt = (file.name.split('.').pop() || '').toLowerCase()
+        const heicExts = ['heic', 'heif']
+        const isHeic = heicExts.includes(fileExt)
+
+        // Resolve the real content type
+        let contentType = file.type
+        if (isHeic || contentType === 'application/octet-stream' || !contentType) {
+            contentType = fileExt === 'heif' ? 'image/heif' : 'image/heic'
+        }
+
+        // Validate it's actually an image (HEIC MIME starts with image/)
+        if (!contentType.startsWith('image/')) {
             return NextResponse.json({ error: 'File must be an image' }, { status: 400 })
         }
 
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 })
+        // Validate file size (max 25 MB — HEIC files can be large before compression)
+        if (file.size > 25 * 1024 * 1024) {
+            return NextResponse.json({ error: 'File size must be less than 25MB' }, { status: 400 })
         }
 
         // Initialize Supabase Admin Client
@@ -51,7 +62,9 @@ export async function POST(request: NextRequest) {
         const timestamp = Date.now()
         const randomStr = Math.random().toString(36).substring(2, 8)
         const bucketName = bucket === 'products' ? 'products' : 'general'
-        const fileName = `${bucketName}/${timestamp}-${randomStr}.${fileExtension}`
+        // Preserve original extension (heic/heif will stay as-is)
+        const safeExt = fileExt || 'jpg'
+        const fileName = `${bucketName}/${timestamp}-${randomStr}.${safeExt}`
 
         // Convert File to Buffer for upload
         const bytes = await file.arrayBuffer()
@@ -60,9 +73,9 @@ export async function POST(request: NextRequest) {
         // Upload to Supabase Storage
         const { data, error } = await supabaseAdmin
             .storage
-            .from('products') // Assuming 'products' is the main bucket
+            .from('products')
             .upload(fileName, buffer, {
-                contentType: file.type,
+                contentType,
                 upsert: false
             })
 

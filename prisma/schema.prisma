@@ -348,4 +348,22 @@ model CouponUsage {
   @@schema("public")
 }
 
+model InventoryItem {
+  id              String   @id @default(dbgenerated("uuid_generate_v4()")) @map("id") @db.Uuid
+  name            String   @map("name")
+  category        String   @default("General") @map("category")
+  quantity        Int      @default(0) @map("quantity")
+  unit            String   @default("pcs") @map("unit")
+  lowStockAlert   Int      @default(5) @map("low_stock_alert")
+  costPerUnit     Decimal? @map("cost_per_unit") @db.Decimal(10, 2)
+  supplier        String?  @map("supplier")
+  notes           String?  @map("notes")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("inventory_items")
+  @@schema("public")
+}
+
+
 

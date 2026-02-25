@@ -62,15 +62,26 @@ export async function POST(request: NextRequest) {
 
         const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
-        // 🔒 SECURITY: Sanitize file extension
-        const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif']
-        const fileExtension = file.name.split('.').pop()?.toLowerCase()
+        // 🔒 SECURITY: Sanitize file extension — include iOS HEIC/HEIF
+        const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif']
+        const fileExtension = (file.name.split('.').pop() || '').toLowerCase()
 
         if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
             return NextResponse.json(
-                { error: 'Invalid file type. Allowed: jpg, jpeg, png, webp, gif' },
+                { error: 'Invalid file type. Allowed: jpg, jpeg, png, webp, gif, heic, heif' },
                 { status: 400 }
             )
+        }
+
+        // Normalise MIME type (iOS sometimes sends application/octet-stream for HEIC)
+        let contentType = file.type
+        if (['heic', 'heif'].includes(fileExtension) || contentType === 'application/octet-stream' || !contentType) {
+            contentType = fileExtension === 'heif' ? 'image/heif' : 'image/heic'
+        }
+
+        // Validate it's an image after normalisation
+        if (!contentType.startsWith('image/')) {
+            return NextResponse.json({ error: 'File must be an image' }, { status: 400 })
         }
 
         // 🧹 CLEANUP: Delete old profile image if exists
@@ -131,7 +142,7 @@ export async function POST(request: NextRequest) {
             .storage
             .from(bucketName)
             .upload(fileName, buffer, {
-                contentType: file.type,
+                contentType,
                 upsert: false
             })
 
@@ -144,7 +155,7 @@ export async function POST(request: NextRequest) {
                     .storage
                     .from(fallbackBucket)
                     .upload(fileName, buffer, {
-                        contentType: file.type,
+                        contentType,
                         upsert: false
                     })
 

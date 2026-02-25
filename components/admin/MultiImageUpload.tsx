@@ -139,7 +139,7 @@ export function MultiImageUpload({ images, onChange, maxImages = 8 }: MultiImage
                             type="file"
                             id="multi-image-upload"
                             multiple
-                            accept="image/*"
+                            accept="image/*, .heic, .heif"
                             onChange={handleFileChange}
                             className="hidden"
                             disabled={uploading}
@@ -178,7 +178,7 @@ export function MultiImageUpload({ images, onChange, maxImages = 8 }: MultiImage
                             Click to upload product images
                         </p>
                         <p className="text-xs text-gray-500">
-                            PNG, JPG, WebP up to 5MB (max {maxImages} images)
+                            PNG, JPG, WebP, HEIC (iPhone) up to 5MB (max {maxImages} images)
                         </p>
                     </label>
                 </Card>

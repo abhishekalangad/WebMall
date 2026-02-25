@@ -19,16 +19,21 @@ export async function GET(request: NextRequest) {
     // Pagination parameters
     const { searchParams } = new URL(request.url)
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')))
-    const skip = (page - 1) * limit
+    const limitParam = searchParams.get('limit')
+    // Admins can request all products by passing limit=all or being an admin without specifying a limit
+    const fetchAll = isAdmin && (!limitParam || limitParam === 'all')
+    const limit = fetchAll ? undefined : Math.min(500, Math.max(1, parseInt(limitParam || '20')))
+    const skip = fetchAll ? undefined : (page - 1) * (limit as number)
 
     // Admins can see all products (including drafts), non-admins only see active products
     const where = isAdmin ? { status: { not: 'deleted' } } : { status: 'active' }
 
     // Get total count for pagination metadata
     const totalCount = await prisma.product.count({ where })
+    const activeCount = await prisma.product.count({ where: isAdmin ? { status: 'active' } : { status: 'active' } })
+    const lowStockCount = await prisma.product.count({ where: { ...where, stock: { lt: 5 } } })
 
-    // Fetch paginated products
+    // Fetch products (all for admin, paginated for others)
     const products = await prisma.product.findMany({
       where,
       skip,
@@ -38,9 +43,10 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate pagination metadata
-    const totalPages = Math.ceil(totalCount / limit)
-    const hasNextPage = page < totalPages
-    const hasPrevPage = page > 1
+    const effectiveLimit = limit ?? totalCount
+    const totalPages = effectiveLimit > 0 ? Math.ceil(totalCount / effectiveLimit) : 1
+    const hasNextPage = fetchAll ? false : page < totalPages
+    const hasPrevPage = fetchAll ? false : page > 1
 
     if (products.length === 0) {
       return NextResponse.json({
@@ -49,6 +55,8 @@ export async function GET(request: NextRequest) {
           page,
           limit,
           totalCount,
+          activeCount,
+          lowStockCount,
           totalPages,
           hasNextPage,
           hasPrevPage
@@ -84,6 +92,8 @@ export async function GET(request: NextRequest) {
         page,
         limit,
         totalCount,
+        activeCount,
+        lowStockCount,
         totalPages,
         hasNextPage,
         hasPrevPage
@@ -121,7 +131,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const {
       name,
-      slug,
       description,
       price,
       currency = 'LKR',
@@ -132,6 +141,15 @@ export async function POST(request: NextRequest) {
       images = [],
       variants = []
     } = body
+
+    // Auto-generate a unique slug from name
+    const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    let slug = baseSlug
+    let counter = 1
+    while (await prisma.product.findFirst({ where: { slug } })) {
+      counter++
+      slug = `${baseSlug}-${counter}`
+    }
 
     const created = await prisma.product.create({
       data: {

@@ -41,8 +41,11 @@ export async function GET(request: NextRequest) {
     // Pagination parameters
     const { searchParams } = new URL(request.url)
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')))
-    const skip = (page - 1) * limit
+    const limitParam = searchParams.get('limit')
+    // Admins can see all orders when no limit is specified
+    const fetchAll = user.role === 'admin' && (!limitParam || limitParam === 'all')
+    const limit = fetchAll ? undefined : Math.min(500, Math.max(1, parseInt(limitParam || '20')))
+    const skip = fetchAll ? undefined : (page - 1) * (limit as number)
 
     // Admin sees all orders, users see only their orders
     let where: any = {}
@@ -62,7 +65,7 @@ export async function GET(request: NextRequest) {
     // Get total count for pagination metadata
     const totalCount = await prisma.order.count({ where })
 
-    // Fetch paginated orders
+    // Fetch orders (all for admin, paginated for others)
     const orders = await prisma.order.findMany({
       where,
       skip,
@@ -108,9 +111,10 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate pagination metadata
-    const totalPages = Math.ceil(totalCount / limit)
-    const hasNextPage = page < totalPages
-    const hasPrevPage = page > 1
+    const effectiveLimit = limit ?? totalCount
+    const totalPages = effectiveLimit > 0 ? Math.ceil(totalCount / effectiveLimit) : 1
+    const hasNextPage = fetchAll ? false : page < totalPages
+    const hasPrevPage = fetchAll ? false : page > 1
 
     return NextResponse.json({
       orders,

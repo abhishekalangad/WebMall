@@ -55,11 +55,11 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { name, slug, description, image, categoryId } = body
+        const { name, description, image, categoryId } = body
 
-        if (!name || !slug || !categoryId) {
+        if (!name || !categoryId) {
             return NextResponse.json(
-                { error: 'Name, slug, and categoryId are required' },
+                { error: 'Name and categoryId are required' },
                 { status: 400 }
             )
         }
@@ -76,19 +76,13 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Check for duplicate slug within the same category
-        const existing = await prisma.subcategory.findFirst({
-            where: {
-                categoryId,
-                slug
-            }
-        })
-
-        if (existing) {
-            return NextResponse.json(
-                { error: 'A subcategory with this slug already exists in this category' },
-                { status: 400 }
-            )
+        // Auto-generate a unique slug from name
+        const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+        let slug = baseSlug
+        let counter = 1
+        while (await prisma.subcategory.findFirst({ where: { slug } })) {
+            counter++
+            slug = `${baseSlug}-${counter}`
         }
 
         const subcategory = await prisma.subcategory.create({

@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { ShoppingBag, User, Menu, X, ChevronDown, LogOut, Settings, Package, Heart, Search, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -242,7 +241,7 @@ function HeaderContent() {
                       </div>
                     ) : user?.profileImage ? (
                       // Customer: Show profile image if available
-                      <img src={user.profileImage} alt={user?.name || 'User'} className="w-full h-full object-cover" />
+                      <img src={user.profileImage} alt={user?.name || 'User'} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                     ) : (
                       // Customer: Show initials if no profile image
                       <div className="w-full h-full bg-gradient-to-br from-pink-300 to-yellow-300 flex items-center justify-center">

@@ -363,7 +363,7 @@ export default function AdminCategoriesContent() {
                                     </TableCell>
                                     <TableCell>
                                         {category.image ? (
-                                            <img src={category.image} alt={category.name} className="w-8 h-8 object-cover rounded" />
+                                            <img src={category.image} alt={category.name} className="w-8 h-8 object-cover rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                                         ) : '(none)'}
                                     </TableCell>
                                     <TableCell>
@@ -395,7 +395,7 @@ export default function AdminCategoriesContent() {
                                             </TableCell>
                                             <TableCell>
                                                 {subcategory.image ? (
-                                                    <img src={subcategory.image} alt={subcategory.name} className="w-6 h-6 object-cover rounded" />
+                                                    <img src={subcategory.image} alt={subcategory.name} className="w-6 h-6 object-cover rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                                                 ) : '(none)'}
                                             </TableCell>
                                             <TableCell>

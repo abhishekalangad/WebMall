@@ -3,7 +3,6 @@
 import React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { ShoppingBag, Heart, Minus, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useWishlist } from '@/contexts/WishlistContext'
@@ -108,12 +107,12 @@ export function ProductCard({
       >
         {/* Product Image - Fixed Width */}
         <div className="relative w-1/3 sm:w-48 md:w-56 overflow-hidden bg-gray-100 flex-shrink-0">
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={primaryImage}
             alt={product.name}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={handleImageError}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => handleImageError(e as any)}
           />
 
           {/* Category Badge */}
@@ -273,12 +272,12 @@ export function ProductCard({
     >
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden bg-gray-100">
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={primaryImage}
           alt={product.name}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
-          onError={handleImageError}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          onError={(e) => handleImageError(e as any)}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-10 opacity-transition duration-300 sm:group-hover:opacity-10"></div>
 

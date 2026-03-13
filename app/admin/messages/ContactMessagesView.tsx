@@ -79,6 +79,33 @@ export default function ContactMessagesView() {
         }
     }
 
+    const handleDeleteMessage = async (id: string, e?: React.MouseEvent) => {
+        e?.stopPropagation() // don't open the dialog when clicking delete on the row
+        if (!window.confirm('Permanently delete this message? This cannot be undone.')) return
+
+        try {
+            const token = await accessToken()
+            const res = await fetch(`/api/contact?id=${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            if (!res.ok) throw new Error('Delete failed')
+
+            // Remove from local state immediately
+            setMessages(prev => prev.filter(m => m.id !== id))
+
+            // Close dialog if this was the open message
+            if (selectedMessage?.id === id) setSelectedMessage(null)
+
+            // Update total count in stats
+            setStats(prev => ({ ...prev, total: Math.max(0, prev.total - 1) }))
+
+            toast({ title: 'Deleted', description: 'Message removed permanently.' })
+        } catch (error) {
+            toast({ title: 'Error', description: 'Failed to delete message.', variant: 'destructive' })
+        }
+    }
+
     const handleMarkAsRead = async (id: string) => {
         try {
             const token = await accessToken()
@@ -311,7 +338,16 @@ export default function ContactMessagesView() {
                                             </div>
                                             <p className="text-sm text-gray-600">{message.email}</p>
                                         </div>
-                                        <span className="text-xs text-gray-500">{formatDate(message.createdAt)}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-gray-500">{formatDate(message.createdAt)}</span>
+                                            <button
+                                                onClick={(e) => handleDeleteMessage(message.id, e)}
+                                                title="Delete message"
+                                                className="ml-1 p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                     <h4 className="font-semibold text-gray-800 mb-1">{cleanSubject(message.subject)}</h4>
                                     <p className="text-sm text-gray-600 line-clamp-2">{message.message}</p>
@@ -419,6 +455,14 @@ export default function ContactMessagesView() {
                                         className="rounded-xl"
                                     >
                                         Close
+                                    </Button>
+                                    <Button
+                                        onClick={() => handleDeleteMessage(selectedMessage!.id)}
+                                        variant="outline"
+                                        className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                                        title="Delete this message permanently"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
                                     </Button>
                                 </div>
                             </div>

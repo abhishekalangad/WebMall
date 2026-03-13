@@ -20,21 +20,15 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category')
     const lowStock = searchParams.get('lowStock') === 'true'
 
-    const items = await prisma.inventoryItem.findMany({
-      where: {
-        ...(category ? { category } : {}),
-        ...(lowStock ? { quantity: { lte: prisma.inventoryItem.fields.lowStockAlert } } : {})
-      },
-      orderBy: { name: 'asc' }
-    })
+    // Single query — fetch all items, then filter in-memory for the response
+    const all = await prisma.inventoryItem.findMany({ orderBy: { name: 'asc' } })
 
-    // Calculate low-stock manually since Prisma can't compare two fields in a where clause easily
-    const result = lowStock
-      ? items.filter((i: any) => i.quantity <= i.lowStockAlert)
-      : items
+    // Apply optional filters in-memory (avoids a second DB round-trip)
+    let result = all
+    if (category) result = result.filter((i: any) => i.category === category)
+    if (lowStock) result = result.filter((i: any) => i.quantity <= i.lowStockAlert)
 
-    // Summary stats
-    const all = await prisma.inventoryItem.findMany()
+    // Summary stats derived from the same dataset
     const totalItems = all.length
     const lowStockCount = all.filter((i: any) => i.quantity <= i.lowStockAlert).length
     const totalValue = all.reduce((sum: number, i: any) => {

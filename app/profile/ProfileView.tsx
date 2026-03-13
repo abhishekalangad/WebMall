@@ -417,6 +417,7 @@ export function ProfileView() {
                                         alt="Profile"
                                         className="w-full h-full object-cover"
                                         key={user.profileImage}
+                                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                                     />
                                 ) : (
                                     <div className="w-full h-full bg-gradient-to-br from-pink-300 to-yellow-300 flex items-center justify-center">
@@ -718,7 +719,7 @@ export function ProfileView() {
                                                     >
                                                         <div className={wishlistView === 'grid' ? "aspect-[3/4] w-full bg-slate-100 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden relative shadow-sm group-hover:shadow-2xl transition-all duration-500" : "w-24 h-32 md:w-32 md:h-40 bg-slate-100 rounded-xl md:rounded-2xl overflow-hidden relative shrink-0 shadow-sm"}>
                                                             {item.image ? (
-                                                                <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                                                                <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }} />
                                                             ) : (
                                                                 <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-50">
                                                                     <LayoutGrid className="h-8 w-8" />
@@ -864,7 +865,7 @@ export function ProfileView() {
                                         {selectedOrder.items.map((item) => (
                                             <div key={item.id} className="flex items-center gap-4 p-3 border border-slate-100/50 rounded-2xl bg-white shadow-sm hover:shadow-md transition-shadow">
                                                 <div className="w-12 h-16 md:w-16 md:h-20 bg-slate-50 rounded-lg overflow-hidden shrink-0">
-                                                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }} />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-sm font-bold text-slate-900 truncate">{item.name}</p>

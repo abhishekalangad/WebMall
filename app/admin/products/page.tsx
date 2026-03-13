@@ -20,7 +20,6 @@ import {
   Save,
   Loader2
 } from 'lucide-react'
-import Image from 'next/image'
 import { toast } from '@/hooks/use-toast'
 import { MultiImageUpload } from '@/components/admin/MultiImageUpload'
 import { ProductVariants, ProductVariant } from '@/components/admin/ProductVariants'
@@ -552,131 +551,148 @@ export default function AdminProductsPage() {
         {/* Products Display */}
         {viewMode === 'list' ? (
           <Card className="overflow-hidden">
-            <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <div className="inline-block min-w-full align-middle">
-                <table className="min-w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Product
-                      </th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
-                        Category
-                      </th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Price
-                      </th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                        Stock
-                      </th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                        Status
-                      </th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredProducts.map((product) => (
-                      <tr key={product.id} className="hover:bg-gray-50">
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12">
-                              {product.images?.[0]?.url ? (
-                                <Image
-                                  src={product.images[0].url}
-                                  alt={product.name}
-                                  width={48}
-                                  height={48}
-                                  className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg object-cover"
-                                />
-                              ) : (
-                                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-gray-200 flex items-center justify-center text-gray-400">
-                                  <Package className="h-5 w-5 sm:h-6 sm:w-6" />
-                                </div>
-                              )}
-                            </div>
-                            <div className="ml-2 sm:ml-4 min-w-0">
-                              <div className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[120px] sm:max-w-none">
-                                {product.name}
-                              </div>
-                              <div className="text-xs text-gray-500 truncate max-w-[120px] sm:max-w-xs">
-                                {product.description}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap hidden sm:table-cell">
-                          <Badge variant="secondary" className="text-xs">{product.category?.name || 'Uncategorized'}</Badge>
-                        </td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                          <div className="font-medium">{product.currency} {product.price.toLocaleString()}</div>
-                        </td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap hidden md:table-cell">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-gray-900">{product.stock}</span>
-                            {product.stock === 0 ? (
-                              <Badge className="bg-red-100 text-red-800 text-xs">Out of Stock</Badge>
-                            ) : product.stock < 10 ? (
-                              <Badge className="bg-amber-100 text-amber-800 text-xs">Low Stock</Badge>
+            <div className="overflow-x-auto">
+              <table className="min-w-full table-fixed">
+                <colgroup>
+                  <col className="w-[280px]" />
+                  <col className="w-[130px]" />
+                  <col className="w-[120px]" />
+                  <col className="w-[130px]" />
+                  <col className="w-[90px]" />
+                  <col className="w-[200px]" />
+                </colgroup>
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Product
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Category
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Price
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Stock
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredProducts.map((product) => (
+                    <tr key={product.id} className="hover:bg-gray-50">
+                      {/* Product thumbnail + name */}
+                      <td className="px-4 py-3 overflow-hidden">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-shrink-0 h-11 w-11 rounded-lg overflow-hidden bg-gray-100">
+                            {product.images?.[0]?.url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={product.images[0].url}
+                                alt={product.name}
+                                className="h-11 w-11 object-cover"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                              />
                             ) : (
-                              <Badge className="bg-green-100 text-green-800 text-xs">In Stock</Badge>
+                              <div className="h-11 w-11 flex items-center justify-center text-gray-400">
+                                <Package className="h-5 w-5" />
+                              </div>
                             )}
                           </div>
-                        </td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap hidden lg:table-cell">
-                          <Badge
-                            className={product.status === 'active' ? 'bg-green-100 text-green-800 text-xs' : 'bg-red-100 text-red-800 text-xs'}
-                          >
-                            {product.status === 'active' ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => router.push(`/products/${product.slug}`)}
-                              className="h-8 w-8 p-0 sm:w-auto sm:px-2 flex-shrink-0"
-                              title="View"
-                            >
-                              <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditProduct(product)}
-                              className="h-8 w-8 p-0 sm:w-auto sm:px-2 flex-shrink-0"
-                              title="Edit"
-                            >
-                              <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleToggleStock(product)}
-                              className="hidden lg:inline-flex h-8 flex-shrink-0"
-                              title={product.status === 'active' ? 'Archive' : 'Activate'}
-                            >
-                              {product.status === 'active' ? 'Archive' : 'Activate'}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteProduct(product.id)}
-                              className="h-8 w-8 p-0 sm:w-auto sm:px-2 text-red-600 hover:text-red-800 flex-shrink-0"
-                              title="Delete"
-                            >
-                              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            </Button>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium text-gray-900 truncate" title={product.name}>
+                              {product.name}
+                            </div>
+                            <div className="text-xs text-gray-500 truncate" title={product.description}>
+                              {product.description}
+                            </div>
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </div>
+                      </td>
+
+                      {/* Category */}
+                      <td className="px-4 py-3 overflow-hidden whitespace-nowrap">
+                        <Badge variant="secondary" className="text-xs max-w-full truncate block">{product.category?.name || 'Uncategorized'}</Badge>
+                      </td>
+
+                      {/* Price */}
+                      <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap overflow-hidden">
+                        <div className="font-medium">{product.currency} {product.price.toLocaleString()}</div>
+                      </td>
+
+                      {/* Stock */}
+                      <td className="px-4 py-3 whitespace-nowrap overflow-hidden">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-900">{product.stock}</span>
+                          {product.stock === 0 ? (
+                            <Badge className="bg-red-100 text-red-800 text-xs">Out of Stock</Badge>
+                          ) : product.stock < 10 ? (
+                            <Badge className="bg-amber-100 text-amber-800 text-xs">Low Stock</Badge>
+                          ) : (
+                            <Badge className="bg-green-100 text-green-800 text-xs">In Stock</Badge>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-4 py-3 whitespace-nowrap overflow-hidden">
+                        <Badge
+                          className={product.status === 'active' ? 'bg-green-100 text-green-800 text-xs' : 'bg-red-100 text-red-800 text-xs'}
+                        >
+                          {product.status === 'active' ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-4 py-3 whitespace-nowrap overflow-hidden">
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.push(`/products/${product.slug}`)}
+                            className="h-8 w-8 p-0 flex-shrink-0"
+                            title="View"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditProduct(product)}
+                            className="h-8 w-8 p-0 flex-shrink-0"
+                            title="Edit"
+                          >
+                            <Edit className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleToggleStock(product)}
+                            className="h-8 px-2 text-xs font-medium flex-shrink-0 whitespace-nowrap"
+                            title={product.status === 'active' ? 'Archive' : 'Activate'}
+                          >
+                            {product.status === 'active' ? 'Archive' : 'Activate'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteProduct(product.id)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50 flex-shrink-0"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </Card>
         ) : (
@@ -686,11 +702,12 @@ export default function AdminProductsPage() {
                 {/* Image */}
                 <div className="relative aspect-square bg-gray-100">
                   {product.images?.[0]?.url ? (
-                    <Image
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
                       src={product.images[0].url}
                       alt={product.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">

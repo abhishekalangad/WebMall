@@ -286,7 +286,7 @@ export default function AdminUserDetailPage() {
                             <div className="flex flex-col items-center text-center">
                                 <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-4 overflow-hidden border-4 border-white shadow-sm">
                                     {user.profileImage ? (
-                                        <img src={user.profileImage} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                                        <img src={user.profileImage} alt={user.name || 'User'} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                                     ) : (
                                         <User className="w-10 h-10 text-slate-300" />
                                     )}

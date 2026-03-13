@@ -6,7 +6,6 @@ import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { X, Upload, Loader2, GripVertical, Image as ImageIcon } from 'lucide-react'
-import Image from 'next/image'
 import { toast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -212,11 +211,12 @@ export function MultiImageUpload({ images, onChange, maxImages = 8 }: MultiImage
 
                                 {/* Image Preview */}
                                 <div className="flex-shrink-0 w-20 h-20 relative bg-gray-100 rounded-lg overflow-hidden">
-                                    <Image
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
                                         src={image.url}
                                         alt={image.alt || 'Product image'}
-                                        fill
-                                        className="object-cover"
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }}
                                     />
                                     {index === 0 && (
                                         <div className="absolute top-1 left-1 bg-pink-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">

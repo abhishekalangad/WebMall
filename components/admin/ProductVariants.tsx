@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Plus, X, Trash2, Copy, Edit2, Sparkles, Upload, Loader2, ImageIcon, Check } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import Image from 'next/image'
+
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from '@/hooks/use-toast'
 import {
@@ -326,11 +326,11 @@ export function ProductVariants({
                             {/* Variant Image */}
                             <div className="relative h-20 w-20 sm:h-24 sm:w-24 bg-gray-50 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
                                 {variant.image ? (
-                                    <Image
+                                    <img
                                         src={variant.image}
                                         alt={variant.name}
-                                        fill
-                                        className="object-cover"
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }}
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-gray-300">
@@ -665,7 +665,7 @@ export function ProductVariants({
                                                     onClick={() => handleSelectExistingImage(img.url)}
                                                     className="relative aspect-square border rounded-md overflow-hidden hover:ring-2 hover:ring-pink-500 focus:outline-none"
                                                 >
-                                                    <Image src={img.url} alt="Product" fill className="object-cover" />
+                                                    <img src={img.url} alt="Product" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }} />
                                                     {formData.images?.includes(img.url) && (
                                                         <div className="absolute inset-0 bg-pink-500/20 flex items-center justify-center">
                                                             <div className="bg-pink-500 text-white rounded-full p-0.5"><Check className="h-3 w-3" /></div>
@@ -687,7 +687,7 @@ export function ProductVariants({
                                     <div className="grid grid-cols-4 gap-3">
                                         {formData.images.map((url, idx) => (
                                             <div key={idx} className="group relative aspect-square rounded-lg overflow-hidden border border-gray-200">
-                                                <Image src={url} alt="Variant" fill className="object-cover" />
+                                                <img src={url} alt="Variant" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }} />
                                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                                                 <button
                                                     onClick={() => handleRemoveVariantImage(idx)}

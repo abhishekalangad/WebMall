@@ -264,3 +264,42 @@ export async function PATCH(request: NextRequest) {
         )
     }
 }
+
+export async function DELETE(request: NextRequest) {
+    try {
+        const authHeader = request.headers.get('Authorization')
+        if (!authHeader?.startsWith('Bearer ')) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        const token = authHeader.split(' ')[1]
+        const user = await verifyAuthToken(token)
+
+        if (!user || user.role !== 'admin') {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+
+        // Support both ?id=xxx query param and { id } request body
+        const { searchParams } = new URL(request.url)
+        let id = searchParams.get('id')
+
+        if (!id) {
+            const body = await request.json().catch(() => ({}))
+            id = body.id
+        }
+
+        if (!id) {
+            return NextResponse.json({ error: 'Message ID is required' }, { status: 400 })
+        }
+
+        await prisma.message.delete({ where: { id } })
+
+        return NextResponse.json({ success: true, message: 'Message deleted' })
+    } catch (error: any) {
+        console.error('Error deleting message:', error)
+        if (error?.code === 'P2025') {
+            return NextResponse.json({ error: 'Message not found' }, { status: 404 })
+        }
+        return NextResponse.json({ error: 'Failed to delete message' }, { status: 500 })
+    }
+}

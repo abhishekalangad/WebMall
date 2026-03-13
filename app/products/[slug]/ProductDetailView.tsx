@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -586,14 +585,12 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                         )}
 
                         <div className="aspect-square bg-white rounded-2xl overflow-hidden shadow-sm">
-                            <Image
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
                                 src={getValidImageUrl(manualImageOverride || product.images[selectedImage]?.url, '/placeholder.png')}
                                 alt={product.name}
-                                width={600}
-                                height={600}
                                 className="w-full h-full object-cover"
-                                onError={handleImageError}
-                                priority
+                                onError={(e) => handleImageError(e as any)}
                             />
                         </div>
 
@@ -651,13 +648,12 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                 : 'border-gray-200 hover:border-pink-300 hover:scale-102'
                                                 }`}
                                         >
-                                            <Image
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
                                                 src={getValidImageUrl(imgUrl, '/placeholder.png')}
                                                 alt={`Product view ${i + 1}`}
-                                                width={100}
-                                                height={100}
                                                 className="w-full h-full object-cover"
-                                                onError={handleImageError}
+                                                onError={(e) => handleImageError(e as any)}
                                             />
                                             {/* Show variant badge if linked - REMOVED per user request
                                             {badgeLabel && (
@@ -1057,7 +1053,8 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                     <div className="flex items-center">
                                                         <div className="h-10 w-10 relative overflow-hidden rounded-full bg-gray-100 border mr-3">
                                                             {review.user?.image ? (
-                                                                <Image src={review.user.image} alt={review.user.name || 'User'} fill className="object-cover" />
+                                                                // eslint-disable-next-line @next/next/no-img-element
+                                                                <img src={review.user.image} alt={review.user.name || 'User'} className="h-full w-full object-cover" />
                                                             ) : (
                                                                 <div className="h-full w-full flex items-center justify-center text-gray-500 font-bold bg-pink-100/50">
                                                                     {(review.user?.name || 'A').charAt(0).toUpperCase()}

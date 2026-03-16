@@ -238,7 +238,8 @@ export async function POST(request: NextRequest) {
     const shippingCost = isFreeShipping ? 0 : shippingBaseRate
 
     // Final total amount
-    const totalAmount = subtotal - (discountAmount || 0) + shippingCost
+    const rawTotalAmount = subtotal - (discountAmount || 0) + shippingCost
+    const totalAmount = Math.floor(rawTotalAmount)
 
     // 🔧 FIX: Ensure user exists in public.users before creating order
     // This handles cases where Supabase auth user hasn't been synced yet

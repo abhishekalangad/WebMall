@@ -18,7 +18,8 @@ function HeaderContent() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const { user, signOut, loading, accessToken } = useAuth()
-  const { totalItems } = useCart()
+  const { items } = useCart()
+  const itemCount = items.length
   const { totalItems: wishlistItems } = useWishlist()
   const { settings, categories, loading: configLoading } = useSiteConfig()
 
@@ -212,9 +213,9 @@ function HeaderContent() {
             {user && (
               <Link href="/cart" className="relative p-1.5 sm:p-2 text-gray-600 hover:text-gray-900 transition-colors">
                 <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" />
-                {totalItems > 0 && (
+                {itemCount > 0 && (
                   <span className="absolute -top-0.5 sm:-top-1 -right-0.5 sm:-right-1 bg-pink-500 text-white text-[10px] sm:text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center border-2 border-white font-bold">
-                    {totalItems}
+                    {itemCount}
                   </span>
                 )}
               </Link>

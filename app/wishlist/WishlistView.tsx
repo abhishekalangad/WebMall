@@ -161,14 +161,24 @@ export function WishlistView() {
                                     </div>
 
                                     <div className="flex space-x-2">
-                                        <Button
-                                            onClick={() => handleAddToCart(item)}
-                                            className="flex-1 bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-medium"
-                                            size="sm"
-                                        >
-                                            <ShoppingBag className="h-4 w-4 mr-1" />
-                                            Add to Cart
-                                        </Button>
+                                        {item.inStock === false ? (
+                                            <Button
+                                                disabled
+                                                className="flex-1 bg-gray-200 text-gray-500 font-medium"
+                                                size="sm"
+                                            >
+                                                Out of Stock
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                onClick={() => handleAddToCart(item)}
+                                                className="flex-1 bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-medium"
+                                                size="sm"
+                                            >
+                                                <ShoppingBag className="h-4 w-4 mr-1" />
+                                                Add to Cart
+                                            </Button>
+                                        )}
                                         <Button
                                             variant="outline"
                                             onClick={() => handleRemoveFromWishlist(item.productId)}

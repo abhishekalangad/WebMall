@@ -135,7 +135,9 @@ export default function CheckoutPage() {
 
   const subtotal = totalPrice
   const discount = appliedCoupon?.discountAmount || 0
-  const finalTotal = (appliedCoupon?.finalTotal || totalPrice) + shippingCost
+  const rawFinalTotal = (appliedCoupon?.finalTotal || totalPrice) + shippingCost
+  const finalTotal = Math.floor(rawFinalTotal)
+  const roundOffAmount = finalTotal - rawFinalTotal
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -512,7 +514,13 @@ export default function CheckoutPage() {
                 {discount > 0 && (
                   <div className="flex justify-between items-center text-green-600">
                     <span>Discount:</span>
-                    <span>-{discount.toLocaleString('en-LK')} LKR</span>
+                    <span>-{discount.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} LKR</span>
+                  </div>
+                )}
+                {roundOffAmount !== 0 && (
+                  <div className="flex justify-between items-center text-gray-500 text-sm">
+                    <span>Round-off:</span>
+                    <span>{roundOffAmount > 0 ? '+' : ''}{roundOffAmount.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} LKR</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center pt-2 border-t">

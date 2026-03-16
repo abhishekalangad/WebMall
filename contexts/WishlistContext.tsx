@@ -16,6 +16,7 @@ export interface WishlistItem {
   slug: string
   category: string
   addedAt: string
+  inStock?: boolean
 }
 
 interface WishlistContextType {

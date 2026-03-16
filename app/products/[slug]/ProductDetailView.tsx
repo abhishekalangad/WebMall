@@ -403,7 +403,8 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                 slug: product.slug,
                 variantName: selectedVariant?.name,
                 variantAttributes: selectedVariant?.attributes,
-                originalPrice: product.price > effectivePrice ? product.price : undefined
+                originalPrice: product.price > effectivePrice ? product.price : undefined,
+                maxStock: availableStock
             })
             toast({
                 title: "Added to Cart!",
@@ -499,7 +500,8 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
             slug: product.slug,
             variantName: selectedVariant?.name,
             variantAttributes: selectedVariant?.attributes,
-            originalPrice: product.price > effectivePrice ? product.price : undefined
+            originalPrice: product.price > effectivePrice ? product.price : undefined,
+            maxStock: availableStock
         }
 
         // Store in localStorage for checkout page to access
@@ -951,26 +953,56 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
 
                         {/* Add to Cart Actions */}
                         <div className="space-y-4 pt-4 border-t">
-                            <div className="flex items-center space-x-4">
-                                <span className="font-medium">Quantity</span>
-                                <div className="flex items-center border rounded-lg bg-white">
-                                    <Button variant="ghost" size="sm" onClick={() => setQuantity(Math.max(1, quantity - 1))}><Minus className="h-4 w-4" /></Button>
-                                    <span className="w-8 text-center">{quantity}</span>
-                                    <Button variant="ghost" size="sm" onClick={() => setQuantity(Math.min(maxStock, quantity + 1))}><Plus className="h-4 w-4" /></Button>
+                            {product.inStock ? (
+                                <>
+                                    <div className="flex items-center space-x-4">
+                                        <span className="font-medium">Quantity</span>
+                                        <div className="flex items-center border rounded-lg bg-white">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                disabled={quantity <= 1}
+                                                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                            >
+                                                <Minus className="h-4 w-4" />
+                                            </Button>
+                                            <span className="w-8 text-center">{quantity}</span>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                disabled={quantity >= maxStock}
+                                                onClick={() => setQuantity(Math.min(maxStock, quantity + 1))}
+                                            >
+                                                <Plus className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                        {maxStock > 0 && maxStock <= 5 && (
+                                            <span className="text-xs text-amber-600 font-medium">
+                                                Only {maxStock} left
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                        <Button onClick={handleAddToCart} className="flex-1 bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold h-12 sm:h-14 text-base shadow-lg hover:shadow-xl transition-all">
+                                            <ShoppingBag className="mr-2 h-5 w-5" /> Add to Cart
+                                        </Button>
+                                        <Button onClick={handleBuyNow} className="flex-1 bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500 text-white font-semibold h-12 sm:h-14 text-base shadow-lg hover:shadow-xl transition-all">
+                                            <Truck className="mr-2 h-5 w-5" /> Buy Now
+                                        </Button>
+                                        <Button variant="outline" onClick={handleWishlist} className={`h-12 sm:h-14 w-full sm:w-14 border-2 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'text-red-500 border-red-300 bg-red-50' : 'border-gray-300 hover:border-red-300 hover:bg-red-50'}`}>
+                                            <Heart className={`h-5 w-5 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'fill-current' : ''}`} />
+                                            <span className="ml-2 sm:hidden">Wishlist</span>
+                                        </Button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex flex-col gap-3">
+                                    <Button variant="outline" onClick={handleWishlist} className={`w-full h-12 sm:h-14 border-2 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'text-red-500 border-red-300 bg-red-50' : 'border-gray-300 hover:border-red-300 hover:bg-red-50'} text-base font-semibold`}>
+                                        <Heart className={`mr-2 h-5 w-5 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'fill-current' : ''}`} />
+                                        {isInWishlist(product.id, selectedVariant?.id || undefined) ? 'Added to Wishlist' : 'Out of Stock - Add to Wishlist'}
+                                    </Button>
                                 </div>
-                            </div>
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <Button onClick={handleAddToCart} disabled={!product.inStock} className="flex-1 bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold h-12 sm:h-14 text-base shadow-lg hover:shadow-xl transition-all">
-                                    <ShoppingBag className="mr-2 h-5 w-5" /> Add to Cart
-                                </Button>
-                                <Button onClick={handleBuyNow} disabled={!product.inStock} className="flex-1 bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500 text-white font-semibold h-12 sm:h-14 text-base shadow-lg hover:shadow-xl transition-all">
-                                    <Truck className="mr-2 h-5 w-5" /> Buy Now
-                                </Button>
-                                <Button variant="outline" onClick={handleWishlist} className={`h-12 sm:h-14 w-full sm:w-14 border-2 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'text-red-500 border-red-300 bg-red-50' : 'border-gray-300 hover:border-red-300 hover:bg-red-50'}`}>
-                                    <Heart className={`h-5 w-5 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'fill-current' : ''}`} />
-                                    <span className="ml-2 sm:hidden">Wishlist</span>
-                                </Button>
-                            </div>
+                            )}
                         </div>
 
                     </div>
@@ -1106,31 +1138,45 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
 
                     {/* Quantity & Add Button */}
                     <div className="flex items-center gap-2">
-                        {/* Compact Quantity Selector */}
-                        <div className="flex items-center border-2 border-gray-300 rounded-lg">
-                            <button
-                                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                className="p-2 hover:bg-gray-100"
-                            >
-                                <Minus className="h-4 w-4" />
-                            </button>
-                            <span className="px-3 font-semibold text-sm">{quantity}</span>
-                            <button
-                                onClick={() => setQuantity(Math.min(maxStock, quantity + 1))}
-                                className="p-2 hover:bg-gray-100"
-                            >
-                                <Plus className="h-4 w-4" />
-                            </button>
-                        </div>
+                        {product.inStock ? (
+                            <>
+                                {/* Compact Quantity Selector */}
+                                <div className="flex items-center border-2 border-gray-300 rounded-lg">
+                                    <button
+                                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                        disabled={quantity <= 1}
+                                        className="p-2 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                        <Minus className="h-4 w-4" />
+                                    </button>
+                                    <span className="px-3 font-semibold text-sm">{quantity}</span>
+                                    <button
+                                        onClick={() => setQuantity(Math.min(maxStock, quantity + 1))}
+                                        disabled={quantity >= maxStock}
+                                        className="p-2 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                    </button>
+                                </div>
 
-                        {/* Add to Cart Button */}
-                        <Button
-                            onClick={handleAddToCart}
-                            disabled={!product.inStock}
-                            className="bg-gradient-to-r from-pink-400 to-yellow-400 hover:from-pink-500 hover:to-yellow-500 text-white font-semibold px-6 py-6 shadow-lg"
-                        >
-                            <ShoppingBag className="h-5 w-5" />
-                        </Button>
+                                {/* Add to Cart Button */}
+                                <Button
+                                    onClick={handleAddToCart}
+                                    className="bg-gradient-to-r from-pink-400 to-yellow-400 hover:from-pink-500 hover:to-yellow-500 text-white font-semibold px-6 py-6 shadow-lg"
+                                >
+                                    <ShoppingBag className="h-5 w-5" />
+                                </Button>
+                            </>
+                        ) : (
+                            <Button
+                                variant="outline"
+                                onClick={handleWishlist}
+                                className={`flex-1 h-12 border-2 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'text-red-500 border-red-300 bg-red-50' : 'border-gray-300 hover:border-red-300 hover:bg-red-50'}`}
+                            >
+                                <Heart className={`mr-2 h-5 w-5 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'fill-current' : ''}`} />
+                                {isInWishlist(product.id, selectedVariant?.id || undefined) ? 'In Wishlist' : 'Add to Wishlist'}
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>

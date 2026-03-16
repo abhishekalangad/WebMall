@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
                                 name: true,
                                 slug: true,
                                 price: true,
+                                stock: true,
                                 images: {
                                     take: 1,
                                     orderBy: { position: 'asc' }
@@ -41,7 +42,8 @@ export async function GET(request: NextRequest) {
                                 attributes: true,
                                 image: true,
                                 images: true,
-                                priceOverride: true
+                                priceOverride: true,
+                                stock: true
                             }
                         }
                     }
@@ -71,6 +73,7 @@ export async function GET(request: NextRequest) {
                                     name: true,
                                     slug: true,
                                     price: true,
+                                    stock: true,
                                     images: {
                                         take: 1,
                                         orderBy: { position: 'asc' }
@@ -82,7 +85,8 @@ export async function GET(request: NextRequest) {
                                     id: true,
                                     name: true,
                                     attributes: true,
-                                    image: true
+                                    image: true,
+                                    stock: true
                                 }
                             }
                         }
@@ -110,7 +114,8 @@ export async function GET(request: NextRequest) {
                     : (item.variant?.image || item.product?.images[0]?.url),
                 slug: item.product?.slug || '',
                 variantName: item.variantName || undefined,
-                variantAttributes: item.variantAttributes as Record<string, string> || undefined
+                variantAttributes: item.variantAttributes as Record<string, string> || undefined,
+                maxStock: item.variant ? item.variant.stock : item.product?.stock
             }
         })
 
@@ -208,6 +213,7 @@ export async function POST(request: NextRequest) {
                                 name: true,
                                 slug: true,
                                 price: true,
+                                stock: true,
                                 images: {
                                     take: 1,
                                     orderBy: { position: 'asc' }
@@ -220,7 +226,8 @@ export async function POST(request: NextRequest) {
                                 attributes: true,
                                 image: true,
                                 images: true,
-                                priceOverride: true
+                                priceOverride: true,
+                                stock: true
                             }
                         }
                     }
@@ -247,7 +254,8 @@ export async function POST(request: NextRequest) {
                     : (item.variant?.image || item.product?.images[0]?.url),
                 slug: item.product?.slug || '',
                 variantName: item.variantName || undefined,
-                variantAttributes: item.variantAttributes as Record<string, string> || undefined
+                variantAttributes: item.variantAttributes as Record<string, string> || undefined,
+                maxStock: item.variant ? item.variant.stock : item.product?.stock
             }
         })
 

@@ -106,7 +106,7 @@ export function CartView() {
                             </h1>
                             <p className="text-gray-600 flex items-center gap-2">
                                 <ShoppingBag className="h-4 w-4" />
-                                {totalItems} {totalItems === 1 ? 'item' : 'items'} in your cart
+                                {items.length} {items.length === 1 ? 'item' : 'items'} in your cart
                             </p>
                         </div>
                         {items.length > 0 && (
@@ -240,7 +240,8 @@ export function CartView() {
                                                     <div className="flex items-center border-2 border-gray-200 rounded-lg overflow-hidden w-full sm:w-auto">
                                                         <button
                                                             onClick={() => updateQuantity(item.productId, item.quantity - 1, item.variantId)}
-                                                            className="p-2 sm:p-2.5 hover:bg-pink-50 transition-colors flex-1 sm:flex-none"
+                                                            disabled={item.quantity <= 1}
+                                                            className="p-2 sm:p-2.5 hover:bg-pink-50 transition-colors flex-1 sm:flex-none disabled:opacity-40 disabled:cursor-not-allowed"
                                                         >
                                                             <Minus className="h-4 w-4 text-gray-600 mx-auto" />
                                                         </button>
@@ -249,7 +250,7 @@ export function CartView() {
                                                         </span>
                                                         <button
                                                             onClick={() => updateQuantity(item.productId, item.quantity + 1, item.variantId)}
-                                                            className="p-2 sm:p-2.5 hover:bg-pink-50 transition-colors flex-1 sm:flex-none"
+                                                            className={`p-2 sm:p-2.5 hover:bg-pink-50 transition-colors flex-1 sm:flex-none ${item.maxStock !== undefined && item.quantity >= item.maxStock ? 'opacity-40 cursor-not-allowed' : ''}`}
                                                         >
                                                             <Plus className="h-4 w-4 text-gray-600 mx-auto" />
                                                         </button>
@@ -292,7 +293,7 @@ export function CartView() {
                             {/* Price Breakdown */}
                             <div className="space-y-3 mb-6 pb-6 border-b">
                                 <div className="flex justify-between text-gray-600">
-                                    <span>Subtotal ({totalItems} items)</span>
+                                    <span>Subtotal ({items.length} {items.length === 1 ? 'item' : 'items'})</span>
                                     <span className="font-medium">LKR {totalPrice.toLocaleString()}</span>
                                 </div>
 

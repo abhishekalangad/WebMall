@@ -41,7 +41,52 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useToast } from '@/hooks/use-toast'
+import Cropper from 'react-easy-crop'
 
+const createImage = (url: string) =>
+  new Promise((resolve, reject) => {
+    const image = new Image()
+    image.addEventListener('load', () => resolve(image))
+    image.addEventListener('error', (error) => reject(error))
+    image.setAttribute('crossOrigin', 'anonymous')
+    image.src = url
+  })
+
+async function getCroppedImg(
+  imageSrc: string,
+  pixelCrop: { x: number; y: number; width: number; height: number }
+) {
+  const image: any = await createImage(imageSrc)
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+
+  if (!ctx) {
+    return null
+  }
+
+  canvas.width = image.width
+  canvas.height = image.height
+
+  ctx.drawImage(image, 0, 0)
+
+  const data = ctx.getImageData(
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height
+  )
+
+  canvas.width = pixelCrop.width
+  canvas.height = pixelCrop.height
+
+  ctx.putImageData(data, 0, 0)
+
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((file) => {
+      resolve(file!)
+    }, 'image/jpeg')
+  })
+}
 type ProfileTab = 'account' | 'orders' | 'wishlist' | 'security'
 
 interface OrderItem {
@@ -73,10 +118,17 @@ export function ProfileView() {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [activeTab, setActiveTab] = useState<ProfileTab>('account')
 
+    // Cropper State
+    const [imageToCrop, setImageToCrop] = useState<string | null>(null)
+    const [crop, setCrop] = useState({ x: 0, y: 0 })
+    const [zoom, setZoom] = useState(1)
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
+
     // Order History State
+    const [orders, setOrders] = useState<any[]>([])
+    const [ordersLoading, setOrdersLoading] = useState(false)
     const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null)
     const [showOrderDialog, setShowOrderDialog] = useState(false)
-    const [orderCount, setOrderCount] = useState(2)
 
     // Wishlist Logic State
     const [wishlistSearch, setWishlistSearch] = useState('')
@@ -112,9 +164,9 @@ export function ProfileView() {
             setFormData({
                 name: user.name || '',
                 email: user.email || '',
-                phone: user.phone || '+94 77 123 4567',
-                birthday: user.birthday || '1995-05-15',
-                address: user.address || '45/11, Flower Road, Colombo 03',
+                phone: user.phone || '',
+                birthday: user.birthday || '',
+                address: user.address || '',
             })
         }
     }, [user])
@@ -141,11 +193,36 @@ export function ProfileView() {
         })
     }
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    useEffect(() => {
+        if (activeTab === 'orders' && user && orders.length === 0 && !ordersLoading) {
+            fetchOrders()
+        }
+    }, [activeTab, user])
+
+    const fetchOrders = async () => {
+        try {
+            setOrdersLoading(true)
+            const token = await accessToken()
+            const response = await fetch('/api/orders', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            if (response.ok) {
+                const data = await response.json()
+                setOrders(data.orders || [])
+            }
+        } catch (error) {
+            console.error('Failed to fetch orders:', error)
+        } finally {
+            setOrdersLoading(false)
+        }
+    }
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
 
-        // Validate file type
         if (!file.type.startsWith('image/')) {
             toast({
                 title: "Invalid File",
@@ -155,31 +232,33 @@ export function ProfileView() {
             return
         }
 
-        // Validate file size (5MB max)
-        const maxSize = 5 * 1024 * 1024
-        if (file.size > maxSize) {
-            toast({
-                title: "File Too Large",
-                description: "Image must be less than 5MB.",
-                variant: "destructive"
-            })
-            return
+        const reader = new FileReader()
+        reader.addEventListener('load', () => {
+            setImageToCrop(reader.result?.toString() || null)
+        })
+        reader.readAsDataURL(file)
+        
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''
         }
+    }
+
+    const uploadCroppedImage = async () => {
+        if (!imageToCrop || !croppedAreaPixels) return
 
         try {
             setIsSaving(true)
+            const croppedImageBlob = await getCroppedImg(imageToCrop, croppedAreaPixels)
 
             if (!user) {
                 throw new Error('User not authenticated')
             }
 
-            // Create form data for upload
             const formData = new FormData()
-            formData.append('file', file)
+            formData.append('file', new File([croppedImageBlob!], 'profile.jpg', { type: 'image/jpeg' }))
             formData.append('userId', user.id)
 
             const token = await accessToken()
-            // Upload to server
             const response = await fetch('/api/upload/profile-image', {
                 method: 'POST',
                 headers: {
@@ -194,17 +273,10 @@ export function ProfileView() {
                 throw new Error(data.error || 'Upload failed')
             }
 
-            console.log('✅ Upload successful, image URL:', data.imageUrl)
-
-            // Update user profile with the new image URL
             await updateUser({ profileImage: data.imageUrl })
-
-            console.log('✅ User profile updated in database')
-
-            // Force refresh the user data to update the UI immediately
             await refreshUser()
-
-            console.log('✅ User data refreshed, new user state:', user)
+            
+            setImageToCrop(null)
 
             toast({
                 title: "Profile Picture Updated",
@@ -214,66 +286,40 @@ export function ProfileView() {
             console.error('Error uploading profile image:', error)
             toast({
                 title: "Upload Failed",
-                description: error instanceof Error ? error.message : "Failed to upload image. Please try again.",
+                description: error instanceof Error ? error.message : "Failed to upload image.",
                 variant: "destructive"
             })
         } finally {
             setIsSaving(false)
-            // Reset file input
-            if (fileInputRef.current) {
-                fileInputRef.current.value = ''
-            }
         }
     }
 
     // Order Details Logic - Fully Dynamic
-    const handleViewOrder = (id: string, idx: number) => {
-        // Dynamic product catalog for different orders
-        const productCatalog = [
-            [
-                { id: '1', name: 'Premium Silk Blouse', price: 8500, image: 'https://images.unsplash.com/photo-1598559069352-3d8437b0d427?q=80&w=200&auto=format&fit=crop', size: 'M' },
-                { id: '2', name: 'Tailored Linen Trousers', price: 6000, image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?q=80&w=200&auto=format&fit=crop', size: 'L' },
-            ],
-            [
-                { id: '3', name: 'Classic White Shirt', price: 5500, image: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?q=80&w=200&auto=format&fit=crop', size: 'L' },
-                { id: '4', name: 'Designer Denim Jacket', price: 12500, image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?q=80&w=200&auto=format&fit=crop', size: 'XL' },
-                { id: '5', name: 'Leather Belt', price: 3500, image: 'https://images.unsplash.com/photo-1624222247344-550fb60583c2?q=80&w=200&auto=format&fit=crop', size: 'One Size' },
-            ],
-            [
-                { id: '6', name: 'Cashmere Sweater', price: 15000, image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=200&auto=format&fit=crop', size: 'M' },
-                { id: '7', name: 'Wool Scarf', price: 4500, image: 'https://images.unsplash.com/photo-1601740599584-421d0ae06f37?q=80&w=200&auto=format&fit=crop', size: 'One Size' },
-            ],
-            [
-                { id: '8', name: 'Summer Dress', price: 9500, image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&w=200&auto=format&fit=crop', size: 'S' },
-                { id: '9', name: 'Canvas Sneakers', price: 7500, image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?q=80&w=200&auto=format&fit=crop', size: '42' },
-                { id: '10', name: 'Sunglasses', price: 6500, image: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?q=80&w=200&auto=format&fit=crop', size: 'One Size' },
-            ],
-        ]
-
-        // Get order-specific items (cycle through catalog if more orders than catalog entries)
-        const orderItems = productCatalog[idx % productCatalog.length].map((item, itemIdx) => ({
-            ...item,
-            quantity: Math.floor(Math.random() * 2) + 1, // Random quantity 1-2
+    const handleViewOrder = (order: any) => {
+        const mappedItems = order.items.map((i: any) => ({
+            id: i.productId,
+            name: i.product?.name || 'Unknown Item',
+            price: i.price,
+            quantity: i.quantity,
+            image: i.product?.images?.[0]?.url || '/ui-placeholder.png',
+            size: i.variantName || 'Standard'
         }))
 
-        // Calculate dynamic total based on actual items
-        const calculatedTotal = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+        let statusText = 'Processing'
+        if (order.status === 'delivered') statusText = 'Delivered'
+        else if (order.status === 'shipped') statusText = 'Shipped'
 
-        // Dynamic order status based on order age
-        const statuses: ('Delivered' | 'Processing' | 'Shipped')[] = ['Delivered', 'Shipped', 'Processing']
-        const orderStatus = statuses[idx % statuses.length]
-
-        const mockOrder: OrderDetails = {
-            id: `WML-10250${idx + 1}`,
-            date: `October ${20 + idx}, 2024`,
-            status: orderStatus,
-            total: calculatedTotal,
-            items: orderItems,
-            shippingAddress: formData.address || '45/11, Flower Road, Colombo 03, Sri Lanka',
-            paymentMethod: idx % 2 === 0 ? 'Visa Ending In **** 4242' : 'Mastercard Ending In **** 8967',
-            trackingNumber: `TRACK-WM-${102500 + idx + 1}`
+        const mappedOrder: OrderDetails = {
+            id: order.orderNumber,
+            date: new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            status: statusText as any,
+            total: order.totalAmount,
+            items: mappedItems,
+            shippingAddress: order.shippingAddress?.address || 'Selected Address',
+            paymentMethod: order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Card payment',
+            trackingNumber: order.trackingNumber || 'Pending'
         }
-        setSelectedOrder(mockOrder)
+        setSelectedOrder(mappedOrder)
         setShowOrderDialog(true)
     }
 
@@ -495,7 +541,9 @@ export function ProfileView() {
                                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Help Center</p>
                             </div>
                             <p className="text-[11px] text-slate-400 leading-relaxed mb-4">Have questions about your premium account? Contact our team 24/7.</p>
-                            <Button variant="outline" className="w-full text-[10px] font-bold uppercase tracking-widest h-10 rounded-xl border-slate-200 hover:bg-slate-50">Contact Support</Button>
+                            <Link href="/contact" className="block w-full">
+                                <Button variant="outline" className="w-full text-[10px] font-bold uppercase tracking-widest h-10 rounded-xl border-slate-200 hover:bg-slate-50">Contact Support</Button>
+                            </Link>
                         </div>
                     </div>
 
@@ -569,51 +617,65 @@ export function ProfileView() {
                             {/* ORDERS TAB */}
                             {activeTab === 'orders' && (
                                 <motion.div key="orders" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="p-6 md:p-12">
-                                    <h2 className="text-xl font-bold mb-8">Purchase History</h2>
-                                    <div className="space-y-4 md:space-y-6">
-                                        {[...Array(orderCount)].map((_, idx) => {
-                                            const id = idx + 1;
-                                            return (
-                                                <div key={id} className="group p-4 md:p-6 border border-slate-100 rounded-2xl hover:border-slate-200 transition-all bg-white relative">
-                                                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 md:gap-6">
-                                                        <div className="flex items-center gap-4 md:gap-6">
-                                                            <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 group-hover:bg-slate-100 transition-colors">
-                                                                <Package className="h-6 w-6 text-slate-300" />
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-sm font-bold text-slate-900">Order #WML-10250{id}</p>
-                                                                <div className="flex items-center gap-2 mt-1">
-                                                                    <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                                                                    <span className="text-xs text-slate-500 font-medium">Oct 2{id}, 2024</span>
+                                    <h2 className="text-xl font-bold mb-8">Order History</h2>
+                                    
+                                    {ordersLoading ? (
+                                        <div className="flex justify-center items-center py-20">
+                                            <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin"></div>
+                                        </div>
+                                    ) : orders.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center py-20 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                                            <Package className="h-12 w-12 text-slate-300 mb-4" />
+                                            <p className="text-slate-900 font-bold uppercase tracking-widest text-xs">No orders yet</p>
+                                            <p className="text-xs text-slate-400 mt-2">Looks like you haven't made a purchase.</p>
+                                            <Link href="/products" className="mt-6">
+                                                <Button className="rounded-full bg-slate-900 text-white font-bold text-xs h-10 px-8">Start Shopping</Button>
+                                            </Link>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4 md:space-y-6">
+                                            {orders.map((order) => {
+                                                const id = order.orderNumber;
+                                                const date = new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                                const status = order.status === 'delivered' ? 'Delivered' : order.status === 'shipped' ? 'Shipped' : 'Processing'
+
+                                                return (
+                                                    <div key={order.id} className="group p-4 md:p-6 border border-slate-100 rounded-2xl hover:border-slate-200 transition-all bg-white relative">
+                                                        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 md:gap-6">
+                                                            <div className="flex items-center gap-4 md:gap-6">
+                                                                <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 group-hover:bg-slate-100 transition-colors">
+                                                                    <Package className="h-6 w-6 text-slate-300" />
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-bold text-slate-900">Order #{id}</p>
+                                                                    <div className="flex items-center gap-2 mt-1">
+                                                                        <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                                                                        <span className="text-xs text-slate-500 font-medium">{date}</span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                        <div className="flex items-center justify-between sm:justify-end gap-6 md:gap-12 w-full sm:w-auto border-t sm:border-t-0 pt-4 sm:pt-0">
-                                                            <div className="sm:text-right">
-                                                                <p className="text-sm font-bold text-slate-900">LKR {(14500 + id * 1250).toLocaleString()}.00</p>
-                                                                <p className="text-[10px] uppercase font-bold text-emerald-600 flex items-center sm:justify-end gap-1">
-                                                                    <CheckCircle2 className="h-3 w-3" /> Delivered
-                                                                </p>
+                                                            <div className="flex items-center justify-between sm:justify-end gap-6 md:gap-12 w-full sm:w-auto border-t sm:border-t-0 pt-4 sm:pt-0">
+                                                                <div className="sm:text-right">
+                                                                    <p className="text-sm font-bold text-slate-900">LKR {order.totalAmount.toLocaleString()}</p>
+                                                                    <p className={`text-[10px] uppercase font-bold flex items-center sm:justify-end gap-1 ${status === 'Delivered' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                                                        {status === 'Delivered' ? <CheckCircle2 className="h-3 w-3" /> : <Package className="h-3 w-3" />} {status}
+                                                                    </p>
+                                                                </div>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="rounded-xl hover:bg-slate-50 px-2 sm:px-4 shrink-0"
+                                                                    onClick={() => handleViewOrder(order)}
+                                                                >
+                                                                    <span className="hidden xs:inline mr-2">Details</span> <ChevronRight className="h-4 w-4" />
+                                                                </Button>
                                                             </div>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="rounded-xl hover:bg-slate-50 px-2 sm:px-4 shrink-0"
-                                                                onClick={() => handleViewOrder(`WML-10250${id}`, idx)}
-                                                            >
-                                                                <span className="hidden xs:inline mr-2">Details</span> <ChevronRight className="h-4 w-4" />
-                                                            </Button>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            )
-                                        })}
-                                        <div className="flex justify-center pt-8">
-                                            <Button variant="outline" onClick={() => setOrderCount(prev => prev + 2)} className="w-full sm:w-auto rounded-full text-slate-400 font-bold uppercase text-[10px] tracking-widest hover:text-slate-900 hover:bg-slate-50 transition-all px-8 h-11 border-slate-200">
-                                                Load More Orders
-                                            </Button>
+                                                )
+                                            })}
                                         </div>
-                                    </div>
+                                    )}
                                 </motion.div>
                             )}
 
@@ -1032,6 +1094,52 @@ export function ProfileView() {
                             className="rounded-xl flex-1 bg-red-600 text-white hover:bg-red-700 shadow-xl shadow-red-100 font-black uppercase tracking-widest text-[10px] h-12"
                         >
                             {isSaving ? "Deleting..." : "Delete Account"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Cropper Dialog */}
+            <Dialog open={!!imageToCrop} onOpenChange={(open) => !open && setImageToCrop(null)}>
+                <DialogContent className="max-w-[95vw] sm:max-w-md rounded-2xl md:rounded-3xl p-6 md:p-8">
+                    <DialogHeader>
+                        <DialogTitle>Adjust Profile Picture</DialogTitle>
+                        <DialogDescription>
+                            Drag to reposition and use the slider to zoom.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="relative w-full h-64 bg-slate-100 rounded-lg overflow-hidden my-4">
+                        {imageToCrop && (
+                            <Cropper
+                                image={imageToCrop}
+                                crop={crop}
+                                zoom={zoom}
+                                aspect={1}
+                                cropShape="round"
+                                showGrid={false}
+                                onCropChange={setCrop}
+                                onCropComplete={(croppedArea, croppedAreaPixels) => setCroppedAreaPixels(croppedAreaPixels as any)}
+                                onZoomChange={setZoom}
+                            />
+                        )}
+                    </div>
+                    <div>
+                        <Label className="text-xs uppercase font-bold text-slate-500 tracking-widest">Zoom Level</Label>
+                        <input
+                            type="range"
+                            value={zoom}
+                            min={1}
+                            max={3}
+                            step={0.1}
+                            aria-labelledby="Zoom"
+                            onChange={(e) => setZoom(Number(e.target.value))}
+                            className="w-full mt-2"
+                        />
+                    </div>
+                    <DialogFooter className="mt-4">
+                        <Button variant="outline" onClick={() => setImageToCrop(null)} disabled={isSaving} className="rounded-xl border-slate-200">Cancel</Button>
+                        <Button onClick={uploadCroppedImage} disabled={isSaving} className="rounded-xl bg-slate-900 text-white hover:bg-slate-800">
+                            {isSaving ? "Saving..." : "Save Image"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

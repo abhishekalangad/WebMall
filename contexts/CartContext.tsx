@@ -16,6 +16,7 @@ export interface CartItem {
   variantName?: string
   variantAttributes?: Record<string, string>
   originalPrice?: number
+  maxStock?: number
 }
 
 interface CartContextType {
@@ -111,7 +112,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }
 
   // Update server cart on item changes
-  const updateServerCart = useCallback(async (action: string, productId: string, quantity: number, variantId?: string, variantName?: string, variantAttributes?: Record<string, string>) => {
+  const updateServerCart = useCallback(async (action: string, productId: string, quantity: number, variantId?: string, variantName?: string, variantAttributes?: Record<string, string>, maxStock?: number) => {
     if (!user) return
 
     try {
@@ -124,7 +125,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ action, productId, quantity, variantId, variantName, variantAttributes })
+        body: JSON.stringify({ action, productId, quantity, variantId, variantName, variantAttributes, maxStock })
       })
     } catch (error) {
       console.error('Failed to update server cart:', error)
@@ -253,25 +254,34 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         item.variantId === newItem.variantId
       )
       if (existingItem) {
-        const newQuantity = (Number(existingItem.quantity) || 0) + quantityToAdd
+        // If maxStock is available, ensure we don't exceed it
+        const proposedQuantity = (Number(existingItem.quantity) || 0) + quantityToAdd
+        const newQuantity = existingItem.maxStock !== undefined ? Math.min(proposedQuantity, existingItem.maxStock) : proposedQuantity
+        
         const updatedItems = prevItems.map(item =>
           item.productId === newItem.productId && item.variantId === newItem.variantId
-            ? { ...item, quantity: newQuantity }
+            ? { ...item, quantity: newQuantity, maxStock: newItem.maxStock ?? item.maxStock }
             : item
         )
-        showToast(`${newItem.name} quantity updated in cart!`, 'success')
+        
+        if (existingItem.maxStock !== undefined && proposedQuantity > existingItem.maxStock) {
+           showToast(`Added max available quantity to cart`, 'info')
+        } else {
+           showToast(`${newItem.name} quantity updated in cart!`, 'success')
+        }
+        
         // Update server for logged-in users
-        updateServerCart('update', newItem.productId, newQuantity, newItem.variantId, newItem.variantName, newItem.variantAttributes)
+        updateServerCart('update', newItem.productId, newQuantity, newItem.variantId, newItem.variantName, newItem.variantAttributes, newItem.maxStock ?? existingItem.maxStock)
         return updatedItems
       } else {
         const newItems = [...prevItems, { ...newItem, quantity: quantityToAdd, id: Date.now().toString() }]
         showToast(`${newItem.name} added to cart!`, 'success')
         // Update server for logged-in users
-        updateServerCart('add', newItem.productId, quantityToAdd, newItem.variantId, newItem.variantName, newItem.variantAttributes)
+        updateServerCart('add', newItem.productId, quantityToAdd, newItem.variantId, newItem.variantName, newItem.variantAttributes, newItem.maxStock)
         return newItems
       }
     })
-  }, [updateServerCart])
+  }, [updateServerCart, showToast])
 
   const removeItem = useCallback((productId: string, variantId?: string) => {
     const itemToRemove = items.find(item =>
@@ -306,19 +316,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const itemToUpdate = items.find(item =>
       item.productId === productId && item.variantId === variantId
     )
+    
+    let finalQuantity = newQuantity
+    if (itemToUpdate && itemToUpdate.maxStock !== undefined && newQuantity > itemToUpdate.maxStock) {
+       finalQuantity = itemToUpdate.maxStock
+       showToast(`Only ${itemToUpdate.maxStock} units available`, 'error')
+       if (itemToUpdate.quantity === itemToUpdate.maxStock) return // Already at max
+    }
 
     setItems(prevItems =>
       prevItems.map(item =>
         item.productId === productId && item.variantId === variantId
-          ? { ...item, quantity: newQuantity }
+          ? { ...item, quantity: finalQuantity }
           : item
       )
     )
     // Update server for logged-in users with full variant details
     if (itemToUpdate) {
-      updateServerCart('update', productId, newQuantity, variantId, itemToUpdate.variantName, itemToUpdate.variantAttributes)
+      updateServerCart('update', productId, finalQuantity, variantId, itemToUpdate.variantName, itemToUpdate.variantAttributes, itemToUpdate.maxStock)
     }
-  }, [items, updateServerCart])
+  }, [items, updateServerCart, showToast])
 
   const clearCart = useCallback(async () => {
     setItems([])

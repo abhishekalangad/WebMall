@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
                                 name: true,
                                 slug: true,
                                 price: true,
+                                stock: true,
                                 currency: true,
                                 images: {
                                     take: 1,
@@ -46,6 +47,7 @@ export async function GET(request: NextRequest) {
                                 name: true,
                                 attributes: true,
                                 priceOverride: true,
+                                stock: true,
                                 image: true
                             }
                         }
@@ -79,6 +81,7 @@ export async function GET(request: NextRequest) {
                                     name: true,
                                     slug: true,
                                     price: true,
+                                    stock: true,
                                     currency: true,
                                     images: {
                                         take: 1,
@@ -96,6 +99,7 @@ export async function GET(request: NextRequest) {
                                     name: true,
                                     attributes: true,
                                     priceOverride: true,
+                                    stock: true,
                                     image: true
                                 }
                             }
@@ -112,6 +116,7 @@ export async function GET(request: NextRequest) {
             const variantAttributes = variant ? (variant.attributes as Record<string, string>) : undefined
             const price = variant?.priceOverride ? Number(variant.priceOverride) : Number(item.product?.price || 0)
             const image = variant?.image || item.product?.images[0]?.url
+            const inStock = variant ? variant.stock > 0 : (item.product?.stock || 0) > 0
 
             return {
                 id: item.id,
@@ -125,7 +130,8 @@ export async function GET(request: NextRequest) {
                 image,
                 slug: item.product?.slug || '',
                 category: item.product?.category?.name || 'Uncategorized',
-                addedAt: item.createdAt.toISOString()
+                addedAt: item.createdAt.toISOString(),
+                inStock
             }
         })
 

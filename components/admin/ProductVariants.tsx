@@ -303,8 +303,8 @@ export function ProductVariants({
                             <Sparkles className="h-4 w-4" />
                         </span>
                         <div>
-                            <h3 className="font-semibold text-gray-900">Product Variants</h3>
-                            <p className="text-xs text-gray-500">{variants.length} active variant{variants.length !== 1 ? 's' : ''}</p>
+                            <h3 className="font-semibold text-foreground">Product Variants</h3>
+                            <p className="text-xs text-muted-foreground">{variants.length} active variant{variants.length !== 1 ? 's' : ''}</p>
                         </div>
                     </div>
                     <Button
@@ -322,9 +322,9 @@ export function ProductVariants({
             {variants.length > 0 && !showForm && (
                 <div className="space-y-3">
                     {variants.map((variant, index) => (
-                        <div key={index} className="group flex flex-col sm:flex-row gap-4 p-4 bg-white border border-gray-100 rounded-xl hover:shadow-md transition-all hover:border-pink-200">
+                        <div key={index} className="group flex flex-col sm:flex-row gap-4 p-4 bg-card border border-border/50 rounded-xl hover:shadow-md transition-all hover:border-pink-200">
                             {/* Variant Image */}
-                            <div className="relative h-20 w-20 sm:h-24 sm:w-24 bg-gray-50 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
+                            <div className="relative h-20 w-20 sm:h-24 sm:w-24 bg-muted/50 rounded-lg flex-shrink-0 overflow-hidden border border-border/50">
                                 {variant.image ? (
                                     <img
                                         src={variant.image}
@@ -343,17 +343,17 @@ export function ProductVariants({
                                 <div>
                                     <div className="flex items-start justify-between">
                                         <div>
-                                            <h4 className="font-bold text-gray-900 truncate pr-4">{variant.name}</h4>
-                                            <p className="text-xs text-gray-500 font-mono mt-1">SKU: {variant.sku}</p>
+                                            <h4 className="font-bold text-foreground truncate pr-4">{variant.name}</h4>
+                                            <p className="text-xs text-muted-foreground font-mono mt-1">SKU: {variant.sku}</p>
                                         </div>
                                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-blue-600" onClick={() => handleEditVariant(index)}>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground/80 hover:text-blue-600" onClick={() => handleEditVariant(index)}>
                                                 <Edit2 className="h-4 w-4" />
                                             </Button>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-green-600" onClick={() => handleDuplicateVariant(index)}>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground/80 hover:text-green-600" onClick={() => handleDuplicateVariant(index)}>
                                                 <Copy className="h-4 w-4" />
                                             </Button>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-red-600" onClick={() => handleDeleteVariant(index)}>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground/80 hover:text-red-600" onClick={() => handleDeleteVariant(index)}>
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
@@ -361,9 +361,9 @@ export function ProductVariants({
 
                                     <div className="flex flex-wrap gap-2 mt-3">
                                         {Object.entries(variant.attributes).map(([key, value]) => (
-                                            <div key={key} className="flex items-center text-xs bg-gray-50 border border-gray-200 rounded-md px-2 py-1">
-                                                <span className="text-gray-500 mr-1">{key}:</span>
-                                                <span className="font-medium text-gray-900">{value}</span>
+                                            <div key={key} className="flex items-center text-xs bg-muted/50 border border-border rounded-md px-2 py-1">
+                                                <span className="text-muted-foreground mr-1">{key}:</span>
+                                                <span className="font-medium text-foreground">{value}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -372,13 +372,13 @@ export function ProductVariants({
                                 <div className="flex items-end justify-between mt-4">
                                     <div className="flex gap-4 text-sm">
                                         <div>
-                                            <span className="text-xs text-gray-500 block">Price</span>
-                                            <span className="font-semibold text-gray-900">
+                                            <span className="text-xs text-muted-foreground block">Price</span>
+                                            <span className="font-semibold text-foreground">
                                                 {currency} {(variant.priceOverride || basePrice).toLocaleString()}
                                             </span>
                                         </div>
                                         <div>
-                                            <span className="text-xs text-gray-500 block">Stock</span>
+                                            <span className="text-xs text-muted-foreground block">Stock</span>
                                             <span className={`font-semibold ${variant.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                                 {variant.stock}
                                             </span>
@@ -394,14 +394,14 @@ export function ProductVariants({
             {/* Add/Edit Form */}
             {showForm && (
                 <Card className="p-0 overflow-hidden border-2 border-pink-100 shadow-xl rounded-xl animate-in zoom-in-95 duration-200">
-                    <div className="px-6 py-4 border-b bg-gray-50/50 flex items-center justify-between">
+                    <div className="px-6 py-4 border-b bg-muted/50/50 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <div className="h-8 w-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
                                 {editingIndex !== null ? <Edit2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                             </div>
                             <div>
-                                <h3 className="font-bold text-gray-900">{editingIndex !== null ? 'Edit Variant' : 'Create Variant'}</h3>
-                                <p className="text-xs text-gray-500">Configure variant details and attributes</p>
+                                <h3 className="font-bold text-foreground">{editingIndex !== null ? 'Edit Variant' : 'Create Variant'}</h3>
+                                <p className="text-xs text-muted-foreground">Configure variant details and attributes</p>
                             </div>
                         </div>
                         <Button variant="ghost" size="sm" onClick={handleCancelForm} className="h-8 w-8 p-0 rounded-full hover:bg-gray-200">
@@ -418,7 +418,7 @@ export function ProductVariants({
 
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-1.5">
-                                        <Label className="text-xs font-medium text-gray-600">Type</Label>
+                                        <Label className="text-xs font-medium text-muted-foreground">Type</Label>
                                         <Select
                                             value={selectedAttrType}
                                             onValueChange={(val) => {
@@ -426,7 +426,7 @@ export function ProductVariants({
                                                 setSelectedAttrValue('')
                                             }}
                                         >
-                                            <SelectTrigger className="h-9 bg-white border-blue-200">
+                                            <SelectTrigger className="h-9 bg-card border-blue-200">
                                                 <SelectValue placeholder="Attribute" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -447,7 +447,7 @@ export function ProductVariants({
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <Label className="text-xs font-medium text-gray-600">Value</Label>
+                                        <Label className="text-xs font-medium text-muted-foreground">Value</Label>
                                         {selectedAttrType && selectedAttrType !== 'Custom' ? (
                                             <Select
                                                 value={selectedAttrValue}
@@ -459,7 +459,7 @@ export function ProductVariants({
                                                     }
                                                 }}
                                             >
-                                                <SelectTrigger className="h-9 bg-white border-blue-200">
+                                                <SelectTrigger className="h-9 bg-card border-blue-200">
                                                     <SelectValue placeholder="Value" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -470,7 +470,7 @@ export function ProductVariants({
                                                 </SelectContent>
                                             </Select>
                                         ) : (
-                                            <div className="h-9 flex items-center text-xs text-gray-400 italic px-2 border border-transparent">
+                                            <div className="h-9 flex items-center text-xs text-muted-foreground/80 italic px-2 border border-transparent">
                                                 Select Type first
                                             </div>
                                         )}
@@ -498,7 +498,7 @@ export function ProductVariants({
                                 {/* Selected Attributes Chips */}
                                 <div className="flex flex-wrap gap-2 pt-2">
                                     {Object.entries(formData.attributes).map(([key, value]) => (
-                                        <Badge key={key} className="bg-white border border-blue-200 text-blue-800 pointer-events-none pl-2 pr-1 py-1 h-7 flex items-center gap-1">
+                                        <Badge key={key} className="bg-card border border-blue-200 text-blue-800 pointer-events-none pl-2 pr-1 py-1 h-7 flex items-center gap-1">
                                             <span>{key}: <span className="font-bold">{value}</span></span>
                                             <button
                                                 onClick={(e) => { e.preventDefault(); handleRemoveAttribute(key); }}
@@ -509,17 +509,17 @@ export function ProductVariants({
                                         </Badge>
                                     ))}
                                     {Object.keys(formData.attributes).length === 0 && (
-                                        <div className="text-xs text-gray-400 italic text-center w-full">No attributes added yet</div>
+                                        <div className="text-xs text-muted-foreground/80 italic text-center w-full">No attributes added yet</div>
                                     )}
                                 </div>
                             </div>
 
                             {/* Basic Details */}
                             <div className="space-y-4">
-                                <Label className="text-sm font-bold text-gray-900">2. Variant Details</Label>
+                                <Label className="text-sm font-bold text-foreground">2. Variant Details</Label>
 
                                 <div>
-                                    <Label className="text-xs font-medium text-gray-600">Variant Name</Label>
+                                    <Label className="text-xs font-medium text-muted-foreground">Variant Name</Label>
                                     <Input
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -530,7 +530,7 @@ export function ProductVariants({
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <Label className="text-xs font-medium text-gray-600">SKU</Label>
+                                        <Label className="text-xs font-medium text-muted-foreground">SKU</Label>
                                         <div className="flex gap-2 mt-1">
                                             <Input
                                                 value={formData.sku}
@@ -544,7 +544,7 @@ export function ProductVariants({
                                         </div>
                                     </div>
                                     <div>
-                                        <Label className="text-xs font-medium text-gray-600">Stock</Label>
+                                        <Label className="text-xs font-medium text-muted-foreground">Stock</Label>
                                         <Input
                                             type="number"
                                             value={formData.stock}
@@ -557,9 +557,9 @@ export function ProductVariants({
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <Label className="text-xs font-medium text-gray-600">Price Override</Label>
+                                        <Label className="text-xs font-medium text-muted-foreground">Price Override</Label>
                                         <div className="relative mt-1">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">{currency}</span>
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currency}</span>
                                             <Input
                                                 type="number"
                                                 step="1"
@@ -584,7 +584,7 @@ export function ProductVariants({
                                     </div>
 
                                     <div>
-                                        <Label className="text-xs font-medium text-gray-600">Discount (%)</Label>
+                                        <Label className="text-xs font-medium text-muted-foreground">Discount (%)</Label>
                                         <div className="relative mt-1">
                                             <Input
                                                 type="number"
@@ -607,11 +607,11 @@ export function ProductVariants({
                                                 placeholder="0%"
                                                 className="pr-8"
                                             />
-                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">%</span>
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
                                         </div>
                                     </div>
                                 </div>
-                                <p className="text-[10px] text-gray-500 mt-1">
+                                <p className="text-[10px] text-muted-foreground mt-1">
                                     Base Price: {currency} {basePrice?.toLocaleString()}
                                     {formData.priceOverride && formData.priceOverride < basePrice && (
                                         <span className="text-green-600 ml-1 font-medium">
@@ -624,7 +624,7 @@ export function ProductVariants({
 
                         {/* RIGHT COLUMN: Images */}
                         <div className="space-y-6">
-                            <Label className="text-sm font-bold text-gray-900">3. Variant Images</Label>
+                            <Label className="text-sm font-bold text-foreground">3. Variant Images</Label>
 
                             <Tabs defaultValue="upload" className="w-full">
                                 <TabsList className="grid w-full grid-cols-2">
@@ -632,7 +632,7 @@ export function ProductVariants({
                                     <TabsTrigger value="existing">Select Existing</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="upload" className="mt-4">
-                                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:bg-gray-50 transition-colors">
+                                    <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:bg-muted/50 transition-colors">
                                         <input
                                             type="file"
                                             id="variant-image-upload"
@@ -650,8 +650,8 @@ export function ProductVariants({
                                                     <Upload className="h-5 w-5" />
                                                 </div>
                                             )}
-                                            <p className="text-sm font-medium text-gray-900">Click to upload images</p>
-                                            <p className="text-xs text-gray-500">JPG, PNG, WebP up to 5MB</p>
+                                            <p className="text-sm font-medium text-foreground">Click to upload images</p>
+                                            <p className="text-xs text-muted-foreground">JPG, PNG, WebP up to 5MB</p>
                                         </label>
                                     </div>
                                 </TabsContent>
@@ -675,18 +675,18 @@ export function ProductVariants({
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-gray-500 text-center py-8">No main product images available</p>
+                                        <p className="text-sm text-muted-foreground text-center py-8">No main product images available</p>
                                     )}
                                 </TabsContent>
                             </Tabs>
 
                             {/* Selected Images Grid */}
                             <div className="space-y-2">
-                                <Label className="text-xs font-medium text-gray-600">Selected Images ({formData.images?.length || 0})</Label>
+                                <Label className="text-xs font-medium text-muted-foreground">Selected Images ({formData.images?.length || 0})</Label>
                                 {formData.images && formData.images.length > 0 ? (
                                     <div className="grid grid-cols-4 gap-3">
                                         {formData.images.map((url, idx) => (
-                                            <div key={idx} className="group relative aspect-square rounded-lg overflow-hidden border border-gray-200">
+                                            <div key={idx} className="group relative aspect-square rounded-lg overflow-hidden border border-border">
                                                 <img src={url} alt="Variant" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }} />
                                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                                                 <button
@@ -702,7 +702,7 @@ export function ProductVariants({
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="h-20 bg-gray-50 rounded-lg flex items-center justify-center text-xs text-gray-400 border border-dashed border-gray-200">
+                                    <div className="h-20 bg-muted/50 rounded-lg flex items-center justify-center text-xs text-muted-foreground/80 border border-dashed border-border">
                                         No images selected
                                     </div>
                                 )}
@@ -710,7 +710,7 @@ export function ProductVariants({
                         </div>
                     </div>
 
-                    <div className="p-4 bg-gray-50 border-t flex items-center justify-end gap-3">
+                    <div className="p-4 bg-muted/50 border-t flex items-center justify-end gap-3">
                         <Button variant="outline" onClick={handleCancelForm} type="button">Cancel</Button>
                         <Button onClick={handleSaveVariant} type="button" className="bg-pink-600 hover:bg-pink-700 text-white">
                             {editingIndex !== null ? 'Update Variant' : 'Save Variant'}
@@ -721,12 +721,12 @@ export function ProductVariants({
 
             {/* Empty State */}
             {variants.length === 0 && !showForm && (
-                <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
-                    <div className="h-12 w-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
-                        <PackageIcon className="h-6 w-6 text-gray-400" />
+                <div className="text-center py-12 bg-muted/50 rounded-xl border-2 border-dashed border-border">
+                    <div className="h-12 w-12 bg-card rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+                        <PackageIcon className="h-6 w-6 text-muted-foreground/80" />
                     </div>
-                    <h3 className="text-sm font-semibold text-gray-900">No Variants Added</h3>
-                    <p className="text-xs text-gray-500 max-w-xs mx-auto mt-1 mb-4">Create variants to offer different options like colors, sizes, or materials for this product.</p>
+                    <h3 className="text-sm font-semibold text-foreground">No Variants Added</h3>
+                    <p className="text-xs text-muted-foreground max-w-xs mx-auto mt-1 mb-4">Create variants to offer different options like colors, sizes, or materials for this product.</p>
                     <Button onClick={() => setShowForm(true)} variant="outline">
                         <Plus className="h-4 w-4 mr-2" />
                         Add First Variant

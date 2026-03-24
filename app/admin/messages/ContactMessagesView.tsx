@@ -233,7 +233,7 @@ export default function ContactMessagesView() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen bg-muted/50 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="mb-8 flex items-center gap-4">
@@ -243,44 +243,44 @@ export default function ContactMessagesView() {
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Customer Messages</h1>
-                        <p className="text-gray-600">View and respond to customer inquiries</p>
+                        <h1 className="text-3xl font-bold text-foreground mb-2">Customer Messages</h1>
+                        <p className="text-muted-foreground">View and respond to customer inquiries</p>
                     </div>
                 </div>
 
                 {/* Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                    <div className="bg-white rounded-xl shadow p-6 border border-gray-100">
+                    <div className="bg-card rounded-xl shadow p-6 border border-border/50">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Total Messages</p>
-                                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                                <p className="text-sm text-muted-foreground">Total Messages</p>
+                                <p className="text-2xl font-bold text-foreground">{stats.total}</p>
                             </div>
-                            <Mail className="h-8 w-8 text-gray-400" />
+                            <Mail className="h-8 w-8 text-muted-foreground/80" />
                         </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow p-6 border border-gray-100">
+                    <div className="bg-card rounded-xl shadow p-6 border border-border/50">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">New</p>
+                                <p className="text-sm text-muted-foreground">New</p>
                                 <p className="text-2xl font-bold text-blue-600">{stats.new}</p>
                             </div>
                             <Clock className="h-8 w-8 text-blue-400" />
                         </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow p-6 border border-gray-100">
+                    <div className="bg-card rounded-xl shadow p-6 border border-border/50">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Read</p>
+                                <p className="text-sm text-muted-foreground">Read</p>
                                 <p className="text-2xl font-bold text-yellow-600">{stats.read}</p>
                             </div>
                             <Eye className="h-8 w-8 text-yellow-400" />
                         </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow p-6 border border-gray-100">
+                    <div className="bg-card rounded-xl shadow p-6 border border-border/50">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Replied</p>
+                                <p className="text-sm text-muted-foreground">Replied</p>
                                 <p className="text-2xl font-bold text-green-600">{stats.replied}</p>
                             </div>
                             <CheckCircle className="h-8 w-8 text-green-400" />
@@ -289,14 +289,14 @@ export default function ContactMessagesView() {
                 </div>
 
                 {/* Filters */}
-                <div className="bg-white rounded-xl shadow p-4 mb-6 flex flex-wrap gap-2">
+                <div className="bg-card rounded-xl shadow p-4 mb-6 flex flex-wrap gap-2">
                     {['all', 'new', 'read', 'replied'].map((status) => (
                         <button
                             key={status}
                             onClick={() => setFilter(status as any)}
                             className={`px-4 py-2 rounded-lg font-medium transition-colors ${filter === status
                                 ? 'bg-gray-900 text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                : 'bg-muted text-foreground/80 hover:bg-gray-200'
                                 }`}
                         >
                             {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -304,7 +304,7 @@ export default function ContactMessagesView() {
                     ))}
                     <button
                         onClick={() => fetchMessages()}
-                        className="ml-auto px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors flex items-center gap-2"
+                        className="ml-auto px-4 py-2 rounded-lg bg-muted text-foreground/80 hover:bg-gray-200 transition-colors flex items-center gap-2"
                     >
                         <RefreshCcw className="h-4 w-4" />
                         Refresh
@@ -312,49 +312,49 @@ export default function ContactMessagesView() {
                 </div>
 
                 {/* Messages List */}
-                <div className="bg-white rounded-xl shadow overflow-hidden">
+                <div className="bg-card rounded-xl shadow overflow-hidden">
                     {isLoading ? (
                         <div className="flex items-center justify-center py-12">
-                            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/80" />
                         </div>
                     ) : messages.length === 0 ? (
                         <div className="text-center py-12">
                             <Mail className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                            <p className="text-gray-500">No messages found</p>
+                            <p className="text-muted-foreground">No messages found</p>
                         </div>
                     ) : (
                         <div className="divide-y divide-gray-100">
                             {messages.map((message) => (
                                 <div
                                     key={message.id}
-                                    className="p-6 hover:bg-gray-50 transition-colors cursor-pointer"
+                                    className="p-6 hover:bg-muted/50 transition-colors cursor-pointer"
                                     onClick={() => handleViewMessage(message)}
                                 >
                                     <div className="flex items-start justify-between mb-2">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-3 mb-1">
-                                                <h3 className="font-bold text-gray-900">{message.name}</h3>
+                                                <h3 className="font-bold text-foreground">{message.name}</h3>
                                                 {getStatusBadge(message.status)}
                                             </div>
-                                            <p className="text-sm text-gray-600">{message.email}</p>
+                                            <p className="text-sm text-muted-foreground">{message.email}</p>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">{formatDate(message.createdAt)}</span>
+                                            <span className="text-xs text-muted-foreground">{formatDate(message.createdAt)}</span>
                                             <button
                                                 onClick={(e) => handleDeleteMessage(message.id, e)}
                                                 title="Delete message"
-                                                className="ml-1 p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                                className="ml-1 p-1.5 rounded-lg text-muted-foreground/80 hover:text-red-600 hover:bg-red-50 transition-colors"
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </button>
                                         </div>
                                     </div>
-                                    <h4 className="font-semibold text-gray-800 mb-1">{cleanSubject(message.subject)}</h4>
-                                    <p className="text-sm text-gray-600 line-clamp-2">{message.message}</p>
+                                    <h4 className="font-semibold text-foreground/90 mb-1">{cleanSubject(message.subject)}</h4>
+                                    <p className="text-sm text-muted-foreground line-clamp-2">{message.message}</p>
                                 </div>
                             ))}
                             {hasMore && (
-                                <div className="p-4 border-t border-gray-100 flex justify-center">
+                                <div className="p-4 border-t border-border/50 flex justify-center">
                                     <Button
                                         variant="outline"
                                         onClick={handleLoadMore}
@@ -385,23 +385,23 @@ export default function ContactMessagesView() {
                         {selectedMessage && (
                             <div className="space-y-6">
                                 {/* Message Info */}
-                                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="font-semibold text-gray-900">{selectedMessage.name}</p>
-                                            <p className="text-sm text-gray-600">{selectedMessage.email}</p>
+                                            <p className="font-semibold text-foreground">{selectedMessage.name}</p>
+                                            <p className="text-sm text-muted-foreground">{selectedMessage.email}</p>
                                         </div>
                                         {getStatusBadge(selectedMessage.status)}
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-1">Subject</p>
-                                        <p className="font-medium text-gray-900">{cleanSubject(selectedMessage.subject)}</p>
+                                        <p className="text-xs text-muted-foreground mb-1">Subject</p>
+                                        <p className="font-medium text-foreground">{cleanSubject(selectedMessage.subject)}</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-1">Message</p>
-                                        <p className="text-gray-700 whitespace-pre-wrap">{selectedMessage.message}</p>
+                                        <p className="text-xs text-muted-foreground mb-1">Message</p>
+                                        <p className="text-foreground/80 whitespace-pre-wrap">{selectedMessage.message}</p>
                                     </div>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-muted-foreground">
                                         Sent on {formatDate(selectedMessage.createdAt)}
                                     </p>
                                 </div>
@@ -410,7 +410,7 @@ export default function ContactMessagesView() {
                                 {selectedMessage.reply && (
                                     <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                                         <p className="text-xs text-green-700 mb-2 font-semibold">Previous Reply</p>
-                                        <p className="text-gray-700 whitespace-pre-wrap">{selectedMessage.reply}</p>
+                                        <p className="text-foreground/80 whitespace-pre-wrap">{selectedMessage.reply}</p>
                                         <p className="text-xs text-green-600 mt-2">
                                             Replied by {selectedMessage.repliedBy} on {selectedMessage.repliedAt && formatDate(selectedMessage.repliedAt)}
                                         </p>
@@ -419,7 +419,7 @@ export default function ContactMessagesView() {
 
                                 {/* Reply Form */}
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    <label className="block text-sm font-semibold text-foreground/80 mb-2">
                                         {selectedMessage.status === 'replied' ? 'Send Another Reply' : 'Your Reply'}
                                     </label>
                                     <Textarea

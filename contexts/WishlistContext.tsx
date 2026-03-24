@@ -25,6 +25,7 @@ interface WishlistContextType {
   removeItem: (productId: string, variantId?: string) => void  // Add optional variantId parameter
   isInWishlist: (productId: string, variantId?: string) => boolean  // Add optional variantId parameter
   clearWishlist: () => void
+  refreshWishlistData: () => Promise<void>
   totalItems: number
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void
 }
@@ -279,6 +280,61 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     clearServerWishlist()
   }, [clearServerWishlist])
 
+  const refreshWishlistData = useCallback(async () => {
+    if (items.length === 0) return
+
+    try {
+      if (user) {
+        // Logged-in users can just reload from server
+        const token = await getAuthToken()
+        if (token) {
+          const response = await fetch('/api/wishlist', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          if (response.ok) {
+            const data = await response.json()
+            if (data.items) setItems(data.items)
+          }
+        }
+      } else {
+        // For guests, we must fetch product data and update the cached wishlist items
+        const productIds = Array.from(new Set(items.map(item => item.productId)))
+        const response = await fetch(`/api/products?ids=${productIds.join(',')}&limit=all`)
+        if (response.ok) {
+          const data = await response.json()
+          const products = data.products || []
+          
+          if (products.length > 0) {
+            const updatedItems = items.map(item => {
+              const product = products.find((p: any) => p.id === item.productId)
+              if (!product) return item
+              
+              const variant = product.variants?.find((v: any) => v.id === item.variantId)
+              const productPrice = Number(product.price || 0)
+              const variantPrice = variant?.priceOverride ? Number(variant.priceOverride) : null
+              const finalPrice = variantPrice !== null ? variantPrice : productPrice
+              
+              return {
+                 ...item,
+                 name: product.name,
+                 price: finalPrice,
+                 image: (variant?.images && variant.images.length > 0)
+                    ? variant.images[0].url
+                    : (variant?.image || product.images?.[0]?.url || item.image),
+                 slug: product.slug,
+                 category: product.category?.name || product.categoryId || item.category,
+                 inStock: variant ? variant.stock > 0 : product.stock > 0
+              }
+            })
+            setItems(updatedItems)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to refresh wishlist data:', error)
+    }
+  }, [items, user])
+
   const totalItems = items.length
 
   const contextValue = useMemo(() => ({
@@ -287,9 +343,10 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     removeItem,
     isInWishlist,
     clearWishlist,
+    refreshWishlistData,
     totalItems,
     showToast,
-  }), [items, addItem, removeItem, isInWishlist, clearWishlist, totalItems, showToast])
+  }), [items, addItem, removeItem, isInWishlist, clearWishlist, refreshWishlistData, totalItems, showToast])
 
   return (
     <WishlistContext.Provider value={contextValue}>

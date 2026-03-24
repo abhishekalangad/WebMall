@@ -128,7 +128,7 @@ export function ImageUpload({
     return (
         <div className="space-y-3 sm:space-y-4">
             <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-700">Photo</label>
+                <label className="text-sm font-medium text-foreground">Photo</label>
                 {preview && (
                     <Button
                         type="button"
@@ -145,7 +145,7 @@ export function ImageUpload({
 
             <div
                 onClick={!uploading ? triggerSelect : undefined}
-                className={`relative aspect-square md:aspect-video rounded-lg sm:rounded-xl border-2 border-dashed transition-all flex flex-center cursor-pointer overflow-hidden ${preview ? 'border-pink-300 bg-white' : 'border-gray-300 bg-gray-50 hover:border-pink-300 hover:bg-white'
+                className={`relative aspect-square md:aspect-video rounded-lg sm:rounded-xl border-2 border-dashed transition-all flex items-center justify-center cursor-pointer overflow-hidden ${preview ? 'border-pink-300 bg-background' : 'border-border bg-muted/50 hover:border-pink-300 hover:bg-muted'
                     }`}
             >
                 {preview ? (
@@ -156,12 +156,12 @@ export function ImageUpload({
                     />
                 ) : (
                     <div className="flex flex-col items-center justify-center space-y-2 p-4 sm:p-6 text-center w-full">
-                        <div className="p-2 sm:p-3 rounded-full bg-pink-50 text-pink-500">
+                        <div className="p-2 sm:p-3 rounded-full bg-pink-100 dark:bg-pink-950/50 text-pink-600 dark:text-pink-400">
                             <Upload className="h-5 w-5 sm:h-6 sm:w-6" />
                         </div>
                         <div>
-                            <p className="text-xs sm:text-sm font-semibold text-gray-900">Click to upload photo</p>
-                            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">PNG, JPG, WEBP, HEIC (Max. {maxSizeMB}MB)</p>
+                            <p className="text-xs sm:text-sm font-semibold text-foreground">Click to upload photo</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">PNG, JPG, WEBP, HEIC (Max. {maxSizeMB}MB)</p>
                         </div>
                     </div>
                 )}

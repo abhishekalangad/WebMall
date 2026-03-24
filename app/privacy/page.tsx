@@ -11,17 +11,17 @@ export default function PrivacyPolicyPage() {
     const lastUpdated = 'December 27, 2025'
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-4xl mx-auto bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
                 {/* Header */}
-                <div className="bg-gray-900 px-8 py-12 text-center">
-                    <Shield className="w-16 h-16 text-pink-300 mx-auto mb-4" />
-                    <h1 className="text-4xl font-playfair font-bold text-white mb-2">Privacy Policy</h1>
-                    <p className="text-gray-400">Last Updated: {lastUpdated}</p>
+                <div className="bg-card border-b border-border px-8 py-12 text-center">
+                    <Shield className="w-16 h-16 text-pink-500 mx-auto mb-4" />
+                    <h1 className="text-4xl font-playfair font-bold text-foreground mb-2">Privacy Policy</h1>
+                    <p className="text-muted-foreground">Last Updated: {lastUpdated}</p>
                 </div>
 
                 {/* Content */}
-                <div className="p-8 md:p-12 prose prose-pink max-w-none text-gray-600">
+                <div className="p-8 md:p-12 prose prose-pink max-w-none text-muted-foreground">
                     <p className="text-lg leading-relaxed mb-8">
                         At WebMall, we are committed to protecting your privacy. This Privacy Policy explains how your
                         personal information is collected, used, and shared when you visit or make a purchase from
@@ -29,7 +29,7 @@ export default function PrivacyPolicyPage() {
                     </p>
 
                     <section className="mb-10">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                        <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center">
                             <Eye className="w-6 h-6 mr-2 text-pink-500" />
                             Information We Collect
                         </h2>
@@ -45,7 +45,7 @@ export default function PrivacyPolicyPage() {
                     </section>
 
                     <section className="mb-10">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                        <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center">
                             <FileText className="w-6 h-6 mr-2 text-pink-500" />
                             How We Use Your Information
                         </h2>
@@ -62,7 +62,7 @@ export default function PrivacyPolicyPage() {
                     </section>
 
                     <section className="mb-10">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                        <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center">
                             <Lock className="w-6 h-6 mr-2 text-pink-500" />
                             Data Retention
                         </h2>
@@ -73,16 +73,16 @@ export default function PrivacyPolicyPage() {
                     </section>
 
                     <section className="mb-10">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Changes</h2>
+                        <h2 className="text-2xl font-bold text-foreground mb-4">Changes</h2>
                         <p>
                             We may update this privacy policy from time to time in order to reflect, for example, changes to our
                             practices or for other operational, legal or regulatory reasons.
                         </p>
                     </section>
 
-                    <div className="border-t pt-8 mt-12 text-center text-gray-400 text-sm">
+                    <div className="border-t border-border pt-8 mt-12 text-center text-muted-foreground text-sm">
                         If you have questions about our privacy practices, please contact us at
-                        <a href="mailto:webmalll.ik@gmail.com" className="text-pink-600 font-bold ml-1">webmalll.ik@gmail.com</a>
+                        <a href="mailto:webmalll.ik@gmail.com" className="text-pink-600 dark:text-pink-500 font-bold ml-1">webmalll.ik@gmail.com</a>
                     </div>
                 </div>
             </div>

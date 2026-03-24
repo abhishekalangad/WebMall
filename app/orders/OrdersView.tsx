@@ -140,10 +140,10 @@ export function OrdersView() {
 
     if (authLoading || isLoadingOrders) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="text-center">
-                    <div className="w-8 h-8 border-4 border-pink-300 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading orders...</p>
+                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading orders...</p>
                 </div>
             </div>
         )
@@ -151,19 +151,19 @@ export function OrdersView() {
 
     if (!user) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <Card className="w-full max-w-md p-8 text-center">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <Package className="h-8 w-8 text-gray-400" />
+            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+                <Card className="w-full max-w-md p-8 text-center bg-card border-border shadow-lg shadow-black/5 dark:shadow-white/5">
+                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Package className="h-8 w-8 text-muted-foreground" />
                     </div>
-                    <h1 className="text-3xl font-playfair font-bold text-gray-900 mb-4">
+                    <h1 className="text-3xl font-playfair font-bold text-foreground mb-4">
                         Please Sign In
                     </h1>
-                    <p className="text-gray-600 mb-8">
+                    <p className="text-muted-foreground mb-8">
                         You need to be signed in to view your orders.
                     </p>
                     <Link href="/login">
-                        <Button className="w-full bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold">
+                        <Button className="w-full bg-foreground text-background font-semibold hover:bg-muted-foreground">
                             Sign In
                         </Button>
                     </Link>
@@ -173,8 +173,8 @@ export function OrdersView() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="min-h-screen bg-background py-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
                     <Link href="/">
@@ -183,33 +183,33 @@ export function OrdersView() {
                             Back to Home
                         </Button>
                     </Link>
-                    <h1 className="text-4xl font-playfair font-bold text-gray-900">
+                    <h1 className="text-4xl font-playfair font-bold text-foreground">
                         My Orders
                     </h1>
                 </div>
 
                 {/* Filters */}
-                <Card className="p-6 mb-8">
+                <Card className="p-6 mb-8 bg-card border-border shadow-sm">
                     <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-                        <div className="flex flex-col sm:flex-row gap-4 flex-1">
+                        <div className="flex flex-col sm:flex-row gap-4 flex-1 w-full">
                             {/* Search */}
-                            <div className="relative flex-1 max-w-md">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                            <div className="relative flex-1 max-w-md w-full">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                 <Input
                                     type="search"
                                     placeholder="Search orders..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10 pr-4 py-2"
+                                    className="pl-10 pr-4 py-2 border-border bg-background focus:ring-primary w-full"
                                 />
                             </div>
 
                             {/* Status Filter */}
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="w-48">
+                                <SelectTrigger className="w-full sm:w-48 bg-background border-border">
                                     <SelectValue placeholder="Filter by status" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="bg-popover border-border">
                                     <SelectItem value="all">All Orders</SelectItem>
                                     <SelectItem value="pending">Pending</SelectItem>
                                     <SelectItem value="confirmed">Confirmed</SelectItem>
@@ -225,30 +225,30 @@ export function OrdersView() {
                 {/* Orders List */}
                 <div className="space-y-6">
                     {filteredOrders.length === 0 ? (
-                        <Card className="p-12 text-center">
-                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <Package className="h-8 w-8 text-gray-400" />
+                        <Card className="p-12 text-center bg-card border-border shadow-sm">
+                            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+                                <Package className="h-8 w-8 text-muted-foreground" />
                             </div>
-                            <h3 className="text-xl font-semibold text-gray-900 mb-2">No orders found</h3>
-                            <p className="text-gray-600 mb-6">
+                            <h3 className="text-xl font-semibold text-foreground mb-2">No orders found</h3>
+                            <p className="text-muted-foreground mb-6">
                                 {searchQuery || statusFilter !== 'all'
                                     ? 'Try adjusting your search or filter criteria'
                                     : 'You haven\'t placed any orders yet'
                                 }
                             </p>
                             <Link href="/products">
-                                <Button className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold">
+                                <Button className="bg-foreground text-background font-semibold hover:bg-muted-foreground transition-colors px-8">
                                     Start Shopping
                                 </Button>
                             </Link>
                         </Card>
                     ) : (
                         filteredOrders.map((order) => (
-                            <Card key={order.id} className="p-6">
+                            <Card key={order.id} className="p-6 bg-card border border-border shadow-sm hover:shadow-md transition-shadow">
                                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-4 mb-4">
-                                            <h3 className="text-lg font-semibold text-gray-900">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-4 mb-4">
+                                            <h3 className="text-lg font-semibold text-foreground truncate">
                                                 Order #{order.orderNumber}
                                             </h3>
                                             <Badge className={statusColors[order.status as keyof typeof statusColors]}>
@@ -257,45 +257,45 @@ export function OrdersView() {
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                <Calendar className="h-4 w-4" />
-                                                <span>Ordered on {new Date(order.createdAt).toLocaleDateString()}</span>
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                <Calendar className="h-4 w-4 shrink-0" />
+                                                <span className="truncate">Ordered on {new Date(order.createdAt).toLocaleDateString()}</span>
                                             </div>
-                                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                <CreditCard className="h-4 w-4" />
-                                                <span>Total: {order.currency} {order.totalAmount.toLocaleString('en-LK')}</span>
+                                            <div className="flex items-center gap-2 text-sm text-foreground">
+                                                <CreditCard className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                                <span className="font-medium truncate">Total: {order.currency} {order.totalAmount.toLocaleString('en-LK')}</span>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-start gap-2 text-sm text-gray-600 mb-4">
-                                            <MapPin className="h-4 w-4 mt-0.5" />
-                                            <span>
+                                        <div className="flex items-start gap-2 text-sm text-muted-foreground mb-4">
+                                            <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
+                                            <span className="truncate text-wrap line-clamp-2">
                                                 {order.shippingAddress?.address}, {order.shippingAddress?.city}, {order.shippingAddress?.postalCode}
                                             </span>
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <p className="text-sm font-medium text-gray-900">Items:</p>
+                                        <div className="space-y-2 mb-4 lg:mb-0">
+                                            <p className="text-sm font-medium text-foreground">Items:</p>
                                             {order.items.map((item, index) => (
-                                                <div key={index} className="flex justify-between text-sm text-gray-600">
-                                                    <span>{item.product.name} x {item.quantity}</span>
-                                                    <span>{order.currency} {item.total.toLocaleString('en-LK')}</span>
+                                                <div key={index} className="flex justify-between text-sm text-muted-foreground gap-4">
+                                                    <span className="truncate">{item.product.name} <span className="text-foreground">x {item.quantity}</span></span>
+                                                    <span className="shrink-0">{order.currency} {item.total.toLocaleString('en-LK')}</span>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col sm:flex-row gap-2">
+                                    <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-border lg:border-t-0 lg:pt-0 shrink-0">
                                         <Button
                                             variant="outline"
-                                            className="flex items-center gap-2"
+                                            className="flex items-center gap-2 justify-center border-border hover:bg-muted"
                                             onClick={() => setSelectedOrder(order)}
                                         >
                                             <Eye className="h-4 w-4" />
                                             View Details
                                         </Button>
                                         {order.status === 'delivered' && (
-                                            <Button variant="outline" className="flex items-center gap-2">
+                                            <Button variant="outline" className="flex items-center gap-2 justify-center border-border hover:bg-muted">
                                                 <Package className="h-4 w-4" />
                                                 Reorder
                                             </Button>
@@ -309,17 +309,17 @@ export function OrdersView() {
 
                 {/* Order Detail Modal Overlay */}
                 {selectedOrder && (
-                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
-                            <div className="p-6">
+                    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="bg-card border border-border rounded-xl md:rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl custom-scrollbar">
+                            <div className="p-6 md:p-8">
                                 <div className="flex justify-between items-start mb-6">
                                     <div>
-                                        <h2 className="text-2xl font-bold font-playfair mb-1">Order Details</h2>
-                                        <p className="text-gray-500 text-sm">#{selectedOrder.orderNumber}</p>
+                                        <h2 className="text-2xl font-bold font-playfair mb-1 text-foreground">Order Details</h2>
+                                        <p className="text-muted-foreground text-sm">#{selectedOrder.orderNumber}</p>
                                     </div>
                                     <button
                                         onClick={() => setSelectedOrder(null)}
-                                        className="text-gray-500 hover:text-gray-700"
+                                        className="text-muted-foreground hover:text-foreground transition-colors p-2 hover:bg-muted rounded-full"
                                     >
                                         <span className="sr-only">Close</span>
                                         <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -330,46 +330,46 @@ export function OrdersView() {
 
                                 <div className="space-y-6">
                                     {/* Order Status & Info */}
-                                    <div className="flex flex-wrap gap-4 items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+                                    <div className="flex flex-wrap gap-4 items-center justify-between p-4 bg-muted/50 rounded-xl border border-border">
                                         <div className="space-y-1">
-                                            <div className="text-sm text-gray-500">Date Placed</div>
-                                            <div className="font-medium">
+                                            <div className="text-sm text-muted-foreground">Date Placed</div>
+                                            <div className="font-medium text-foreground">
                                                 {new Date(selectedOrder.createdAt).toLocaleDateString()} {new Date(selectedOrder.createdAt).toLocaleTimeString()}
                                             </div>
                                         </div>
                                         <div className="space-y-1">
-                                            <div className="text-sm text-gray-500">Status</div>
+                                            <div className="text-sm text-muted-foreground">Status</div>
                                             <Badge className={statusColors[selectedOrder.status as keyof typeof statusColors]}>
                                                 {statusLabels[selectedOrder.status as keyof typeof statusLabels]}
                                             </Badge>
                                         </div>
                                         <div className="space-y-1">
-                                            <div className="text-sm text-gray-500">Payment Method</div>
-                                            <div className="font-medium capitalize">{selectedOrder.paymentMethod}</div>
+                                            <div className="text-sm text-muted-foreground">Payment Method</div>
+                                            <div className="font-medium capitalize text-foreground">{selectedOrder.paymentMethod}</div>
                                         </div>
                                     </div>
 
                                     {/* Shipping Address */}
                                     <div>
-                                        <h3 className="font-semibold mb-2 flex items-center gap-2">
+                                        <h3 className="font-semibold mb-3 flex items-center gap-2 text-foreground">
                                             <MapPin className="h-4 w-4" />
                                             Shipping Information
                                         </h3>
-                                        <div className="border rounded-lg p-4 text-sm space-y-1">
-                                            <div className="font-medium">
+                                        <div className="border border-border bg-card rounded-xl p-4 text-sm space-y-1.5 shadow-sm">
+                                            <div className="font-bold text-foreground">
                                                 {selectedOrder.shippingAddress.firstName} {selectedOrder.shippingAddress.lastName}
                                             </div>
-                                            <div>{selectedOrder.shippingAddress.address}</div>
-                                            <div>{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.postalCode}</div>
-                                            <div>{selectedOrder.shippingAddress.district}</div>
+                                            <div className="text-muted-foreground">{selectedOrder.shippingAddress.address}</div>
+                                            <div className="text-muted-foreground">{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.postalCode}</div>
+                                            <div className="text-muted-foreground">{selectedOrder.shippingAddress.district}</div>
                                             {selectedOrder.shippingAddress.phone && (
-                                                <div className="text-gray-500 mt-1">
-                                                    Phone: {selectedOrder.shippingAddress.phone}
+                                                <div className="text-muted-foreground mt-2 pt-2 border-t border-border flex items-center gap-2">
+                                                    <span className="font-medium text-foreground">Phone:</span> {selectedOrder.shippingAddress.phone}
                                                 </div>
                                             )}
                                             {selectedOrder.shippingAddress.email && (
-                                                <div className="text-gray-500">
-                                                    Email: {selectedOrder.shippingAddress.email}
+                                                <div className="text-muted-foreground flex items-center gap-2">
+                                                    <span className="font-medium text-foreground">Email:</span> {selectedOrder.shippingAddress.email}
                                                 </div>
                                             )}
                                         </div>
@@ -377,11 +377,11 @@ export function OrdersView() {
 
                                     {/* Order Items */}
                                     <div>
-                                        <h3 className="font-semibold mb-3 text-gray-900 border-b pb-2">Items Ordered</h3>
+                                        <h3 className="font-semibold mb-4 text-foreground border-b border-border pb-2">Items Ordered</h3>
                                         <div className="space-y-4">
                                             {selectedOrder.items.map((item) => (
-                                                <div key={item.id} className="flex gap-4 items-start py-2">
-                                                    <div className="h-20 w-20 bg-gray-100 rounded-lg overflow-hidden shrink-0 border border-gray-200">
+                                                <div key={item.id} className="flex gap-4 items-start py-3 px-4 bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                                                    <div className="h-20 w-20 bg-muted/50 rounded-lg overflow-hidden shrink-0 border border-border">
                                                         {item.product.images?.[0]?.url ? (
                                                             <img
                                                                 src={item.product.images[0].url}
@@ -392,17 +392,17 @@ export function OrdersView() {
                                                                 }}
                                                             />
                                                         ) : (
-                                                            <div className="h-full w-full flex items-center justify-center bg-gray-50 text-gray-400">
+                                                            <div className="h-full w-full flex items-center justify-center bg-muted text-muted-foreground/50">
                                                                 <Package className="h-8 w-8" />
                                                             </div>
                                                         )}
                                                     </div>
                                                     <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         <div>
-                                                            <div className="font-medium text-gray-900 truncate text-base">
+                                                            <div className="font-medium text-foreground truncate text-base">
                                                                 {item.product.name}
                                                                 {(item.variantName || item.variant?.name) && (
-                                                                    <span className="ml-2 text-sm text-gray-500 font-normal">
+                                                                    <span className="ml-2 text-sm text-muted-foreground font-normal">
                                                                         ({item.variantName || item.variant?.name})
                                                                     </span>
                                                                 )}
@@ -410,7 +410,7 @@ export function OrdersView() {
                                                             {item.product.slug && (
                                                                 <Link
                                                                     href={`/products/${item.product.slug}`}
-                                                                    className="text-xs text-blue-600 hover:text-blue-800 hover:underline mt-1 inline-flex items-center gap-1"
+                                                                    className="text-xs text-primary hover:text-primary/80 hover:underline mt-1 inline-flex items-center gap-1 font-semibold"
                                                                     target="_blank"
                                                                 >
                                                                     View Product <ArrowLeft className="h-3 w-3 rotate-180" />
@@ -418,23 +418,23 @@ export function OrdersView() {
                                                             )}
                                                         </div>
                                                         <div className="flex flex-col items-end gap-1">
-                                                            <div className="text-sm text-gray-500 flex items-center gap-2">
-                                                                <span className="font-medium text-gray-900">{item.quantity}</span> x
+                                                            <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                                                <span className="font-semibold text-foreground">{item.quantity}</span><span className="text-xs">✕</span>
                                                                 <div className="flex flex-col items-end">
-                                                                    <span>{selectedOrder.currency} {Number(item.price).toLocaleString('en-LK')}</span>
+                                                                    <span className="font-medium">{selectedOrder.currency} {Number(item.price).toLocaleString('en-LK')}</span>
                                                                     {item.product.price && Number(item.price) < Number(item.product.price) && (
-                                                                        <span className="text-xs text-gray-400 line-through">
+                                                                        <span className="text-xs text-muted-foreground/60 line-through">
                                                                             {selectedOrder.currency} {Number(item.product.price).toLocaleString('en-LK')}
                                                                         </span>
                                                                     )}
                                                                 </div>
                                                             </div>
                                                             {item.product.price && Number(item.price) < Number(item.product.price) && (
-                                                                <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-medium">
+                                                                <span className="text-[10px] bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                                                                     Save {selectedOrder.currency} {(Number(item.product.price) - Number(item.price)).toLocaleString('en-LK')}
                                                                 </span>
                                                             )}
-                                                            <div className="font-semibold text-gray-900 mt-1">
+                                                            <div className="font-bold text-foreground mt-1 text-base">
                                                                 {selectedOrder.currency} {Number(item.total).toLocaleString('en-LK')}
                                                             </div>
                                                         </div>
@@ -445,17 +445,17 @@ export function OrdersView() {
                                     </div>
 
                                     {/* Order Summary */}
-                                    <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-6 space-y-3 text-sm border border-gray-100 dark:border-gray-700">
-                                        <h3 className="font-semibold mb-2 text-gray-900">Payment Summary</h3>
+                                    <div className="bg-muted/30 rounded-xl p-6 space-y-3 text-sm border border-border shadow-sm">
+                                        <h3 className="font-bold mb-4 text-foreground uppercase tracking-wider text-xs">Payment Summary</h3>
 
-                                        <div className="flex justify-between text-gray-600 dark:text-gray-300">
+                                        <div className="flex justify-between text-muted-foreground font-medium">
                                             <span>Subtotal</span>
-                                            <span className="font-medium">
+                                            <span className="text-foreground">
                                                 {selectedOrder.currency} {selectedOrder.items.reduce((acc, item) => acc + Number(item.total), 0).toLocaleString('en-LK')}
                                             </span>
                                         </div>
 
-                                        <div className="flex justify-between text-gray-600 dark:text-gray-300">
+                                        <div className="flex justify-between text-muted-foreground font-medium">
                                             <span>Processing & Delivery Charges</span>
                                             <span className="flex gap-2">
                                                 {(() => {
@@ -467,36 +467,36 @@ export function OrdersView() {
                                                     if (shipping === 0) {
                                                         return (
                                                             <>
-                                                                <span className="line-through text-gray-400">
+                                                                <span className="line-through text-muted-foreground/60">
                                                                     {selectedOrder.currency} {shippingBaseRate.toLocaleString('en-LK')}
                                                                 </span>
-                                                                <span className="text-green-600 font-bold">FREE</span>
+                                                                <span className="text-emerald-500 font-bold tracking-wider uppercase">FREE</span>
                                                             </>
                                                         )
                                                     }
-                                                    return <span className="font-medium">{selectedOrder.currency} {shipping.toLocaleString('en-LK')}</span>
+                                                    return <span className="text-foreground">{selectedOrder.currency} {shipping.toLocaleString('en-LK')}</span>
                                                 })()}
                                             </span>
                                         </div>
 
                                         {selectedOrder.couponUsage && (
-                                            <div className="flex justify-between text-green-600">
-                                                <span>Discount Applied ({selectedOrder.couponUsage.coupon.code})</span>
-                                                <span className="font-medium">- {selectedOrder.currency} {Number(selectedOrder.couponUsage.discountAmount).toLocaleString('en-LK')}</span>
+                                            <div className="flex justify-between text-emerald-500 font-medium">
+                                                <span>Discount Applied <span className="px-1.5 py-0.5 bg-emerald-500/10 rounded-md text-[10px] ml-1 border border-emerald-500/20">{selectedOrder.couponUsage.coupon.code}</span></span>
+                                                <span className="font-bold">- {selectedOrder.currency} {Number(selectedOrder.couponUsage.discountAmount).toLocaleString('en-LK')}</span>
                                             </div>
                                         )}
 
-                                        <div className="border-t border-gray-200 dark:border-gray-600 pt-3 mt-2 flex justify-between items-center">
-                                            <span className="font-bold text-lg text-gray-900 dark:text-white">Final Price</span>
-                                            <span className="font-bold text-xl text-gray-900 dark:text-white">
+                                        <div className="border-t border-border pt-4 mt-4 flex justify-between items-center bg-card -mx-6 -mb-6 p-6 rounded-b-xl border-x-0 border-b-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+                                            <span className="font-black text-lg text-foreground uppercase tracking-wide">Final Price</span>
+                                            <span className="font-black text-2xl text-foreground bg-foreground/5 py-1 px-3 rounded-lg border border-border">
                                                 {selectedOrder.currency} {Number(selectedOrder.totalAmount).toLocaleString('en-LK')}
                                             </span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="mt-6 pt-6 border-t flex justify-end">
-                                    <Button onClick={() => setSelectedOrder(null)}>Close</Button>
+                                <div className="mt-8 flex justify-end">
+                                    <Button onClick={() => setSelectedOrder(null)} variant="outline" className="rounded-xl border-border px-8 shadow-sm">Close</Button>
                                 </div>
                             </div>
                         </div>

@@ -409,7 +409,7 @@ export default function AdminProductsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
@@ -423,8 +423,8 @@ export default function AdminProductsPage() {
               <span className="hidden sm:inline">Back</span>
             </Button>
             <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Product Management</h1>
-              <p className="text-sm sm:text-base text-gray-600 mt-0.5">Manage your product catalog</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Product Management</h1>
+              <p className="text-sm sm:text-base text-muted-foreground mt-0.5">Manage your product catalog</p>
             </div>
           </div>
           <Button
@@ -448,8 +448,8 @@ export default function AdminProductsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center">
               <Package className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500 mb-2 sm:mb-0" />
               <div className="sm:ml-4">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Products</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">{totalCount || products.length}</p>
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">Total Products</p>
+                <p className="text-xl sm:text-2xl font-bold text-foreground">{totalCount || products.length}</p>
               </div>
             </div>
           </Card>
@@ -460,8 +460,8 @@ export default function AdminProductsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center">
               <Package className="h-6 w-6 sm:h-8 sm:w-8 text-green-500 mb-2 sm:mb-0" />
               <div className="sm:ml-4">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Active</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">{activeCount}</p>
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">Active</p>
+                <p className="text-xl sm:text-2xl font-bold text-foreground">{activeCount}</p>
               </div>
             </div>
           </Card>
@@ -472,8 +472,8 @@ export default function AdminProductsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center">
               <Package className="h-6 w-6 sm:h-8 sm:w-8 text-red-500 mb-2 sm:mb-0" />
               <div className="sm:ml-4">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Low Stock</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">{lowStockCount}</p>
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">Low Stock</p>
+                <p className="text-xl sm:text-2xl font-bold text-foreground">{lowStockCount}</p>
               </div>
             </div>
           </Card>
@@ -481,8 +481,8 @@ export default function AdminProductsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center">
               <Package className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500 mb-2 sm:mb-0" />
               <div className="sm:ml-4">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Categories</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">{categories.length}</p>
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">Categories</p>
+                <p className="text-xl sm:text-2xl font-bold text-foreground">{categories.length}</p>
               </div>
             </div>
           </Card>
@@ -519,10 +519,10 @@ export default function AdminProductsPage() {
               </select>
 
               {/* View Mode Toggle */}
-              <div className="flex border rounded-md overflow-hidden bg-gray-50">
+              <div className="flex border border-border rounded-md overflow-hidden bg-muted">
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 ${viewMode === 'list' ? 'bg-white shadow-sm text-pink-600' : 'text-gray-400 hover:text-gray-600'}`}
+                  className={`p-2 ${viewMode === 'list' ? 'bg-card shadow-sm text-pink-600' : 'text-muted-foreground hover:text-foreground'}`}
                   title="List View"
                 >
                   <div className="h-5 w-5 flex flex-col justify-center gap-1">
@@ -533,7 +533,7 @@ export default function AdminProductsPage() {
                 </button>
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 ${viewMode === 'grid' ? 'bg-white shadow-sm text-pink-600' : 'text-gray-400 hover:text-gray-600'}`}
+                  className={`p-2 ${viewMode === 'grid' ? 'bg-card shadow-sm text-pink-600' : 'text-muted-foreground hover:text-foreground'}`}
                   title="Grid View"
                 >
                   <div className="h-5 w-5 grid grid-cols-2 gap-0.5">
@@ -561,35 +561,35 @@ export default function AdminProductsPage() {
                   <col className="w-[90px]" />
                   <col className="w-[200px]" />
                 </colgroup>
-                <thead className="bg-gray-50">
+                <thead className="bg-muted">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Product
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Category
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Price
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Stock
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-card divide-y divide-border">
                   {filteredProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50">
+                    <tr key={product.id} className="hover:bg-muted/50">
                       {/* Product thumbnail + name */}
                       <td className="px-4 py-3 overflow-hidden">
                         <div className="flex items-center gap-3">
-                          <div className="flex-shrink-0 h-11 w-11 rounded-lg overflow-hidden bg-gray-100">
+                          <div className="flex-shrink-0 h-11 w-11 rounded-lg overflow-hidden bg-muted">
                             {product.images?.[0]?.url ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
@@ -599,16 +599,16 @@ export default function AdminProductsPage() {
                                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                               />
                             ) : (
-                              <div className="h-11 w-11 flex items-center justify-center text-gray-400">
+                              <div className="h-11 w-11 flex items-center justify-center text-muted-foreground">
                                 <Package className="h-5 w-5" />
                               </div>
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium text-gray-900 truncate" title={product.name}>
+                            <div className="text-sm font-medium text-foreground truncate" title={product.name}>
                               {product.name}
                             </div>
-                            <div className="text-xs text-gray-500 truncate" title={product.description}>
+                            <div className="text-xs text-muted-foreground truncate" title={product.description}>
                               {product.description}
                             </div>
                           </div>
@@ -700,7 +700,7 @@ export default function AdminProductsPage() {
             {filteredProducts.map((product) => (
               <Card key={product.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
                 {/* Image */}
-                <div className="relative aspect-square bg-gray-100">
+                <div className="relative aspect-square bg-muted">
                   {product.images?.[0]?.url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -710,20 +710,20 @@ export default function AdminProductsPage() {
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                       <Package className="h-12 w-12" />
                     </div>
                   )}
                   {/* Status Badge Over Image */}
                   <div className="absolute top-2 right-2">
-                    <Badge className={product.status === 'active' ? 'bg-white/90 text-green-700 hover:bg-white' : 'bg-white/90 text-red-700 hover:bg-white'}>
+                    <Badge className={product.status === 'active' ? 'bg-card/90 text-green-700 hover:bg-card' : 'bg-card/90 text-red-700 hover:bg-card'}>
                       {product.status === 'active' ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
                   {/* Stock Badge */}
                   {product.stock < 10 && (
                     <div className="absolute bottom-2 left-2">
-                      <Badge className={product.stock === 0 ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}>
+                      <Badge className={product.stock === 0 ? 'bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-400' : 'bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-400'}>
                         {product.stock === 0 ? 'Out of Stock' : `${product.stock} Left`}
                       </Badge>
                     </div>
@@ -838,12 +838,12 @@ export default function AdminProductsPage() {
 
         {/* Add/Edit Product Modal */}
         {showAddForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start sm:items-center justify-center z-50 overflow-y-auto">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 overflow-y-auto">
             <div className="w-full min-h-screen sm:min-h-0 sm:my-8 flex items-start sm:items-center justify-center p-0 sm:p-4">
-              <Card className="w-full max-w-2xl sm:max-h-[90vh] overflow-y-auto sm:rounded-lg rounded-none">
-                <div className="p-4 sm:p-6 sticky top-0 bg-white z-10 border-b sm:border-none">
+              <Card className="w-full max-w-2xl sm:max-h-[90vh] overflow-y-auto sm:rounded-lg rounded-none bg-card border-border">
+                <div className="p-4 sm:p-6 sticky top-0 bg-card z-10 border-b border-border sm:border-none">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                    <h2 className="text-xl sm:text-2xl font-bold text-foreground">
                       {editingProduct ? 'Edit Product' : 'Add New Product'}
                     </h2>
                     <Button
@@ -872,11 +872,11 @@ export default function AdminProductsPage() {
                           id="name"
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className="mt-1.5 h-10"
+                          className="mt-1.5 h-10 bg-background border-border"
                           placeholder="e.g., Cotton T-Shirt"
                           required
                         />
-                        <p className="text-xs text-gray-500 mt-1">Keep it clear and descriptive</p>
+                        <p className="text-xs text-muted-foreground mt-1">Keep it clear and descriptive</p>
                       </div>
 
                       <div>
@@ -892,7 +892,7 @@ export default function AdminProductsPage() {
                             }
                             setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '' })
                           }}
-                          className="mt-1.5 w-full h-10 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                          className="mt-1.5 w-full h-10 px-3 py-2 text-sm border border-border bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
                           required
                         >
                           <option value="" disabled>Select a category</option>
@@ -1090,13 +1090,13 @@ export default function AdminProductsPage() {
                   </div>
 
                   {/* Submit Buttons */}
-                  <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t sticky bottom-0 bg-white pb-4 sm:pb-0">
+                  <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t sticky bottom-0 bg-card pb-4 sm:pb-0">
                     <Button
                       type="button"
                       variant="outline"
                       onClick={handleCloseForm}
                       disabled={submitting}
-                      className="w-full sm:w-auto h-11 sm:h-10"
+                      className="w-full sm:w-auto h-11 sm:h-10 border-border text-foreground hover:bg-muted"
                     >
                       Cancel
                     </Button>
@@ -1119,16 +1119,16 @@ export default function AdminProductsPage() {
         {/* ── New Category Modal ── sits above the product modal (z-60) */}
         {showNewCategoryModal && (
           <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-[60] overflow-y-auto py-8 px-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg">
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b">
+              <div className="flex items-center justify-between p-6 border-b border-border">
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">Create New Category</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">Available immediately after saving</p>
+                  <h3 className="text-lg font-bold text-foreground">Create New Category</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Available immediately after saving</p>
                 </div>
                 <button
                   onClick={() => setShowNewCategoryModal(false)}
-                  className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -1147,25 +1147,25 @@ export default function AdminProductsPage() {
                     value={newCategoryForm.name}
                     onChange={(e) => setNewCategoryForm(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="e.g., Sunglasses"
-                    className="mt-1.5 h-10"
+                    className="mt-1.5 h-10 bg-background border-border"
                   />
                 </div>
 
                 {/* Description */}
                 <div>
-                  <Label className="text-sm font-medium">Description <span className="text-gray-400">(Optional)</span></Label>
+                  <Label className="text-sm font-medium">Description <span className="text-muted-foreground">(Optional)</span></Label>
                   <textarea
                     value={newCategoryForm.description}
                     onChange={(e) => setNewCategoryForm(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Brief description of this category"
                     rows={2}
-                    className="mt-1.5 w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
+                    className="mt-1.5 w-full px-3 py-2 text-sm border border-border bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
                   />
                 </div>
 
                 {/* Image */}
                 <div>
-                  <Label className="text-sm font-medium">Category Image <span className="text-gray-400">(Optional)</span></Label>
+                  <Label className="text-sm font-medium">Category Image <span className="text-muted-foreground">(Optional)</span></Label>
                   <div className="mt-1.5">
                     <ImageUpload
                       onUploadComplete={(url) => setNewCategoryForm(prev => ({ ...prev, image: url }))}
@@ -1176,16 +1176,16 @@ export default function AdminProductsPage() {
                 </div>
 
                 {/* ── Subcategories ── */}
-                <div className="pt-2 border-t">
+                <div className="pt-2 border-t border-border">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-semibold text-pink-500 uppercase tracking-wider">Subcategories <span className="text-gray-400 font-normal normal-case">(Optional)</span></p>
+                    <p className="text-xs font-semibold text-pink-500 uppercase tracking-wider">Subcategories <span className="text-muted-foreground font-normal normal-case">(Optional)</span></p>
                     <button
                       type="button"
                       onClick={() => setNewCategoryForm(prev => ({
                         ...prev,
                         pendingSubcategories: [...prev.pendingSubcategories, { name: '', description: '', image: '' }]
                       }))}
-                      className="flex items-center gap-1.5 text-xs font-medium text-pink-600 hover:text-pink-700 bg-pink-50 hover:bg-pink-100 px-2.5 py-1.5 rounded-lg transition-colors"
+                      className="flex items-center gap-1.5 text-xs font-medium text-pink-600 dark:text-pink-400 hover:text-pink-700 bg-pink-50 dark:bg-pink-950/30 hover:bg-pink-100 px-2.5 py-1.5 rounded-lg transition-colors"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       Add Subcategory
@@ -1193,20 +1193,20 @@ export default function AdminProductsPage() {
                   </div>
 
                   {newCategoryForm.pendingSubcategories.length === 0 && (
-                    <p className="text-xs text-gray-400 py-2">No subcategories yet. Click "Add Subcategory" to create one.</p>
+                    <p className="text-xs text-muted-foreground py-2">No subcategories yet. Click "Add Subcategory" to create one.</p>
                   )}
 
                   {newCategoryForm.pendingSubcategories.map((sub, idx) => (
-                    <div key={idx} className="border border-gray-200 rounded-xl p-4 mb-3 space-y-3 bg-gray-50/60">
+                    <div key={idx} className="border border-border rounded-xl p-4 mb-3 space-y-3 bg-muted/60">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-gray-600">Subcategory #{idx + 1}</span>
+                        <span className="text-xs font-semibold text-muted-foreground">Subcategory #{idx + 1}</span>
                         <button
                           type="button"
                           onClick={() => setNewCategoryForm(prev => ({
                             ...prev,
                             pendingSubcategories: prev.pendingSubcategories.filter((_, i) => i !== idx)
                           }))}
-                          className="h-6 w-6 flex items-center justify-center rounded-full hover:bg-red-100 text-gray-400 hover:text-red-500 transition-colors"
+                          className="h-6 w-6 flex items-center justify-center rounded-full hover:bg-red-950/30 text-muted-foreground hover:text-red-500 transition-colors"
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>

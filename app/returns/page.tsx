@@ -9,46 +9,46 @@ export const metadata: Metadata = {
 
 export default function ReturnsPage() {
     return (
-        <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12 md:py-20">
+        <div className="min-h-screen bg-background py-12 md:py-20">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="text-center mb-12">
-                    <h1 className="text-4xl md:text-5xl font-playfair font-bold text-gray-900 mb-4">
+                    <h1 className="text-4xl md:text-5xl font-playfair font-bold text-foreground mb-4">
                         Returns & Exchanges
                     </h1>
-                    <p className="text-lg text-gray-600">
+                    <p className="text-lg text-muted-foreground">
                         We want you to love your purchase. If you're not completely satisfied, we're here to help.
                     </p>
                 </div>
 
                 {/* Quick Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-12">
-                    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
-                        <Clock className="h-8 w-8 text-gray-700 mx-auto mb-3" />
-                        <div className="font-bold text-2xl text-gray-900 mb-1">30 Days</div>
-                        <div className="text-sm text-gray-600">Return Window</div>
+                    <div className="bg-card rounded-xl shadow-sm p-6 border border-border text-center">
+                        <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                        <div className="font-bold text-2xl text-foreground mb-1">30 Days</div>
+                        <div className="text-sm text-muted-foreground">Return Window</div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
-                        <RefreshCcw className="h-8 w-8 text-gray-700 mx-auto mb-3" />
-                        <div className="font-bold text-2xl text-gray-900 mb-1">Free</div>
-                        <div className="text-sm text-gray-600">Exchange Shipping</div>
+                    <div className="bg-card rounded-xl shadow-sm p-6 border border-border text-center">
+                        <RefreshCcw className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                        <div className="font-bold text-2xl text-foreground mb-1">Free</div>
+                        <div className="text-sm text-muted-foreground">Exchange Shipping</div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
-                        <Package className="h-8 w-8 text-gray-700 mx-auto mb-3" />
-                        <div className="font-bold text-2xl text-gray-900 mb-1">Easy</div>
-                        <div className="text-sm text-gray-600">Return Process</div>
+                    <div className="bg-card rounded-xl shadow-sm p-6 border border-border text-center">
+                        <Package className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                        <div className="font-bold text-2xl text-foreground mb-1">Easy</div>
+                        <div className="text-sm text-muted-foreground">Return Process</div>
                     </div>
                 </div>
 
                 {/* Content */}
-                <div className="bg-white rounded-2xl shadow-xl p-6 md:p-10 border border-gray-100 space-y-8">
+                <div className="bg-card rounded-2xl shadow-sm p-6 md:p-10 border border-border space-y-8">
                     {/* Return Policy */}
                     <section>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <CheckCircle className="h-6 w-6 text-green-600" />
+                        <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
+                            <CheckCircle className="h-6 w-6 text-emerald-500" />
                             Return Policy
                         </h2>
-                        <div className="prose prose-gray max-w-none text-gray-600 space-y-4">
+                        <div className="prose prose-gray max-w-none text-muted-foreground space-y-4">
                             <p>
                                 We offer a <strong>30-day return policy</strong> for most items. If you're not satisfied with your purchase, you can return it within 30 days of delivery for a full refund.
                             </p>
@@ -63,37 +63,37 @@ export default function ReturnsPage() {
 
                     {/* Exchange Process */}
                     <section>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <RefreshCcw className="h-6 w-6 text-blue-600" />
+                        <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
+                            <RefreshCcw className="h-6 w-6 text-blue-500" />
                             How to Exchange an Item
                         </h2>
                         <div className="space-y-4">
                             <div className="flex gap-4">
-                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold">1</div>
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted text-foreground flex items-center justify-center font-bold border border-border">1</div>
                                 <div>
-                                    <h3 className="font-semibold text-gray-900 mb-1">Contact Us</h3>
-                                    <p className="text-gray-600">Email us at <a href="mailto:webmalll.ik@gmail.com" className=" text-gray-900 hover:underline">webmalll.ik@gmail.com</a> with your order number and exchange request.</p>
+                                    <h3 className="font-semibold text-foreground mb-1">Contact Us</h3>
+                                    <p className="text-muted-foreground">Email us at <a href="mailto:webmalll.ik@gmail.com" className="text-foreground hover:underline">webmalll.ik@gmail.com</a> with your order number and exchange request.</p>
                                 </div>
                             </div>
                             <div className="flex gap-4">
-                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold">2</div>
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted text-foreground flex items-center justify-center font-bold border border-border">2</div>
                                 <div>
-                                    <h3 className="font-semibold text-gray-900 mb-1">Pack Your Item</h3>
-                                    <p className="text-gray-600">Securely package the item with all original tags and packaging.</p>
+                                    <h3 className="font-semibold text-foreground mb-1">Pack Your Item</h3>
+                                    <p className="text-muted-foreground">Securely package the item with all original tags and packaging.</p>
                                 </div>
                             </div>
                             <div className="flex gap-4">
-                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold">3</div>
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted text-foreground flex items-center justify-center font-bold border border-border">3</div>
                                 <div>
-                                    <h3 className="font-semibold text-gray-900 mb-1">Ship It Back</h3>
-                                    <p className="text-gray-600">Use the prepaid shipping label we'll email you. Exchanges ship free!</p>
+                                    <h3 className="font-semibold text-foreground mb-1">Ship It Back</h3>
+                                    <p className="text-muted-foreground">Use the prepaid shipping label we'll email you. Exchanges ship free!</p>
                                 </div>
                             </div>
                             <div className="flex gap-4">
-                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold">4</div>
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted text-foreground flex items-center justify-center font-bold border border-border">4</div>
                                 <div>
-                                    <h3 className="font-semibold text-gray-900 mb-1">Receive Your Exchange</h3>
-                                    <p className="text-gray-600">We'll ship your replacement item within 2-3 business days of receiving your return.</p>
+                                    <h3 className="font-semibold text-foreground mb-1">Receive Your Exchange</h3>
+                                    <p className="text-muted-foreground">We'll ship your replacement item within 2-3 business days of receiving your return.</p>
                                 </div>
                             </div>
                         </div>
@@ -101,11 +101,11 @@ export default function ReturnsPage() {
 
                     {/* Non-Returnable Items */}
                     <section>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <XCircle className="h-6 w-6 text-red-600" />
+                        <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
+                            <XCircle className="h-6 w-6 text-red-500" />
                             Non-Returnable Items
                         </h2>
-                        <div className="text-gray-600 space-y-2">
+                        <div className="text-muted-foreground space-y-2">
                             <p>The following items cannot be returned or exchanged:</p>
                             <ul className="list-disc list-inside space-y-1 ml-4">
                                 <li>Personalized or custom-made items</li>
@@ -118,14 +118,14 @@ export default function ReturnsPage() {
 
                     {/* Damaged or Defective */}
                     <section>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <AlertCircle className="h-6 w-6 text-yellow-600" />
+                        <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
+                            <AlertCircle className="h-6 w-6 text-yellow-500" />
                             Damaged or Defective Items
                         </h2>
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-                            <p className="text-gray-700">
+                        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-6">
+                            <p className="text-muted-foreground">
                                 If you receive a damaged or defective item, please contact us immediately at{' '}
-                                <a href="mailto:webmalll.ik@gmail.com" className="font-semibold text-gray-900 hover:underline">
+                                <a href="mailto:webmalll.ik@gmail.com" className="font-semibold text-foreground hover:underline">
                                     webmalll.ik@gmail.com
                                 </a>{' '}
                                 with photos of the damage. We'll arrange a free replacement or full refund right away.
@@ -134,12 +134,12 @@ export default function ReturnsPage() {
                     </section>
 
                     {/* CTA */}
-                    <div className="bg-gray-50 rounded-xl p-6 md:p-8 text-center">
-                        <h3 className="text-xl font-bold text-gray-900 mb-3">Need Help With a Return?</h3>
-                        <p className="text-gray-600 mb-6">Our customer service team is here to assist you.</p>
+                    <div className="bg-muted border border-border rounded-xl p-6 md:p-8 text-center">
+                        <h3 className="text-xl font-bold text-foreground mb-3">Need Help With a Return?</h3>
+                        <p className="text-muted-foreground mb-6">Our customer service team is here to assist you.</p>
                         <Link
                             href="/contact"
-                            className="inline-block bg-gray-900 hover:bg-gray-800 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl"
+                            className="inline-block bg-foreground text-background px-8 py-3 rounded-xl font-bold transition-all shadow-sm hover:shadow-md hover:bg-muted-foreground"
                         >
                             Contact Support
                         </Link>

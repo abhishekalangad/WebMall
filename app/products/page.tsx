@@ -43,10 +43,10 @@ export default async function ProductsPage() {
   if (!process.env.DATABASE_URL) {
     return (
       <Suspense fallback={
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="flex flex-col items-center">
-            <Loader2 className="h-12 w-12 animate-spin text-pink-400 mb-4" />
-            <p className="text-gray-600 text-lg">Loading products...</p>
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground text-lg">Loading products...</p>
           </div>
         </div>
       }>
@@ -96,10 +96,10 @@ export default async function ProductsPage() {
 
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center">
-          <Loader2 className="h-12 w-12 animate-spin text-pink-400 mb-4" />
-          <p className="text-gray-600 text-lg">Loading products...</p>
+          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground text-lg">Loading products...</p>
         </div>
       </div>
     }>

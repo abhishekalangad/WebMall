@@ -14,10 +14,14 @@ import { useRouter } from 'next/navigation'
 import { getValidImageUrl, handleImageError } from '@/lib/image-utils'
 
 export function WishlistView() {
-    const { items, removeItem, clearWishlist, totalItems } = useWishlist()
+    const { items, removeItem, clearWishlist, totalItems, refreshWishlistData } = useWishlist()
     const { addItem } = useCart()
     const { user } = useAuth()
     const router = useRouter()
+
+    React.useEffect(() => {
+        refreshWishlistData()
+    }, [refreshWishlistData])
 
     const handleAddToCart = (item: any) => {
         if (!user) {
@@ -41,24 +45,24 @@ export function WishlistView() {
 
     if (!user) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <Card className="w-full max-w-md p-8 text-center">
-                    <Heart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign In Required</h2>
-                    <p className="text-gray-600 mb-6">
+            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+                <Card className="w-full max-w-md p-8 text-center bg-card border-border shadow-lg">
+                    <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold text-foreground mb-2">Sign In Required</h2>
+                    <p className="text-muted-foreground mb-6">
                         Please sign in to view your wishlist
                     </p>
                     <div className="space-y-3">
                         <Button
                             onClick={() => router.push('/login?redirect=/wishlist')}
-                            className="w-full bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold"
+                            className="w-full bg-foreground text-background hover:bg-muted-foreground font-semibold"
                         >
                             Sign In
                         </Button>
                         <Button
                             variant="outline"
                             onClick={() => router.push('/')}
-                            className="w-full"
+                            className="w-full border-border hover:bg-muted"
                         >
                             Continue Shopping
                         </Button>
@@ -69,22 +73,22 @@ export function WishlistView() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-background">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
                     <div className="flex items-center space-x-4">
                         <Button
                             variant="outline"
                             onClick={() => router.back()}
-                            className="flex items-center"
+                            className="flex items-center border-border hover:bg-muted"
                         >
                             <ArrowLeft className="h-4 w-4 mr-2" />
                             Back
                         </Button>
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900">My Wishlist</h1>
-                            <p className="text-gray-600">
+                            <h1 className="text-3xl font-bold text-foreground">My Wishlist</h1>
+                            <p className="text-muted-foreground">
                                 {totalItems} {totalItems === 1 ? 'item' : 'items'} in your wishlist
                             </p>
                         </div>
@@ -93,7 +97,7 @@ export function WishlistView() {
                         <Button
                             variant="outline"
                             onClick={clearWishlist}
-                            className="text-red-600 hover:text-red-800"
+                            className="text-red-500 hover:text-red-600 border-red-500/20 hover:bg-red-500/10"
                         >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Clear All
@@ -102,14 +106,14 @@ export function WishlistView() {
                 </div>
 
                 {totalItems === 0 ? (
-                    <Card className="p-12 text-center">
-                        <Heart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Your wishlist is empty</h2>
-                        <p className="text-gray-600 mb-6">
+                    <Card className="p-12 text-center bg-card border-border shadow-sm">
+                        <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                        <h2 className="text-2xl font-bold text-foreground mb-2">Your wishlist is empty</h2>
+                        <p className="text-muted-foreground mb-6">
                             Start adding items you love to your wishlist
                         </p>
                         <Link href="/products">
-                            <Button className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold">
+                            <Button className="bg-foreground text-background hover:bg-muted-foreground font-semibold px-8 transition-colors">
                                 Start Shopping
                             </Button>
                         </Link>
@@ -117,9 +121,9 @@ export function WishlistView() {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {items.map((item) => (
-                            <Card key={item.id} className="group relative overflow-hidden hover:shadow-lg transition-all duration-300">
+                            <Card key={item.id} className="group relative overflow-hidden bg-card border-border hover:shadow-lg transition-all duration-300">
                                 {/* Product Image */}
-                                <div className="relative aspect-square overflow-hidden bg-gray-100">
+                                <div className="relative aspect-square overflow-hidden bg-muted">
                                     <Link href={`/products/${item.slug}`}>
                                         <Image
                                             src={getValidImageUrl(item.image, '/placeholder.png')}
@@ -133,14 +137,14 @@ export function WishlistView() {
                                     {/* Remove from wishlist button */}
                                     <button
                                         onClick={() => handleRemoveFromWishlist(item.productId)}
-                                        className="absolute top-3 right-3 p-2 bg-white/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-white"
+                                        className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-background shadow-sm"
                                     >
                                         <Heart className="h-4 w-4 text-red-500 fill-current" />
                                     </button>
 
                                     {/* Category Badge */}
                                     <div className="absolute top-3 left-3">
-                                        <Badge variant="secondary" className="bg-white/90 text-gray-700">
+                                        <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm text-foreground">
                                             {item.category}
                                         </Badge>
                                     </div>
@@ -149,13 +153,13 @@ export function WishlistView() {
                                 {/* Product Info */}
                                 <div className="p-4">
                                     <Link href={`/products/${item.slug}`}>
-                                        <h3 className="font-semibold text-gray-900 mb-2 hover:text-pink-600 transition-colors line-clamp-2">
+                                        <h3 className="font-semibold text-foreground mb-2 hover:text-primary transition-colors line-clamp-2">
                                             {item.name}
                                         </h3>
                                     </Link>
 
                                     <div className="flex items-center justify-between mb-3">
-                                        <span className="text-lg font-bold text-gray-900">
+                                        <span className="text-lg font-bold text-foreground">
                                             LKR {item.price.toLocaleString()}
                                         </span>
                                     </div>
@@ -164,7 +168,7 @@ export function WishlistView() {
                                         {item.inStock === false ? (
                                             <Button
                                                 disabled
-                                                className="flex-1 bg-gray-200 text-gray-500 font-medium"
+                                                className="flex-1 bg-muted text-muted-foreground font-medium"
                                                 size="sm"
                                             >
                                                 Out of Stock
@@ -172,7 +176,7 @@ export function WishlistView() {
                                         ) : (
                                             <Button
                                                 onClick={() => handleAddToCart(item)}
-                                                className="flex-1 bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-medium"
+                                                className="flex-1 bg-foreground text-background hover:bg-muted-foreground font-medium transition-colors"
                                                 size="sm"
                                             >
                                                 <ShoppingBag className="h-4 w-4 mr-1" />
@@ -183,7 +187,7 @@ export function WishlistView() {
                                             variant="outline"
                                             onClick={() => handleRemoveFromWishlist(item.productId)}
                                             size="sm"
-                                            className="text-red-600 hover:text-red-800"
+                                            className="text-red-500 hover:text-red-600 border-border hover:bg-muted"
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>

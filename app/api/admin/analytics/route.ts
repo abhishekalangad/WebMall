@@ -83,8 +83,31 @@ export async function GET(request: NextRequest) {
         const totalSales = `LKR ${totalSalesAmount.toLocaleString()}`
         const activeOrders = totalOrders - completedOrders
 
-        // Fetch message stats from contact API
-        // Get message stats directly from DB
+        // Fetch comparative metrics for dynamic badges
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+        const sixtyDaysAgo = new Date(thirtyDaysAgo.getTime() - 30 * 24 * 60 * 60 * 1000)
+
+        const [recentSales, previousSales, recentCustomers] = await Promise.all([
+            prisma.order.aggregate({
+                _sum: { totalAmount: true },
+                where: { status: { not: 'cancelled' }, createdAt: { gte: thirtyDaysAgo } }
+            }).catch(() => ({ _sum: { totalAmount: 0 } })),
+            prisma.order.aggregate({
+                _sum: { totalAmount: true },
+                where: { status: { not: 'cancelled' }, createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } }
+            }).catch(() => ({ _sum: { totalAmount: 0 } })),
+            prisma.user.count({
+                where: { role: { not: 'admin' }, createdAt: { gte: thirtyDaysAgo } }
+            })
+        ])
+
+        const recentSalesVal = Number(recentSales?._sum?.totalAmount || 0)
+        const prevSalesVal = Number(previousSales?._sum?.totalAmount || 0)
+        const salesGrowth = prevSalesVal === 0 ? (recentSalesVal > 0 ? 100 : 0) : Math.round(((recentSalesVal - prevSalesVal) / prevSalesVal) * 100)
+        const salesChangeStr = salesGrowth >= 0 ? `+${salesGrowth}%` : `${salesGrowth}%`
+        const salesTrendStr = salesGrowth >= 0 ? 'up' : 'down'
+
+        // Fetch message stats directly from DB
         const [totalMessages, newMessages, readMessages, repliedMessages] = await Promise.all([
             prisma.message.count(),
             prisma.message.count({ where: { status: 'new' } }),
@@ -120,9 +143,10 @@ export async function GET(request: NextRequest) {
                 activeProducts,
                 totalCategories,
                 totalUsers,
-                newCustomers: 0, // Calculate from user.createdAt if needed
+                newCustomers: recentCustomers,
                 totalSales,
-                salesChange: "+0%", // To be calculated properly later if needed
+                salesChange: salesChangeStr,
+                salesTrend: salesTrendStr,
                 totalOrders,
                 activeOrders,
                 pendingOrders,

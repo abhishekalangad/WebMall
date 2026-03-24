@@ -39,7 +39,7 @@ export function StarRating({
                         <div key={index} className="relative">
                             {isPartial ? (
                                 <>
-                                    <Star className={`${sizeClasses[size]} text-gray-300 fill-gray-300`} />
+                                    <Star className={`${sizeClasses[size]} text-muted-foreground/30 fill-muted-foreground/30`} />
                                     <div
                                         className="absolute top-0 left-0 overflow-hidden"
                                         style={{ width: `${(rating % 1) * 100}%` }}
@@ -51,7 +51,7 @@ export function StarRating({
                                 <Star
                                     className={`${sizeClasses[size]} ${isFilled
                                             ? 'text-amber-400 fill-amber-400'
-                                            : 'text-gray-300 fill-gray-300'
+                                            : 'text-muted-foreground/30 fill-muted-foreground/30'
                                         }`}
                                 />
                             )}
@@ -60,10 +60,10 @@ export function StarRating({
                 })}
             </div>
             {showNumber && (
-                <span className={`${textSizeClasses[size]} font-medium text-gray-700`}>
+                <span className={`${textSizeClasses[size]} font-medium text-foreground`}>
                     {rating.toFixed(1)}
                     {count !== undefined && (
-                        <span className="text-gray-500 font-normal ml-1">({count})</span>
+                        <span className="text-muted-foreground font-normal ml-1">({count})</span>
                     )}
                 </span>
             )}

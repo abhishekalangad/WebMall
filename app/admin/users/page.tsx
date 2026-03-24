@@ -125,20 +125,20 @@ export default function AdminUsersPage() {
     )
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-12">
-            <div className="bg-white border-b mb-8">
+        <div className="min-h-screen bg-muted/50 pb-12">
+            <div className="bg-card border-b mb-8">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <div className="flex items-center space-x-4 mb-4">
                         <Link href="/admin">
-                            <Button variant="ghost" className="p-2 h-auto text-gray-500 hover:text-gray-900">
+                            <Button variant="ghost" className="p-2 h-auto text-muted-foreground hover:text-foreground">
                                 <ArrowLeft className="w-5 h-5" />
                             </Button>
                         </Link>
-                        <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+                        <h1 className="text-3xl font-bold text-foreground">User Management</h1>
                     </div>
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
                         <div className="relative max-w-md w-full">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/80 w-4 h-4" />
                             <Input
                                 placeholder="Search users by name or email..."
                                 className="pl-10"
@@ -146,7 +146,7 @@ export default function AdminUsersPage() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <div className="flex items-center space-x-2 text-sm text-gray-500">
+                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                             <Users className="w-4 h-4" />
                             <span>
                                 {loading
@@ -173,9 +173,9 @@ export default function AdminUsersPage() {
                                             <UserIcon className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-bold text-gray-900">{user.name || 'No Name'}</h3>
+                                            <h3 className="text-lg font-bold text-foreground">{user.name || 'No Name'}</h3>
                                             <div className="flex items-center space-x-3 mt-1">
-                                                <span className="flex items-center text-sm text-gray-500">
+                                                <span className="flex items-center text-sm text-muted-foreground">
                                                     <Mail className="w-3 h-3 mr-1" />
                                                     {user.email}
                                                 </span>
@@ -189,12 +189,12 @@ export default function AdminUsersPage() {
 
                                     <div className="flex flex-wrap items-center gap-6">
                                         <div className="text-center">
-                                            <p className="text-xs text-gray-400 font-medium">ORDERS</p>
-                                            <p className="text-lg font-bold text-gray-900">{user._count.orders}</p>
+                                            <p className="text-xs text-muted-foreground/80 font-medium">ORDERS</p>
+                                            <p className="text-lg font-bold text-foreground">{user._count.orders}</p>
                                         </div>
                                         <div className="text-center">
-                                            <p className="text-xs text-gray-400 font-medium">JOINED</p>
-                                            <p className="text-sm font-semibold text-gray-900">
+                                            <p className="text-xs text-muted-foreground/80 font-medium">JOINED</p>
+                                            <p className="text-sm font-semibold text-foreground">
                                                 {format(new Date(user.createdAt), 'MMM dd, yyyy')}
                                             </p>
                                         </div>
@@ -211,9 +211,9 @@ export default function AdminUsersPage() {
                         ))}
 
                         {filteredUsers.length === 0 && (
-                            <div className="text-center py-12 bg-white rounded-xl">
+                            <div className="text-center py-12 bg-card rounded-xl">
                                 <Users className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-                                <p className="text-gray-500">No users found matching your search.</p>
+                                <p className="text-muted-foreground">No users found matching your search.</p>
                             </div>
                         )}
                     </div>
@@ -224,7 +224,7 @@ export default function AdminUsersPage() {
 
                 {/* Loading More Spinner */}
                 {loadingMore && (
-                    <div className="flex items-center justify-center py-6 gap-3 text-gray-500">
+                    <div className="flex items-center justify-center py-6 gap-3 text-muted-foreground">
                         <Loader2 className="h-5 w-5 animate-spin text-pink-500" />
                         <span className="text-sm font-medium">Loading more users…</span>
                     </div>
@@ -232,7 +232,7 @@ export default function AdminUsersPage() {
 
                 {/* End of list indicator */}
                 {!hasMore && users.length > 0 && !loading && (
-                    <p className="text-center text-xs text-gray-400 py-4">
+                    <p className="text-center text-xs text-muted-foreground/80 py-4">
                         All {users.length} users loaded
                     </p>
                 )}

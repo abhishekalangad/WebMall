@@ -130,6 +130,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                 targetImageUrl = relevantVariant.image
             }
 
+            
             if (targetImageUrl) {
                 setManualImageOverride(targetImageUrl)
             }
@@ -564,10 +565,10 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-background">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32 lg:pb-8">
                 {/* Breadcrumb ... (omitted for brevity, assume standard) */}
-                <Button variant="ghost" onClick={() => router.back()} className="mb-6">
+                <Button variant="ghost" onClick={() => router.back()} className="mb-6 hover:bg-muted text-foreground">
                     <ArrowLeft className="h-4 w-4 mr-2" /> Back
                 </Button>
 
@@ -576,22 +577,22 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                     <div className="space-y-4">
                         {/* Helper Banner for Variants */}
                         {product.variants && product.variants.length > 1 && product.images.length === product.variants.length && (
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-2">
+                            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg p-3 flex items-center gap-2">
                                 <div className="bg-blue-500 rounded-full p-1">
                                     <Check className="h-3 w-3 text-white" />
                                 </div>
-                                <p className="text-sm text-blue-800">
+                                <p className="text-sm text-blue-800 dark:text-blue-200">
                                     <span className="font-semibold">Tip:</span> Click on images below to select different variants
                                 </p>
                             </div>
                         )}
 
-                        <div className="aspect-square bg-white rounded-2xl overflow-hidden shadow-sm">
+                        <div className="aspect-square bg-card rounded-2xl overflow-hidden shadow-sm">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={getValidImageUrl(manualImageOverride || product.images[selectedImage]?.url, '/placeholder.png')}
                                 alt={product.name}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover dark:brightness-90"
                                 onError={(e) => handleImageError(e as any)}
                             />
                         </div>
@@ -646,15 +647,15 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                 }
                                             }}
                                             className={`relative aspect-square rounded-lg border-2 overflow-hidden transition-all ${selectedImage === i
-                                                ? 'border-pink-500 ring-2 ring-pink-200 scale-105'
-                                                : 'border-gray-200 hover:border-pink-300 hover:scale-102'
+                                                ? 'border-pink-500 ring-2 ring-pink-200 dark:ring-pink-500/30 scale-105'
+                                                : 'border-border hover:border-pink-300 dark:hover:border-pink-500/50 hover:scale-102'
                                                 }`}
                                         >
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
                                             <img
                                                 src={getValidImageUrl(imgUrl, '/placeholder.png')}
                                                 alt={`Product view ${i + 1}`}
-                                                className="w-full h-full object-cover"
+                                                className="w-full h-full object-cover dark:brightness-90"
                                                 onError={(e) => handleImageError(e as any)}
                                             />
                                             {/* Show variant badge if linked - REMOVED per user request
@@ -681,32 +682,32 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                     <div className="space-y-6">
                         <div className="flex justify-between items-center">
                             <div className="flex gap-2">
-                                <Badge className="bg-pink-100 text-pink-700">{product.category?.name || 'General'}</Badge>
+                                <Badge className="bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300 border-none">{product.category?.name || 'General'}</Badge>
                                 {product.subcategory && (
-                                    <Badge variant="outline">{product.subcategory.name}</Badge>
+                                <Badge variant="outline" className="border-border text-muted-foreground">{product.subcategory.name}</Badge>
                                 )}
                             </div>
                             {product.inStock ?
-                                <span className="text-green-600 flex items-center text-sm font-medium"><Check className="h-4 w-4 mr-1" /> In Stock ({maxStock})</span> :
-                                <span className="text-red-600 text-sm font-medium">Out of Stock</span>
+                                <span className="text-green-600 dark:text-green-400 flex items-center text-sm font-medium"><Check className="h-4 w-4 mr-1" /> In Stock ({maxStock})</span> :
+                                <span className="text-red-600 dark:text-red-400 text-sm font-medium">Out of Stock</span>
                             }
                         </div>
 
-                        <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
+                        <h1 className="text-3xl font-bold text-foreground">{product.name}</h1>
 
                         {/* Price */}
                         <div className="flex flex-col space-y-1">
                             {!selectedVariant && hasPriceRange && (
-                                <span className="text-sm font-medium text-pink-600">Starting at</span>
+                                <span className="text-sm font-medium text-pink-600 dark:text-pink-400">Starting at</span>
                             )}
                             <div className="flex items-center space-x-3">
-                                <span className="text-3xl font-bold text-gray-900">
+                                <span className="text-3xl font-bold text-foreground">
                                     {product.currency} {(!selectedVariant && hasPriceRange ? minPrice : effectivePrice).toLocaleString()}
                                 </span>
                                 {product.price > effectivePrice && (
                                     <div className="flex items-center space-x-2">
-                                        <span className="text-lg text-gray-400 line-through font-normal">{product.currency} {product.price.toLocaleString()}</span>
-                                        <Badge className="bg-green-100 text-green-700 border-none font-bold">
+                                        <span className="text-lg text-muted-foreground line-through font-normal">{product.currency} {product.price.toLocaleString()}</span>
+                                        <Badge className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border-none font-bold">
                                             {Math.round(((product.price - effectivePrice) / product.price) * 100)}% OFF
                                         </Badge>
                                     </div>
@@ -714,22 +715,22 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                             </div>
                         </div>
 
-                        <p className="text-gray-600">{product.description}</p>
+                        <p className="text-muted-foreground">{product.description}</p>
 
                         {/* Variants Selection */}
                         {product.variants.length > 0 && (
-                            <div className="border-t pt-6 space-y-4">
+                            <div className="border-t border-border pt-6 space-y-4">
                                 {/* Variant Selection - Enhanced Beautiful Design */}
                                 {product.variants && product.variants.length > 0 && (
                                     <div className="space-y-6">
                                         <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-xl font-bold text-gray-900">Choose Options</h3>
+                                            <h3 className="text-xl font-bold text-foreground">Choose Options</h3>
                                             {selectedVariant ? (
-                                                <span className="text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
+                                                <span className="text-sm font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-1 rounded-full">
                                                     ✓ Selected
                                                 </span>
                                             ) : (
-                                                <span className="text-sm font-medium text-amber-600 bg-amber-50 px-3 py-1 rounded-full animate-pulse">
+                                                <span className="text-sm font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-full animate-pulse">
                                                     Select options
                                                 </span>
                                             )}
@@ -756,13 +757,13 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                 const isSizeAttr = attrType.toLowerCase().includes('size')
 
                                                 return (
-                                                    <div key={attrType} className="bg-white rounded-2xl p-5 border-2 border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                                                        <Label className="text-base font-bold text-gray-900 capitalize mb-3 flex items-center gap-2">
+                                                    <div key={attrType} className="bg-card rounded-2xl p-5 border-2 border-border shadow-sm hover:shadow-md transition-shadow">
+                                                        <Label className="text-base font-bold text-foreground capitalize mb-3 flex items-center gap-2">
                                                             {isColorAttr && <div className="w-3 h-3 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full" />}
                                                             {isSizeAttr && <span className="text-pink-500">📏</span>}
                                                             {attrType}
                                                             {selectedAttributes[attrType] && (
-                                                                <span className="text-sm font-normal text-gray-600">
+                                                                <span className="text-sm font-normal text-muted-foreground">
                                                                     : {selectedAttributes[attrType]}
                                                                 </span>
                                                             )}
@@ -799,15 +800,15 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                                         key={value}
                                                                         onClick={() => handleSelectAttribute(attrType, value)}
                                                                         className={`group relative p-4 border-3 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${isSelected
-                                                                            ? 'border-pink-500 bg-pink-50 ring-4 ring-pink-100 scale-105 shadow-lg'
-                                                                            : 'border-gray-200 hover:border-pink-300 hover:shadow-md hover:scale-102'
+                                                                            ? 'border-pink-500 bg-pink-50 dark:bg-pink-950/30 ring-4 ring-pink-100 dark:ring-pink-900/30 scale-105 shadow-lg'
+                                                                            : 'border-border hover:border-pink-300 dark:hover:border-pink-700 hover:shadow-md hover:scale-102'
                                                                             }`}
                                                                         title={`${value} ${isSelected ? '(Click to remove)' : ''}`}
                                                                     >
                                                                         <div className="flex flex-col items-center gap-2">
                                                                             {/* Color Swatch */}
                                                                             <div
-                                                                                className={`w-10 h-10 rounded-full shadow-inner border-2 ${isSelected ? 'border-pink-400' : 'border-gray-300'} group-hover:scale-110 transition-transform`}
+                                                                                className={`w-10 h-10 rounded-full shadow-inner border-2 ${isSelected ? 'border-pink-400' : 'border-border'} group-hover:scale-110 transition-transform`}
                                                                                 style={{
                                                                                     backgroundColor: value.toLowerCase().replace(/\s/g, ''),
                                                                                     background: value.toLowerCase() === 'multicolor' || value.toLowerCase() === 'multi'
@@ -816,12 +817,12 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                                                 }}
                                                                             />
                                                                             {/* Color Name */}
-                                                                            <span className={`text-xs font-semibold capitalize ${isSelected ? 'text-pink-700' : 'text-gray-700'}`}>
+                                                                            <span className={`text-xs font-semibold capitalize ${isSelected ? 'text-pink-600' : 'text-muted-foreground'}`}>
                                                                                 {value}
                                                                             </span>
                                                                             {/* Stock Badge */}
                                                                             {isActuallyAvailable && (
-                                                                                <span className="text-[10px] text-green-600 font-medium">
+                                                                                <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">
                                                                                     {totalStock > 0 ? `${totalStock} left` : 'Available'}
                                                                                 </span>
                                                                             )}
@@ -841,7 +842,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
 
                                                                         {/* Out of Stock Overlay */}
                                                                         {!isActuallyAvailable && (
-                                                                            <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-xl backdrop-blur-sm">
+                                                                            <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-xl backdrop-blur-sm">
                                                                                 <div className="text-center">
                                                                                     <X className="h-6 w-6 text-red-500 mx-auto mb-1" />
                                                                                     <span className="text-xs text-red-600 font-bold">Out</span>
@@ -854,8 +855,8 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                                         key={value}
                                                                         onClick={() => handleSelectAttribute(attrType, value)}
                                                                         className={`group relative py-2 px-3 sm:py-3 sm:px-4 border-2 rounded-xl text-center font-semibold transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${isSelected
-                                                                            ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-pink-100 text-pink-700 ring-4 ring-pink-100 shadow-lg scale-105'
-                                                                            : 'border-gray-200 bg-white hover:border-pink-300 hover:bg-pink-50 hover:shadow-md'
+                                                                            ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-900/40 dark:to-pink-800/20 text-pink-700 dark:text-pink-300 ring-4 ring-pink-100 dark:ring-pink-900/30 shadow-lg scale-105'
+                                                                            : 'border-border bg-card text-foreground hover:border-pink-300 dark:hover:border-pink-700 hover:bg-pink-50 dark:hover:bg-pink-950/20 hover:shadow-md'
                                                                             }`}
                                                                         title={`${value} ${isSelected ? '(Click to remove)' : ''}`}
                                                                     >
@@ -880,7 +881,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                                         )}
 
                                                                         {!isActuallyAvailable && (
-                                                                            <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-xl backdrop-blur-sm">
+                                                                            <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-xl backdrop-blur-sm">
                                                                                 <div className="text-center">
                                                                                     <X className="h-5 w-5 text-red-500 mx-auto mb-1" />
                                                                                     <span className="text-xs text-red-600 font-bold">Out</span>
@@ -898,14 +899,14 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
 
                                         {/* Selected Variant Summary */}
                                         {selectedVariant && (
-                                            <Card className="mt-4 p-4 bg-gradient-to-r from-pink-50 to-blue-50 border-2 border-pink-300 shadow-md">
+                                            <Card className="mt-4 p-4 bg-gradient-to-r from-pink-50 to-blue-50 dark:from-pink-950/20 dark:to-blue-950/20 border-2 border-pink-300 dark:border-pink-800 shadow-md">
                                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                                     <div className="flex-1">
                                                         <div className="flex items-center gap-2 mb-2">
                                                             <Check className="h-5 w-5 text-green-600" />
-                                                            <p className="text-sm font-medium text-gray-600">Your Selection:</p>
+                                                            <p className="text-sm font-medium text-muted-foreground">Your Selection:</p>
                                                         </div>
-                                                        <p className="text-lg font-bold text-gray-900">{selectedVariant.name}</p>
+                                                        <p className="text-lg font-bold text-foreground">{selectedVariant.name}</p>
                                                         <div className="flex flex-wrap gap-2 mt-2">
                                                             {Object.entries(selectedVariant.attributes).map(([key, value]) => (
                                                                 <Badge key={key} className="bg-pink-500 text-white">
@@ -914,14 +915,14 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                             ))}
                                                         </div>
                                                     </div>
-                                                    <div className="text-left sm:text-right border-t sm:border-t-0 sm:border-l border-pink-200 pt-3 sm:pt-0 sm:pl-4">
-                                                        <p className="text-xs text-gray-600 mb-1">Price</p>
-                                                        <div className="text-2xl font-bold text-pink-600">
+                                                    <div className="text-left sm:text-right border-t sm:border-t-0 sm:border-l border-pink-200 dark:border-pink-800/50 pt-3 sm:pt-0 sm:pl-4">
+                                                        <p className="text-xs text-muted-foreground mb-1">Price</p>
+                                                        <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">
                                                             {product.currency} {effectivePrice.toLocaleString()}
                                                             {product.price > effectivePrice && (
                                                                 <div className="flex items-center space-x-2 mt-1">
-                                                                    <span className="text-sm text-gray-400 line-through font-normal">{product.currency} {product.price.toLocaleString()}</span>
-                                                                    <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px] py-0 h-4">
+                                                                    <span className="text-sm text-muted-foreground line-through font-normal">{product.currency} {product.price.toLocaleString()}</span>
+                                                                    <Badge className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border-none font-bold text-[10px] py-0 h-4">
                                                                         {Math.round(((product.price - effectivePrice) / product.price) * 100)}% OFF
                                                                     </Badge>
                                                                 </div>
@@ -952,12 +953,12 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                         )}
 
                         {/* Add to Cart Actions */}
-                        <div className="space-y-4 pt-4 border-t">
+                        <div className="space-y-4 pt-4 border-t dark:border-white/10">
                             {product.inStock ? (
                                 <>
                                     <div className="flex items-center space-x-4">
                                         <span className="font-medium">Quantity</span>
-                                        <div className="flex items-center border rounded-lg bg-white">
+                                        <div className="flex items-center border dark:border-border rounded-lg bg-card">
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -966,7 +967,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                             >
                                                 <Minus className="h-4 w-4" />
                                             </Button>
-                                            <span className="w-8 text-center">{quantity}</span>
+                                            <span className="w-8 text-center bg-transparent">{quantity}</span>
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -977,7 +978,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                             </Button>
                                         </div>
                                         {maxStock > 0 && maxStock <= 5 && (
-                                            <span className="text-xs text-amber-600 font-medium">
+                                            <span className="text-xs text-amber-600 dark:text-amber-500 font-medium">
                                                 Only {maxStock} left
                                             </span>
                                         )}
@@ -989,7 +990,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                         <Button onClick={handleBuyNow} className="flex-1 bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500 text-white font-semibold h-12 sm:h-14 text-base shadow-lg hover:shadow-xl transition-all">
                                             <Truck className="mr-2 h-5 w-5" /> Buy Now
                                         </Button>
-                                        <Button variant="outline" onClick={handleWishlist} className={`h-12 sm:h-14 w-full sm:w-14 border-2 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'text-red-500 border-red-300 bg-red-50' : 'border-gray-300 hover:border-red-300 hover:bg-red-50'}`}>
+                                        <Button variant="outline" onClick={handleWishlist} className={`h-12 sm:h-14 w-full sm:w-14 border-2 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'text-red-500 border-red-300 bg-red-50 dark:bg-red-950/20' : 'border-input hover:border-red-300 dark:hover:border-red-500/50 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-500'}`}>
                                             <Heart className={`h-5 w-5 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'fill-current' : ''}`} />
                                             <span className="ml-2 sm:hidden">Wishlist</span>
                                         </Button>
@@ -997,7 +998,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                 </>
                             ) : (
                                 <div className="flex flex-col gap-3">
-                                    <Button variant="outline" onClick={handleWishlist} className={`w-full h-12 sm:h-14 border-2 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'text-red-500 border-red-300 bg-red-50' : 'border-gray-300 hover:border-red-300 hover:bg-red-50'} text-base font-semibold`}>
+                                    <Button variant="outline" onClick={handleWishlist} className={`w-full h-12 sm:h-14 border-2 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'text-red-500 border-red-300 bg-red-50 dark:bg-red-900/20' : 'border-input hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-foreground'} text-base font-semibold`}>
                                         <Heart className={`mr-2 h-5 w-5 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'fill-current' : ''}`} />
                                         {isInWishlist(product.id, selectedVariant?.id || undefined) ? 'Added to Wishlist' : 'Out of Stock - Add to Wishlist'}
                                     </Button>
@@ -1010,12 +1011,12 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
 
                 {/* Tabs */}
                 <div className="mt-16">
-                    <div className="border-b">
+                    <div className="border-b dark:border-white/10">
                         <nav className="flex space-x-8">
                             {['Description', 'Specifications', 'Reviews'].map(tab => (
                                 <button key={tab}
                                     onClick={() => setActiveTab(tab)}
-                                    className={`py-4 border-b-2 font-medium text-sm ${activeTab === tab ? 'border-pink-500 text-pink-600' : 'border-transparent text-gray-500'}`}
+                                    className={`py-4 border-b-2 font-medium text-sm transition-colors ${activeTab === tab ? 'border-pink-500 text-pink-600 dark:text-pink-400' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
                                 >
                                     {tab}
                                 </button>
@@ -1025,15 +1026,15 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
 
                     <div className="py-8">
                         {activeTab === 'Description' && (
-                            <div className="prose max-w-none text-gray-600">{product.longDescription}</div>
+                            <div className="prose dark:prose-invert max-w-none text-muted-foreground">{product.longDescription}</div>
                         )}
                         {activeTab === 'Specifications' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {/* Show product base specifications */}
                                 {Object.entries(product.specifications).map(([k, v]) => (
-                                    <div key={k} className="flex justify-between py-2 border-b">
-                                        <span className="font-medium text-gray-700">{k}</span>
-                                        <span className="text-gray-600">{v as string}</span>
+                                    <div key={k} className="flex justify-between py-2 border-b border-border">
+                                        <span className="font-medium text-foreground">{k}</span>
+                                        <span className="text-muted-foreground">{v as string}</span>
                                     </div>
                                 ))}
 
@@ -1041,9 +1042,9 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                 {selectedVariant && selectedVariant.attributes && Object.keys(selectedVariant.attributes).length > 0 && (
                                     <>
                                         {Object.entries(selectedVariant.attributes).map(([k, v]) => (
-                                            <div key={`variant-${k}`} className="flex justify-between py-2 border-b bg-pink-50 px-3 rounded-lg">
-                                                <span className="font-medium text-pink-700 capitalize">{k}</span>
-                                                <span className="text-pink-900 font-semibold">{v as string}</span>
+                                            <div key={`variant-${k}`} className="flex justify-between py-2 border-b dark:border-white/10 bg-pink-50 dark:bg-pink-950/20 px-3 rounded-lg">
+                                                <span className="font-medium text-pink-700 dark:text-pink-400 capitalize">{k}</span>
+                                                <span className="text-pink-900 dark:text-pink-200 font-semibold">{v as string}</span>
                                             </div>
                                         ))}
                                     </>
@@ -1052,25 +1053,26 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                         )}
                         {activeTab === 'Reviews' && (
                             <div className="max-w-2xl">
-                                <div className="bg-white p-6 rounded-xl shadow-sm border mb-8">
-                                    <h3 className="text-lg font-bold mb-4">Write a Review</h3>
+                                <div className="bg-card p-6 rounded-xl shadow-sm border border-border mb-8">
+                                    <h3 className="text-lg font-bold text-foreground mb-4">Write a Review</h3>
                                     <div className="mb-4">
-                                        <label className="block text-sm font-medium mb-2">Rating</label>
+                                        <label className="block text-sm font-medium text-foreground mb-2">Rating</label>
                                         <div className="flex space-x-1">
                                             {[1, 2, 3, 4, 5].map(star => (
                                                 <button key={star} onClick={() => setRating(star)} type="button">
-                                                    <Star className={`h-8 w-8 ${star <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+                                                    <Star className={`h-8 w-8 transition-colors ${star <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`} />
                                                 </button>
                                             ))}
                                         </div>
                                     </div>
                                     <div className="mb-4">
-                                        <label className="block text-sm font-medium mb-2">Review</label>
+                                        <label className="block text-sm font-medium text-foreground mb-2">Review</label>
                                         <Textarea
                                             value={comment}
                                             onChange={(e) => setComment(e.target.value)}
                                             placeholder="Share your thoughts about this product..."
                                             rows={4}
+                                            className="dark:bg-background dark:border-border"
                                         />
                                     </div>
                                     <Button onClick={handleSubmitReview} disabled={isSubmittingReview}>
@@ -1080,38 +1082,38 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                 {reviews.length > 0 ? (
                                     <div className="space-y-6">
                                         {reviews.map((review: any) => (
-                                            <div key={review.id} className="border-b pb-6">
+                                            <div key={review.id} className="border-b dark:border-border pb-6">
                                                 <div className="flex items-center justify-between mb-2">
                                                     <div className="flex items-center">
-                                                        <div className="h-10 w-10 relative overflow-hidden rounded-full bg-gray-100 border mr-3">
+                                                        <div className="h-10 w-10 relative overflow-hidden rounded-full bg-muted border dark:border-border mr-3">
                                                             {review.user?.image ? (
                                                                 // eslint-disable-next-line @next/next/no-img-element
-                                                                <img src={review.user.image} alt={review.user.name || 'User'} className="h-full w-full object-cover" />
+                                                                <img src={review.user.image} alt={review.user.name || 'User'} className="h-full w-full object-cover dark:brightness-90" />
                                                             ) : (
-                                                                <div className="h-full w-full flex items-center justify-center text-gray-500 font-bold bg-pink-100/50">
+                                                                <div className="h-full w-full flex items-center justify-center text-muted-foreground font-bold bg-pink-100/50 dark:bg-pink-900/30">
                                                                     {(review.user?.name || 'A').charAt(0).toUpperCase()}
                                                                 </div>
                                                             )}
                                                         </div>
                                                         <div>
-                                                            <p className="font-semibold text-gray-900">{review.user?.name || 'Anonymous'}</p>
-                                                            <p className="text-xs text-gray-500">
+                                                            <p className="font-semibold text-foreground">{review.user?.name || 'Anonymous'}</p>
+                                                            <p className="text-xs text-muted-foreground">
                                                                 {new Date(review.createdAt).toLocaleDateString()}
                                                             </p>
                                                         </div>
                                                     </div>
                                                     <div className="flex">
                                                         {[...Array(5)].map((_, i) => (
-                                                            <Star key={i} className={`h-4 w-4 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+                                                            <Star key={i} className={`h-4 w-4 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`} />
                                                         ))}
                                                     </div>
                                                 </div>
-                                                <p className="text-gray-600 mt-2">{review.comment}</p>
+                                                <p className="text-muted-foreground mt-2">{review.comment}</p>
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-center text-gray-500 py-8 bg-gray-50 rounded-lg">
+                                    <div className="text-center text-muted-foreground py-8 bg-muted/50 rounded-lg">
                                         <p>No reviews yet. Be the first to review!</p>
                                     </div>
                                 )}
@@ -1123,16 +1125,16 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
             </div>
 
             {/* Sticky Mobile Add to Cart - Only shows on mobile */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 p-4 lg:hidden shadow-2xl z-50">
+            <div className="fixed bottom-0 left-0 right-0 bg-background border-t-2 border-border p-4 lg:hidden shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] z-50">
                 <div className="flex items-center justify-between gap-4 max-w-7xl mx-auto">
                     {/* Product Info */}
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate">{product.name}</p>
-                        <p className="text-lg font-bold text-pink-600">
+                        <p className="text-sm font-semibold text-foreground truncate">{product.name}</p>
+                        <p className="text-lg font-bold text-pink-600 dark:text-pink-400">
                             {product.currency} {effectivePrice.toLocaleString()}
                         </p>
                         {selectedVariant && (
-                            <p className="text-xs text-gray-600 truncate">{selectedVariant.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{selectedVariant.name}</p>
                         )}
                     </div>
 
@@ -1141,19 +1143,19 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                         {product.inStock ? (
                             <>
                                 {/* Compact Quantity Selector */}
-                                <div className="flex items-center border-2 border-gray-300 rounded-lg">
+                                <div className="flex items-center border border-border rounded-lg bg-card text-foreground">
                                     <button
                                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
                                         disabled={quantity <= 1}
-                                        className="p-2 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        className="p-2 hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
                                         <Minus className="h-4 w-4" />
                                     </button>
-                                    <span className="px-3 font-semibold text-sm">{quantity}</span>
+                                    <span className="px-3 font-semibold text-sm bg-transparent">{quantity}</span>
                                     <button
                                         onClick={() => setQuantity(Math.min(maxStock, quantity + 1))}
                                         disabled={quantity >= maxStock}
-                                        className="p-2 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        className="p-2 hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
                                         <Plus className="h-4 w-4" />
                                     </button>
@@ -1171,7 +1173,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                             <Button
                                 variant="outline"
                                 onClick={handleWishlist}
-                                className={`flex-1 h-12 border-2 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'text-red-500 border-red-300 bg-red-50' : 'border-gray-300 hover:border-red-300 hover:bg-red-50'}`}
+                                className={`flex-1 h-12 border-2 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'text-red-500 border-red-300 bg-red-50 dark:bg-red-950/20' : 'border-input hover:border-red-500 dark:hover:border-red-500/50 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-500'}`}
                             >
                                 <Heart className={`mr-2 h-5 w-5 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'fill-current' : ''}`} />
                                 {isInWishlist(product.id, selectedVariant?.id || undefined) ? 'In Wishlist' : 'Add to Wishlist'}

@@ -16,35 +16,35 @@ export function VerificationModal({ isOpen, onClose, email }: VerificationModalP
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="w-full max-w-lg mx-4">
       <div className="p-8">
-        <Card className="p-6 bg-gradient-to-br from-green-50 to-blue-50 border-green-200">
+        <Card className="p-6 bg-card border-border">
           <div className="text-center">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl font-bold text-foreground mb-2">
               Account Created Successfully! 🎉
             </h2>
 
-            <p className="text-gray-600 mb-6">
+            <p className="text-muted-foreground mb-6">
               Welcome to WebMall! Your account for <strong>{email}</strong> has been created.
             </p>
 
-            <div className="bg-white rounded-lg p-6 mb-6 border-2 border-dashed border-green-300">
+            <div className="bg-muted/30 rounded-lg p-6 mb-6 border-2 border-dashed border-emerald-500/30">
               <div className="flex items-center justify-center mb-4">
                 <Mail className="h-8 w-8 text-blue-500 mr-3" />
-                <h3 className="text-lg font-semibold text-gray-800">Please Check Your Email</h3>
+                <h3 className="text-lg font-semibold text-foreground">Please Check Your Email</h3>
               </div>
 
-              <p className="text-gray-600 mb-4">
+              <p className="text-muted-foreground mb-4">
                 We've sent a verification link to <strong>{email}</strong>
               </p>
 
-              <div className="bg-blue-50 rounded-lg p-4 mb-4">
-                <p className="text-sm text-blue-800">
+              <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 mb-4">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
                   📧 Click the verification link in your email to activate your account
                 </p>
               </div>
 
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 <p>✨ <strong>Note:</strong> This is a demo, so you can login directly without email verification!</p>
               </div>
             </div>
@@ -59,7 +59,7 @@ export function VerificationModal({ isOpen, onClose, email }: VerificationModalP
               </Button>
             </div>
 
-            <div className="mt-4 text-sm text-gray-500">
+            <div className="mt-4 text-sm text-muted-foreground">
               <p>⏳ You'll be redirected to the approval page in a moment...</p>
             </div>
           </div>

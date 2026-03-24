@@ -43,17 +43,17 @@ export class ErrorBoundary extends Component<Props, State> {
             }
 
             return (
-                <div className="min-h-screen bg-gradient-to-br from-pink-50 to-yellow-50 flex items-center justify-center px-4">
-                    <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-                        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <AlertTriangle className="h-8 w-8 text-red-600" />
+                <div className="min-h-screen bg-background flex items-center justify-center px-4">
+                    <div className="max-w-md w-full bg-card rounded-2xl shadow-xl p-8 text-center border border-border">
+                        <div className="w-16 h-16 bg-red-100 dark:bg-red-950/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-500" />
                         </div>
 
-                        <h1 className="text-2xl font-bold font-playfair text-gray-900 mb-2">
+                        <h1 className="text-2xl font-bold font-playfair text-foreground mb-2">
                             Oops! Something went wrong
                         </h1>
 
-                        <p className="text-gray-600 mb-6">
+                        <p className="text-muted-foreground mb-6">
                             We're sorry for the inconvenience. An unexpected error occurred while loading this page.
                         </p>
 
@@ -68,7 +68,7 @@ export class ErrorBoundary extends Component<Props, State> {
                         <div className="flex flex-col sm:flex-row gap-3 justify-center">
                             <Button
                                 onClick={this.handleReset}
-                                className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold"
+                                className="bg-foreground hover:bg-muted-foreground text-background font-semibold"
                             >
                                 <RefreshCw className="h-4 w-4 mr-2" />
                                 Reload Page
@@ -76,6 +76,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
                             <Button
                                 variant="outline"
+                                className="border-border text-foreground hover:bg-muted"
                                 onClick={() => window.location.href = '/'}
                             >
                                 Go to Homepage

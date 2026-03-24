@@ -75,13 +75,13 @@ const SortableNavItem = ({
             value={item}
             dragListener={false}
             dragControls={controls}
-            className="flex flex-col sm:grid sm:grid-cols-12 gap-3 sm:gap-4 items-start sm:items-center group bg-white p-3 sm:p-2 rounded-md border border-transparent hover:border-gray-200 transition-colors relative"
+            className="flex flex-col sm:grid sm:grid-cols-12 gap-3 sm:gap-4 items-start sm:items-center group bg-card p-3 sm:p-2 rounded-md border border-transparent hover:border-border transition-colors relative"
         >
             {/* Drag Handle - Absolute on Mobile */}
             <div className="absolute top-2 right-2 sm:static sm:col-span-1 flex justify-center w-full sm:w-auto h-auto">
                 <div
                     onPointerDown={(e) => controls.start(e)}
-                    className="cursor-grab active:cursor-grabbing p-2 text-gray-300 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                    className="cursor-grab active:cursor-grabbing p-2 text-gray-300 hover:text-muted-foreground hover:bg-muted rounded transition-colors"
                 >
                     <GripVertical className="w-5 h-5" />
                 </div>
@@ -89,7 +89,7 @@ const SortableNavItem = ({
 
             {/* Label Input */}
             <div className="w-full sm:col-span-4 mt-8 sm:mt-0">
-                <label className="text-xs font-semibold text-gray-500 mb-1 block sm:hidden">Label</label>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block sm:hidden">Label</label>
                 <Input
                     value={item.label}
                     onChange={(e) => onChange('label', e.target.value)}
@@ -100,7 +100,7 @@ const SortableNavItem = ({
 
             {/* Path Input */}
             <div className="w-full sm:col-span-6">
-                <label className="text-xs font-semibold text-gray-500 mb-1 block sm:hidden">Path</label>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block sm:hidden">Path</label>
                 <Input
                     value={item.path}
                     onChange={(e) => onChange('path', e.target.value)}
@@ -311,25 +311,25 @@ export default function AdminSettingsPage() {
 
     if (initialLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex items-center justify-center bg-muted/50">
                 <div className="w-10 h-10 border-4 border-pink-300 border-t-transparent rounded-full animate-spin"></div>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-12">
-            <div className="bg-white border-b mb-8">
+        <div className="min-h-screen bg-muted/50 pb-12">
+            <div className="bg-card border-b mb-8">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <div className="flex items-center space-x-4 mb-4">
                         <Link href="/admin">
-                            <Button variant="ghost" className="p-2 h-auto text-gray-500 hover:text-gray-900">
+                            <Button variant="ghost" className="p-2 h-auto text-muted-foreground hover:text-foreground">
                                 <ArrowLeft className="w-5 h-5" />
                             </Button>
                         </Link>
-                        <h1 className="text-3xl font-bold text-gray-900">Site Settings</h1>
+                        <h1 className="text-3xl font-bold text-foreground">Site Settings</h1>
                     </div>
-                    <p className="text-gray-500">Configure your store's branding, contact details, and social presence.</p>
+                    <p className="text-muted-foreground">Configure your store's branding, contact details, and social presence.</p>
                 </div>
             </div>
 
@@ -341,11 +341,11 @@ export default function AdminSettingsPage() {
                             <div className="p-2 bg-pink-100 rounded-lg text-pink-600">
                                 <Globe className="w-5 h-5" />
                             </div>
-                            <h2 className="text-xl font-bold text-gray-900">General Branding</h2>
+                            <h2 className="text-xl font-bold text-foreground">General Branding</h2>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-gray-700">Store Name</label>
+                                <label className="text-sm font-semibold text-foreground/80">Store Name</label>
                                 <Input
                                     name="storeName"
                                     value={settings.storeName}
@@ -353,7 +353,7 @@ export default function AdminSettingsPage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-gray-700">Tagline</label>
+                                <label className="text-sm font-semibold text-foreground/80">Tagline</label>
                                 <Input
                                     name="tagline"
                                     value={settings.tagline || ''}
@@ -361,7 +361,7 @@ export default function AdminSettingsPage() {
                                 />
                             </div>
                             <div className="md:col-span-2 space-y-2">
-                                <label className="text-sm font-semibold text-gray-700">Store Description</label>
+                                <label className="text-sm font-semibold text-foreground/80">Store Description</label>
                                 <Textarea
                                     name="description"
                                     value={settings.description || ''}
@@ -370,7 +370,7 @@ export default function AdminSettingsPage() {
                                 />
                             </div>
                             <div className="md:col-span-2 space-y-2">
-                                <label className="text-sm font-semibold text-gray-700">Store Logo</label>
+                                <label className="text-sm font-semibold text-foreground/80">Store Logo</label>
                                 <ImageUpload
                                     currentImageUrl={settings.logoUrl || ''}
                                     onUploadComplete={(url) => setSettings(prev => ({ ...prev, logoUrl: url }))}
@@ -381,7 +381,7 @@ export default function AdminSettingsPage() {
                                     name="logoUrl"
                                     value={settings.logoUrl || ''}
                                 />
-                                <p className="text-xs text-gray-500">Upload a transparent PNG for best results.</p>
+                                <p className="text-xs text-muted-foreground">Upload a transparent PNG for best results.</p>
                             </div>
                         </div>
                     </Card>
@@ -392,13 +392,13 @@ export default function AdminSettingsPage() {
                             <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
                                 <Mail className="w-5 h-5" />
                             </div>
-                            <h2 className="text-xl font-bold text-gray-900">Contact & Support</h2>
+                            <h2 className="text-xl font-bold text-foreground">Contact & Support</h2>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-gray-700">Support Email</label>
+                                <label className="text-sm font-semibold text-foreground/80">Support Email</label>
                                 <div className="relative">
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/80" />
                                     <Input
                                         name="contactEmail"
                                         value={settings.contactEmail || ''}
@@ -408,9 +408,9 @@ export default function AdminSettingsPage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-gray-700">Phone Number</label>
+                                <label className="text-sm font-semibold text-foreground/80">Phone Number</label>
                                 <div className="relative">
-                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/80" />
                                     <Input
                                         name="contactPhone"
                                         value={settings.contactPhone || ''}
@@ -420,9 +420,9 @@ export default function AdminSettingsPage() {
                                 </div>
                             </div>
                             <div className="md:col-span-2 space-y-2">
-                                <label className="text-sm font-semibold text-gray-700">Physical Address</label>
+                                <label className="text-sm font-semibold text-foreground/80">Physical Address</label>
                                 <div className="relative">
-                                    <MapPin className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                    <MapPin className="absolute left-3 top-3 w-4 h-4 text-muted-foreground/80" />
                                     <Textarea
                                         name="contactAddress"
                                         value={settings.contactAddress || ''}
@@ -441,12 +441,12 @@ export default function AdminSettingsPage() {
                             <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
                                 <Facebook className="w-5 h-5" />
                             </div>
-                            <h2 className="text-xl font-bold text-gray-900">Social Presence</h2>
+                            <h2 className="text-xl font-bold text-foreground">Social Presence</h2>
                         </div>
                         <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-gray-700">Facebook URL</label>
+                                    <label className="text-sm font-semibold text-foreground/80">Facebook URL</label>
                                     <Input
                                         name="facebookUrl"
                                         value={settings.facebookUrl || ''}
@@ -455,7 +455,7 @@ export default function AdminSettingsPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-gray-700">Instagram URL</label>
+                                    <label className="text-sm font-semibold text-foreground/80">Instagram URL</label>
                                     <Input
                                         name="instagramUrl"
                                         value={settings.instagramUrl || ''}
@@ -464,7 +464,7 @@ export default function AdminSettingsPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-gray-700">Twitter URL</label>
+                                    <label className="text-sm font-semibold text-foreground/80">Twitter URL</label>
                                     <Input
                                         name="twitterUrl"
                                         value={settings.twitterUrl || ''}
@@ -474,7 +474,7 @@ export default function AdminSettingsPage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-gray-700">Second Instagram URL (Optional)</label>
+                                <label className="text-sm font-semibold text-foreground/80">Second Instagram URL (Optional)</label>
                                 <Input
                                     name="instagramUrl2"
                                     value={settings.instagramUrl2 || ''}
@@ -491,14 +491,14 @@ export default function AdminSettingsPage() {
                             <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
                                 <Menu className="w-5 h-5" />
                             </div>
-                            <h2 className="text-xl font-bold text-gray-900">Admin Header Navigation</h2>
+                            <h2 className="text-xl font-bold text-foreground">Admin Header Navigation</h2>
                         </div>
                         <div className="space-y-4">
-                            <p className="text-sm text-gray-500 mb-4">
+                            <p className="text-sm text-muted-foreground mb-4">
                                 Customize the tabs that appear in the admin header. Drag handles to reorder.
                             </p>
 
-                            <div className="hidden sm:grid grid-cols-12 gap-4 mb-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            <div className="hidden sm:grid grid-cols-12 gap-4 mb-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                                 <div className="col-span-1 text-center">Order</div>
                                 <div className="col-span-4">Label</div>
                                 <div className="col-span-6">Path</div>
@@ -531,8 +531,8 @@ export default function AdminSettingsPage() {
                             </Button>
 
                             {(settings.headerNavigation as any[] || []).length === 0 && (
-                                <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-100 mt-4">
-                                    <p className="text-sm text-gray-400">Navigation is empty</p>
+                                <div className="text-center p-4 bg-muted/50 rounded-lg border border-border/50 mt-4">
+                                    <p className="text-sm text-muted-foreground/80">Navigation is empty</p>
                                     <Button
                                         type="button"
                                         variant="link"
@@ -557,14 +557,14 @@ export default function AdminSettingsPage() {
                             <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
                                 <Menu className="w-5 h-5" />
                             </div>
-                            <h2 className="text-xl font-bold text-gray-900">Customer Header Navigation</h2>
+                            <h2 className="text-xl font-bold text-foreground">Customer Header Navigation</h2>
                         </div>
                         <div className="space-y-4">
-                            <p className="text-sm text-gray-500 mb-4">
+                            <p className="text-sm text-muted-foreground mb-4">
                                 Customize the tabs that appear in the customer header. Drag handles to reorder.
                             </p>
 
-                            <div className="hidden sm:grid grid-cols-12 gap-4 mb-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            <div className="hidden sm:grid grid-cols-12 gap-4 mb-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                                 <div className="col-span-1 text-center">Order</div>
                                 <div className="col-span-4">Label</div>
                                 <div className="col-span-6">Path</div>
@@ -597,8 +597,8 @@ export default function AdminSettingsPage() {
                             </Button>
 
                             {(settings.customerNavigation as any[] || []).length === 0 && (
-                                <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-100 mt-4">
-                                    <p className="text-sm text-gray-400">Navigation is empty (will show categories)</p>
+                                <div className="text-center p-4 bg-muted/50 rounded-lg border border-border/50 mt-4">
+                                    <p className="text-sm text-muted-foreground/80">Navigation is empty (will show categories)</p>
                                     <Button
                                         type="button"
                                         variant="link"
@@ -624,7 +624,7 @@ export default function AdminSettingsPage() {
                                 <div className="p-2 bg-pink-100 rounded-lg text-pink-600">
                                     <ImageIcon className="w-5 h-5" />
                                 </div>
-                                <h2 className="text-xl font-bold text-gray-900">Hero Banners</h2>
+                                <h2 className="text-xl font-bold text-foreground">Hero Banners</h2>
                             </div>
                             <Button
                                 type="button"
@@ -654,9 +654,9 @@ export default function AdminSettingsPage() {
 
                         <div className="space-y-8">
                             {banners.length === 0 && (
-                                <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                                <div className="text-center py-12 bg-muted/50 rounded-xl border-2 border-dashed border-border">
                                     <ImageIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                                    <p className="text-gray-500">No hero banners configured yet.</p>
+                                    <p className="text-muted-foreground">No hero banners configured yet.</p>
                                 </div>
                             )}
 
@@ -671,12 +671,12 @@ export default function AdminSettingsPage() {
                                         <Reorder.Item
                                             key={banner.id}
                                             value={banner}
-                                            className="bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow relative group"
+                                            className="bg-card border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow relative group"
                                         >
                                             <div className="p-6">
                                                 <div className="flex flex-col lg:flex-row gap-6">
                                                     {/* Drag Handle */}
-                                                    <div className="absolute top-2 right-2 lg:static flex items-center cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-600 p-2 lg:p-0 z-10">
+                                                    <div className="absolute top-2 right-2 lg:static flex items-center cursor-grab active:cursor-grabbing text-gray-300 hover:text-muted-foreground p-2 lg:p-0 z-10">
                                                         <GripVertical className="w-6 h-6" />
                                                     </div>
 
@@ -696,7 +696,7 @@ export default function AdminSettingsPage() {
                                                     {/* Form Fields */}
                                                     <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                         <div className="col-span-2 space-y-1">
-                                                            <label className="text-xs font-bold text-gray-500 uppercase">Banner Title</label>
+                                                            <label className="text-xs font-bold text-muted-foreground uppercase">Banner Title</label>
                                                             <Input
                                                                 value={banner.title}
                                                                 onChange={(e) => {
@@ -708,7 +708,7 @@ export default function AdminSettingsPage() {
                                                             />
                                                         </div>
                                                         <div className="col-span-2 space-y-1">
-                                                            <label className="text-xs font-bold text-gray-500 uppercase">Subtitle / Description</label>
+                                                            <label className="text-xs font-bold text-muted-foreground uppercase">Subtitle / Description</label>
                                                             <Input
                                                                 value={banner.subtitle}
                                                                 onChange={(e) => {
@@ -720,7 +720,7 @@ export default function AdminSettingsPage() {
                                                             />
                                                         </div>
                                                         <div className="space-y-1">
-                                                            <label className="text-xs font-bold text-gray-500 uppercase">Button Text</label>
+                                                            <label className="text-xs font-bold text-muted-foreground uppercase">Button Text</label>
                                                             <Input
                                                                 value={banner.ctaText}
                                                                 onChange={(e) => {
@@ -732,7 +732,7 @@ export default function AdminSettingsPage() {
                                                             />
                                                         </div>
                                                         <div className="space-y-1">
-                                                            <label className="text-xs font-bold text-gray-500 uppercase">Button URL</label>
+                                                            <label className="text-xs font-bold text-muted-foreground uppercase">Button URL</label>
                                                             <Input
                                                                 value={banner.ctaLink}
                                                                 onChange={(e) => {
@@ -749,7 +749,7 @@ export default function AdminSettingsPage() {
                                                     <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex lg:flex-col gap-4 lg:min-w-[140px] border-t lg:border-t-0 pt-4 lg:pt-0">
                                                         {/* Status Toggle (isActive) */}
                                                         <div className="space-y-1.5">
-                                                            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Banner Status</label>
+                                                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">Banner Status</label>
                                                             <button
                                                                 type="button"
                                                                 onClick={() => {
@@ -761,16 +761,16 @@ export default function AdminSettingsPage() {
                                                             >
                                                                 <span className="sr-only">Toggle Status</span>
                                                                 <span
-                                                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${banner.isActive ? 'translate-x-6' : 'translate-x-1'}`}
+                                                                    className={`inline-block h-4 w-4 transform rounded-full bg-card transition-transform ${banner.isActive ? 'translate-x-6' : 'translate-x-1'}`}
                                                                 />
                                                                 <span className="absolute right-1 text-[8px] font-bold text-white uppercase pr-1.5 select-none">{banner.isActive ? 'ON' : ''}</span>
-                                                                <span className="absolute left-1 text-[8px] font-bold text-gray-400 uppercase pl-1.5 select-none">{!banner.isActive ? 'OFF' : ''}</span>
+                                                                <span className="absolute left-1 text-[8px] font-bold text-muted-foreground/80 uppercase pl-1.5 select-none">{!banner.isActive ? 'OFF' : ''}</span>
                                                             </button>
                                                         </div>
 
                                                         {/* Badge Toggle */}
                                                         <div className="space-y-1.5">
-                                                            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Craft Badge</label>
+                                                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">Craft Badge</label>
                                                             <button
                                                                 type="button"
                                                                 onClick={() => {
@@ -782,16 +782,16 @@ export default function AdminSettingsPage() {
                                                             >
                                                                 <span className="sr-only">Toggle Badge</span>
                                                                 <span
-                                                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${banner.showBadge ? 'translate-x-6' : 'translate-x-1'}`}
+                                                                    className={`inline-block h-4 w-4 transform rounded-full bg-card transition-transform ${banner.showBadge ? 'translate-x-6' : 'translate-x-1'}`}
                                                                 />
                                                                 <span className="absolute right-1 text-[8px] font-bold text-white uppercase pr-1.5 select-none">{banner.showBadge ? 'ON' : ''}</span>
-                                                                <span className="absolute left-1 text-[8px] font-bold text-gray-400 uppercase pl-1.5 select-none">{!banner.showBadge ? 'OFF' : ''}</span>
+                                                                <span className="absolute left-1 text-[8px] font-bold text-muted-foreground/80 uppercase pl-1.5 select-none">{!banner.showBadge ? 'OFF' : ''}</span>
                                                             </button>
                                                         </div>
 
                                                         {/* Top Rated Toggle */}
                                                         <div className="space-y-1.5">
-                                                            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Top Rated Card</label>
+                                                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">Top Rated Card</label>
                                                             <button
                                                                 type="button"
                                                                 onClick={() => {
@@ -803,10 +803,10 @@ export default function AdminSettingsPage() {
                                                             >
                                                                 <span className="sr-only">Toggle Top Rated</span>
                                                                 <span
-                                                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${banner.showTopRated ? 'translate-x-6' : 'translate-x-1'}`}
+                                                                    className={`inline-block h-4 w-4 transform rounded-full bg-card transition-transform ${banner.showTopRated ? 'translate-x-6' : 'translate-x-1'}`}
                                                                 />
                                                                 <span className="absolute right-1 text-[8px] font-bold text-white uppercase pr-1.5 select-none">{banner.showTopRated ? 'ON' : ''}</span>
-                                                                <span className="absolute left-1 text-[8px] font-bold text-gray-400 uppercase pl-1.5 select-none">{!banner.showTopRated ? 'OFF' : ''}</span>
+                                                                <span className="absolute left-1 text-[8px] font-bold text-muted-foreground/80 uppercase pl-1.5 select-none">{!banner.showTopRated ? 'OFF' : ''}</span>
                                                             </button>
                                                         </div>
 
@@ -909,11 +909,11 @@ export default function AdminSettingsPage() {
                             <div className="p-2 bg-pink-100 rounded-lg text-pink-600">
                                 <ImageIcon className="w-5 h-5" />
                             </div>
-                            <h2 className="text-xl font-bold text-gray-900">About Page Gallery Carousel</h2>
+                            <h2 className="text-xl font-bold text-foreground">About Page Gallery Carousel</h2>
                         </div>
 
                         <div className="space-y-6">
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted-foreground">
                                 Upload images to be displayed in the carousel on the About Us page.
                                 These images will replace the "Crafting Beautiful Memories" card.
                             </p>
@@ -924,19 +924,19 @@ export default function AdminSettingsPage() {
                                 {(settings.aboutGalleryImages || []).map((url, index) => (
                                     <div
                                         key={url}
-                                        className="bg-white border rounded-lg sm:rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow relative group flex flex-col"
+                                        className="bg-card border rounded-lg sm:rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow relative group flex flex-col"
                                     >
-                                        <div className="relative aspect-video bg-gray-50 border-b isolate">
+                                        <div className="relative aspect-video bg-muted/50 border-b isolate">
                                             <img
                                                 src={url}
                                                 alt={`Gallery ${index}`}
-                                                className="absolute inset-0 w-full h-full object-cover bg-gray-100"
+                                                className="absolute inset-0 w-full h-full object-cover bg-muted"
                                                 onError={(e) => {
                                                     e.currentTarget.style.display = 'none';
                                                     e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center');
                                                     const fallback = document.createElement('div');
                                                     fallback.className = 'text-center p-4';
-                                                    fallback.innerHTML = `<div class="text-red-400 mb-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><span class="text-xs text-gray-500">Image not found</span>`;
+                                                    fallback.innerHTML = `<div class="text-red-400 mb-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><span class="text-xs text-muted-foreground">Image not found</span>`;
                                                     e.currentTarget.parentElement?.appendChild(fallback);
                                                 }}
                                             />
@@ -948,11 +948,11 @@ export default function AdminSettingsPage() {
                                                         type="button"
                                                         variant="secondary"
                                                         size="icon"
-                                                        className="h-7 w-7 sm:h-8 sm:w-8 bg-white/90 hover:bg-white shadow-sm"
+                                                        className="h-7 w-7 sm:h-8 sm:w-8 bg-card/90 hover:bg-card shadow-sm"
                                                         onClick={() => window.open(url, '_blank')}
                                                         title="View Full Image"
                                                     >
-                                                        <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-700" />
+                                                        <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-foreground/80" />
                                                     </Button>
                                                     <Button
                                                         type="button"
@@ -972,8 +972,8 @@ export default function AdminSettingsPage() {
                                             </div>
                                         </div>
 
-                                        <div className="p-2 sm:p-3 bg-gray-50/50 flex items-center justify-between gap-2 sm:gap-3 text-[10px] sm:text-xs">
-                                            <div className="font-mono text-gray-400 truncate flex-1" title={url}>
+                                        <div className="p-2 sm:p-3 bg-muted/50/50 flex items-center justify-between gap-2 sm:gap-3 text-[10px] sm:text-xs">
+                                            <div className="font-mono text-muted-foreground/80 truncate flex-1" title={url}>
                                                 Image #{index + 1}
                                             </div>
                                             <div className="flex items-center gap-0.5 sm:gap-1">
@@ -1023,19 +1023,19 @@ export default function AdminSettingsPage() {
 
                             {/* Empty State */}
                             {(settings.aboutGalleryImages || []).length === 0 && (
-                                <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 mb-8">
-                                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <div className="text-center py-12 bg-muted/50 rounded-xl border-2 border-dashed border-border mb-8">
+                                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                                         <ImageIcon className="w-8 h-8 text-gray-300" />
                                     </div>
-                                    <h3 className="text-sm font-semibold text-gray-900 mb-1">No images yet</h3>
-                                    <p className="text-xs text-gray-500 max-w-xs mx-auto">
+                                    <h3 className="text-sm font-semibold text-foreground mb-1">No images yet</h3>
+                                    <p className="text-xs text-muted-foreground max-w-xs mx-auto">
                                         Upload photos to showcase your story in the carousel.
                                     </p>
                                 </div>
                             )}
 
-                            <div className="bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-                                <h4 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <div className="bg-muted/50/50 p-6 rounded-xl border border-border/50">
+                                <h4 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
                                     <Upload className="w-4 h-4" />
                                     Add New Image
                                 </h4>
@@ -1053,7 +1053,7 @@ export default function AdminSettingsPage() {
                                             }
                                         }}
                                     />
-                                    <p className="text-xs text-gray-500 mt-2">
+                                    <p className="text-xs text-muted-foreground mt-2">
                                         Supported formats: JPG, PNG, WEBP.
                                     </p>
                                 </div>
@@ -1067,11 +1067,11 @@ export default function AdminSettingsPage() {
                             <div className="p-2 bg-yellow-100 rounded-lg text-yellow-600">
                                 <Truck className="w-5 h-5" />
                             </div>
-                            <h2 className="text-xl font-bold text-gray-900">Shipping Configuration</h2>
+                            <h2 className="text-xl font-bold text-foreground">Shipping Configuration</h2>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-gray-700">Fixed Shipping Rate (LKR)</label>
+                                <label className="text-sm font-semibold text-foreground/80">Fixed Shipping Rate (LKR)</label>
                                 <Input
                                     name="shippingBaseRate"
                                     type="number"
@@ -1080,7 +1080,7 @@ export default function AdminSettingsPage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-gray-700">Free Shipping Min Amount (LKR)</label>
+                                <label className="text-sm font-semibold text-foreground/80">Free Shipping Min Amount (LKR)</label>
                                 <Input
                                     name="freeShippingThreshold"
                                     type="number"

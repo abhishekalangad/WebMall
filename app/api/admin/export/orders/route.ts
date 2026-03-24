@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
             { header: 'Phone', key: 'phone', width: 15 },
             { header: 'Address', key: 'address', width: 30 },
             { header: 'Total Amount', key: 'totalAmount', width: 15 },
+            { header: 'Total Qty', key: 'totalQty', width: 10 },
             { header: 'Payment Method', key: 'paymentMethod', width: 15 },
             { header: 'Items', key: 'items', width: 50 },
             { header: 'Notes', key: 'notes', width: 20 },
@@ -45,6 +46,9 @@ export async function GET(request: NextRequest) {
                 `${item.product?.name || 'Unknown Product'} (x${item.quantity})`
             ).join(', ')
 
+            // Calculate total quantity
+            const totalQty = order.items.reduce((sum, item) => sum + item.quantity, 0)
+
             worksheet.addRow({
                 orderNumber: order.orderNumber,
                 status: order.status,
@@ -54,6 +58,7 @@ export async function GET(request: NextRequest) {
                 phone: shipping?.phone || order.user?.phone || 'N/A',
                 address: shipping ? `${shipping.address}, ${shipping.city}, ${shipping.postalCode}` : 'N/A',
                 totalAmount: order.totalAmount,
+                totalQty: totalQty,
                 paymentMethod: order.paymentMethod,
                 items: itemsString,
                 notes: order.notes

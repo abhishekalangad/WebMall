@@ -84,25 +84,25 @@ export default function FAQPage() {
     ]
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12 md:py-20">
+        <div className="min-h-screen bg-background py-12 md:py-20">
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="text-center mb-12">
-                    <h1 className="text-4xl md:text-5xl font-playfair font-bold text-gray-900 mb-4">
+                    <h1 className="text-4xl md:text-5xl font-playfair font-bold text-foreground mb-4">
                         Help Center
                     </h1>
-                    <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
+                    <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
                         Find answers to commonly asked questions. Can't find what you're looking for? Contact our support team.
                     </p>
 
                     {/* Search Box */}
                     <div className="max-w-2xl mx-auto">
                         <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                             <input
                                 type="text"
                                 placeholder="Search for help..."
-                                className="w-full px-12 py-4 rounded-xl border border-gray-300 focus:border-gray-500 focus:ring-2 focus:ring-gray-200 transition-all"
+                                className="w-full px-12 py-4 rounded-xl border border-border bg-card text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none placeholder:text-muted-foreground"
                             />
                         </div>
                     </div>
@@ -113,22 +113,22 @@ export default function FAQPage() {
                     {categories.map((category, catIdx) => (
                         <div key={catIdx}>
                             <div className="flex items-center gap-3 mb-6">
-                                <div className="p-2 bg-gray-900 rounded-lg">
-                                    <category.icon className="h-6 w-6 text-white" />
+                                <div className="p-2 bg-foreground rounded-lg">
+                                    <category.icon className="h-6 w-6 text-background" />
                                 </div>
-                                <h2 className="text-2xl md:text-3xl font-bold text-gray-900">{category.title}</h2>
+                                <h2 className="text-2xl md:text-3xl font-bold text-foreground">{category.title}</h2>
                             </div>
 
                             <div className="space-y-4">
                                 {category.faqs.map((faq, faqIdx) => (
                                     <details
                                         key={faqIdx}
-                                        className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden group hover:shadow-lg transition-all"
+                                        className="bg-card rounded-xl shadow-sm border border-border overflow-hidden group hover:shadow-md transition-all"
                                     >
-                                        <summary className="px-6 py-4 font-semibold text-gray-900 cursor-pointer list-none flex items-center justify-between">
+                                        <summary className="px-6 py-4 font-semibold text-foreground cursor-pointer list-none flex items-center justify-between">
                                             <span className="flex-1">{faq.question}</span>
                                             <svg
-                                                className="h-5 w-5 text-gray-400 transition-transform group-open:rotate-180"
+                                                className="h-5 w-5 text-muted-foreground transition-transform group-open:rotate-180"
                                                 fill="none"
                                                 stroke="currentColor"
                                                 viewBox="0 0 24 24"
@@ -136,7 +136,7 @@ export default function FAQPage() {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                             </svg>
                                         </summary>
-                                        <div className="px-6 pb-4 pt-2 text-gray-600 border-t border-gray-100">
+                                        <div className="px-6 pb-4 pt-2 text-muted-foreground border-t border-border focus:outline-none focus:ring-0">
                                             {faq.answer}
                                         </div>
                                     </details>
@@ -147,22 +147,22 @@ export default function FAQPage() {
                 </div>
 
                 {/* Contact CTA */}
-                <div className="mt-16 bg-gray-900 rounded-2xl p-8 md:p-12 text-center text-white">
+                <div className="mt-16 bg-card border border-border shadow-sm rounded-2xl p-8 md:p-12 text-center text-foreground dark:bg-muted/50">
                     <h2 className="text-2xl md:text-3xl font-bold mb-4">Still Need Help?</h2>
-                    <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
+                    <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
                         Our customer support team is here to assist you. Reach out and we'll get back to you as soon as possible.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Link
                             href="/contact"
-                            className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 px-8 py-3 rounded-xl font-bold hover:bg-gray-100 transition-all shadow-lg"
+                            className="inline-flex items-center justify-center gap-2 bg-foreground text-background px-8 py-3 rounded-xl font-bold hover:bg-muted-foreground transition-all shadow-lg"
                         >
                             <Mail className="h-5 w-5" />
                             Email Us
                         </Link>
                         <a
                             href="tel:+94778973708"
-                            className="inline-flex items-center justify-center gap-2 bg-gray-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-gray-700 transition-all border border-gray-700"
+                            className="inline-flex items-center justify-center gap-2 bg-background text-foreground px-8 py-3 rounded-xl font-bold hover:bg-muted transition-all border border-border"
                         >
                             <Phone className="h-5 w-5" />
                             Call Us

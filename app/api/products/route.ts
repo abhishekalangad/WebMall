@@ -20,13 +20,19 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
     const limitParam = searchParams.get('limit')
+    const idsParam = searchParams.get('ids')
+    
     // Admins can request all products by passing limit=all or being an admin without specifying a limit
-    const fetchAll = isAdmin && (!limitParam || limitParam === 'all')
-    const limit = fetchAll ? undefined : Math.min(500, Math.max(1, parseInt(limitParam || '20')))
-    const skip = fetchAll ? undefined : (page - 1) * (limit as number)
+    const fetchAll = isAdmin && (!limitParam || limitParam === 'all') && !idsParam
+    const limit = fetchAll ? undefined : (idsParam ? undefined : Math.min(500, Math.max(1, parseInt(limitParam || '20'))))
+    const skip = fetchAll ? undefined : (idsParam ? undefined : (page - 1) * (limit as number))
 
     // Admins can see all products (including drafts), non-admins only see active products
-    const where = isAdmin ? { status: { not: 'deleted' } } : { status: 'active' }
+    let where: any = isAdmin ? { status: { not: 'deleted' } } : { status: 'active' }
+
+    if (idsParam) {
+      where.id = { in: idsParam.split(',') }
+    }
 
     // Get total count for pagination metadata
     const totalCount = await prisma.product.count({ where })

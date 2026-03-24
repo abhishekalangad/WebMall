@@ -12,6 +12,8 @@ import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useSiteConfig } from '@/contexts/SiteConfigContext'
 
+import { ThemeToggle } from '@/components/ThemeToggle'
+
 function HeaderContent() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -131,7 +133,6 @@ function HeaderContent() {
   ]
 
   // Determine which navigation to show based on user role
-  // Determine which navigation to show based on user role
   // If settings exist and have items, use them. Otherwise, use defaults.
   const navItems = user?.role === 'admin'
     ? (settings?.headerNavigation && Array.isArray(settings.headerNavigation) && settings.headerNavigation.length > 0
@@ -142,7 +143,7 @@ function HeaderContent() {
       : DEFAULT_CUSTOMER_TABS)
 
   return (
-    <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+    <header className="bg-white dark:bg-gray-900 shadow-sm border-b dark:border-gray-800 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16 md:h-18">
           {/* Left Side: Logo & Navigation Group */}
@@ -151,11 +152,11 @@ function HeaderContent() {
               <img
                 src={settings?.logoUrl || '/logo-no-bg.png'}
                 alt={settings?.storeName || 'WebMall'}
-                className="h-9 sm:h-12 md:h-14 w-auto object-contain"
+                className="h-9 sm:h-12 md:h-14 w-auto object-contain dark:brightness-200"
               />
-              <span className="text-xl sm:text-2xl md:text-3xl font-playfair font-bold text-gray-900 truncate">
+              <span className="text-xl sm:text-2xl md:text-3xl font-playfair font-bold text-gray-900 dark:text-white truncate">
                 {configLoading ? (
-                  <div className="h-8 w-24 bg-gray-200 animate-pulse rounded"></div>
+                  <div className="h-8 w-24 bg-gray-200 dark:bg-gray-800 animate-pulse rounded"></div>
                 ) : (
                   settings?.storeName || 'WebMall'
                 )}
@@ -169,7 +170,7 @@ function HeaderContent() {
                   <Link
                     key={index}
                     href={link.path || '#'}
-                    className={`font-cursive text-lg xl:text-2xl whitespace-nowrap hover:text-pink-600 transition-colors ${isActive(link.path) ? 'text-pink-600' : 'text-gray-600'}`}
+                    className={`font-cursive text-lg xl:text-2xl whitespace-nowrap hover:text-pink-600 dark:hover:text-pink-400 transition-colors ${isActive(link.path) ? 'text-pink-600 dark:text-pink-400' : 'text-gray-600 dark:text-gray-300'}`}
                   >
                     {link.label}
                   </Link>
@@ -190,7 +191,7 @@ function HeaderContent() {
                     placeholder="Search..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 h-10 border-none rounded-full bg-gray-100/80 focus:bg-white focus:ring-2 focus:ring-pink-100 transition-all font-cursive text-lg"
+                    className="w-full pl-10 pr-4 h-10 border-none rounded-full bg-gray-100/80 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-pink-100 dark:focus:ring-pink-900 transition-all font-cursive text-lg dark:text-white"
                   />
                 </form>
               </div>
@@ -199,8 +200,10 @@ function HeaderContent() {
 
           {/* Right Side: Actions Grouped */}
           <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 flex-shrink-0">
+            <ThemeToggle />
+
             {user && (
-              <Link href="/wishlist" className="relative p-1.5 sm:p-2 text-gray-600 hover:text-gray-900 transition-colors">
+              <Link href="/wishlist" className="relative p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
                 <Heart className="h-5 w-5 sm:h-6 sm:w-6" />
                 {wishlistItems > 0 && (
                   <span className="absolute -top-0.5 sm:-top-1 -right-0.5 sm:-right-1 bg-red-500 text-white text-[10px] sm:text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center border-2 border-white font-bold">
@@ -230,14 +233,14 @@ function HeaderContent() {
                   className="flex items-center space-x-1 sm:space-x-2 hover:bg-gray-100 rounded-full p-1.5 sm:p-2 transition-all"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 >
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center overflow-hidden border border-gray-100 shadow-sm relative">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center overflow-hidden border border-border bg-background shadow-sm relative">
                     {user?.role === 'admin' ? (
                       // Admin: Show WebMall transparent logo
-                      <div className="w-full h-full bg-white flex items-center justify-center">
+                      <div className="w-full h-full bg-background flex items-center justify-center">
                         <img
                           src="/logo-no-bg.png"
                           alt="WebMall"
-                          className="w-full h-full object-contain scale-90"
+                          className="w-full h-full object-contain scale-90 dark:brightness-200"
                         />
                       </div>
                     ) : user?.profileImage ? (
@@ -258,28 +261,28 @@ function HeaderContent() {
                   <ChevronDown className="h-4 w-4 text-gray-500" />
                 </Button>
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-3 z-[9999]">
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-semibold text-gray-900">{user?.name || 'User'}</p>
-                      <p className="text-xs text-gray-500">{user?.email}</p>
+                  <div className="absolute right-0 mt-2 w-64 bg-card rounded-xl shadow-xl border border-border py-3 z-[9999]">
+                    <div className="px-4 py-3 border-b border-border/50">
+                      <p className="text-sm font-semibold text-foreground">{user?.name || 'User'}</p>
+                      <p className="text-xs text-muted-foreground">{user?.email}</p>
                     </div>
 
                     <div className="py-2">
-                      <Link href="/profile" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
-                        <Settings className="h-4 w-4 mr-3 text-gray-400" />
+                      <Link href="/profile" className="flex items-center px-4 py-2 text-sm text-foreground/80 hover:bg-muted" onClick={() => setIsUserMenuOpen(false)}>
+                        <Settings className="h-4 w-4 mr-3 text-muted-foreground" />
                         <span>My Profile</span>
                       </Link>
-                      <Link href="/orders" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
-                        <Package className="h-4 w-4 mr-3 text-gray-400" />
+                      <Link href="/orders" className="flex items-center px-4 py-2 text-sm text-foreground/80 hover:bg-muted" onClick={() => setIsUserMenuOpen(false)}>
+                        <Package className="h-4 w-4 mr-3 text-muted-foreground" />
                         <span>My Orders</span>
                       </Link>
                       <Link
                         href={user?.role === 'admin' ? "/admin/messages" : "/profile/messages"}
-                        className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        className="flex items-center justify-between px-4 py-2 text-sm text-foreground/80 hover:bg-muted"
                         onClick={() => setIsUserMenuOpen(false)}
                       >
                         <div className="flex items-center">
-                          <Mail className="h-4 w-4 mr-3 text-gray-400" />
+                          <Mail className="h-4 w-4 mr-3 text-muted-foreground" />
                           <span>{user?.role === 'admin' ? 'Customer Messages' : 'My Messages'}</span>
                         </div>
                         {unreadMessages > 0 && (
@@ -288,26 +291,26 @@ function HeaderContent() {
                           </span>
                         )}
                       </Link>
-                      <Link href="/cart" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
-                        <ShoppingBag className="h-4 w-4 mr-3 text-gray-400" />
+                      <Link href="/cart" className="flex items-center px-4 py-2 text-sm text-foreground/80 hover:bg-muted" onClick={() => setIsUserMenuOpen(false)}>
+                        <ShoppingBag className="h-4 w-4 mr-3 text-muted-foreground" />
                         <span>My Cart</span>
                       </Link>
                       {user?.role === 'admin' && (
-                        <Link href="/admin" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
-                          <User className="h-4 w-4 mr-3 text-gray-400" />
+                        <Link href="/admin" className="flex items-center px-4 py-2 text-sm text-foreground/80 hover:bg-muted" onClick={() => setIsUserMenuOpen(false)}>
+                          <User className="h-4 w-4 mr-3 text-muted-foreground" />
                           <span>Admin Dashboard</span>
                         </Link>
                       )}
                     </div>
 
-                    <div className="border-t border-gray-100 pt-2">
+                    <div className="border-t border-border/50 pt-2">
                       <button
                         onClick={async () => {
                           setIsUserMenuOpen(false)
                           await signOut()
                           window.location.href = '/'
                         }}
-                        className="flex items-center w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50"
+                        className="flex items-center w-full px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
                       >
                         <LogOut className="h-4 w-4 mr-3" />
                         <span>Sign Out</span>

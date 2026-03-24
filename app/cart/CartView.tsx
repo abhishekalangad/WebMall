@@ -16,9 +16,13 @@ import { useSiteConfig } from '@/contexts/SiteConfigContext'
 
 export function CartView() {
     const { settings } = useSiteConfig()
-    const { items, updateQuantity, removeItem, clearCart, totalItems, totalPrice } = useCart()
+    const { items, updateQuantity, removeItem, clearCart, totalItems, totalPrice, refreshCartData } = useCart()
     const { toast } = useToast()
     const [removingItem, setRemovingItem] = useState<string | null>(null)
+
+    React.useEffect(() => {
+        refreshCartData()
+    }, [refreshCartData])
 
     // Calculate free shipping progress and costs using site settings
     const freeShippingThreshold = settings?.freeShippingThreshold || 5000
@@ -56,20 +60,20 @@ export function CartView() {
 
     if (items.length === 0) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-yellow-50">
+            <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-yellow-50 dark:from-pink-950/20 dark:via-background dark:to-yellow-950/20">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="text-center"
                     >
-                        <div className="w-32 h-32 bg-gradient-to-br from-pink-100 to-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                            <ShoppingBag className="h-16 w-16 text-pink-500" />
+                        <div className="w-32 h-32 bg-gradient-to-br from-pink-100 to-yellow-100 dark:from-pink-900/40 dark:to-yellow-900/40 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                            <ShoppingBag className="h-16 w-16 text-pink-500 dark:text-pink-400" />
                         </div>
-                        <h1 className="text-4xl font-playfair font-bold text-gray-900 mb-4">
+                        <h1 className="text-4xl font-playfair font-bold text-foreground mb-4">
                             Your Cart is Empty
                         </h1>
-                        <p className="text-xl text-gray-600 mb-8">
+                        <p className="text-xl text-muted-foreground mb-8">
                             Discover beautiful accessories and fill your cart with joy! ✨
                         </p>
                         <Link href="/products">
@@ -85,14 +89,14 @@ export function CartView() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-yellow-50">
+        <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-yellow-50 dark:from-pink-950/20 dark:via-background dark:to-yellow-950/20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
                 <div className="mb-8">
                     {/* Back Button */}
                     <Link
                         href="/products"
-                        className="inline-flex items-center text-gray-600 hover:text-pink-600 transition-colors mb-6 group"
+                        className="inline-flex items-center text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors mb-6 group"
                     >
                         <ArrowLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
                         <span className="font-medium">Continue Shopping</span>
@@ -101,10 +105,10 @@ export function CartView() {
                     {/* Header Content */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
-                            <h1 className="text-3xl sm:text-4xl font-playfair font-bold text-gray-900 mb-2">
+                            <h1 className="text-3xl sm:text-4xl font-playfair font-bold text-foreground mb-2">
                                 Shopping Cart
                             </h1>
-                            <p className="text-gray-600 flex items-center gap-2">
+                            <p className="text-muted-foreground flex items-center gap-2">
                                 <ShoppingBag className="h-4 w-4" />
                                 {items.length} {items.length === 1 ? 'item' : 'items'} in your cart
                             </p>
@@ -121,7 +125,7 @@ export function CartView() {
                                         })
                                     }
                                 }}
-                                className="border-red-200 text-red-600 hover:bg-red-50"
+                                className="border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
                             >
                                 <Trash2 className="h-4 w-4 mr-2" />
                                 Clear Cart
@@ -135,16 +139,16 @@ export function CartView() {
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="mb-6 bg-white rounded-2xl p-4 shadow-sm border border-blue-100"
+                        className="mb-6 bg-card rounded-2xl p-4 shadow-sm border border-blue-100 dark:border-blue-900/40"
                     >
                         <div className="flex items-center justify-between mb-2">
-                            <p className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                <Truck className="h-4 w-4 text-blue-600" />
+                            <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                                <Truck className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                 Add LKR {amountToFreeShipping.toLocaleString()} more for FREE shipping!
                             </p>
-                            <span className="text-xs text-gray-500">{Math.round(shippingProgress)}%</span>
+                            <span className="text-xs text-muted-foreground">{Math.round(shippingProgress)}%</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="w-full bg-muted rounded-full h-2">
                             <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: `${shippingProgress}%` }}
@@ -170,14 +174,14 @@ export function CartView() {
                                     }}
                                     exit={{ opacity: 0, scale: 0.9, x: -100 }}
                                     transition={{ duration: 0.3 }}
-                                    className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-100"
+                                    className="bg-card rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-border"
                                 >
                                     <div className="p-4 sm:p-6">
                                         <div className="flex flex-col sm:flex-row gap-4">
                                             {/* Product Image */}
                                             <Link
                                                 href={`/products/${item.slug}`}
-                                                className="relative w-full sm:w-24 h-40 sm:h-24 md:w-28 md:h-28 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 group"
+                                                className="relative w-full sm:w-24 h-40 sm:h-24 md:w-28 md:h-28 bg-muted rounded-xl overflow-hidden flex-shrink-0 group"
                                             >
                                                 <Image
                                                     src={getValidImageUrl(item.image, '/placeholder.png')}
@@ -194,7 +198,7 @@ export function CartView() {
                                                 <div>
                                                     <Link
                                                         href={`/products/${item.slug}`}
-                                                        className="text-base sm:text-lg font-semibold text-gray-900 hover:text-pink-600 transition-colors block mb-1 line-clamp-2"
+                                                        className="text-base sm:text-lg font-semibold text-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors block mb-1 line-clamp-2"
                                                     >
                                                         {item.name}
                                                     </Link>
@@ -202,7 +206,7 @@ export function CartView() {
                                                     {/* Variant Details */}
                                                     {item.variantName && (
                                                         <div className="mb-2">
-                                                            <p className="text-xs sm:text-sm text-gray-600 font-medium mb-1 truncate">
+                                                            <p className="text-xs sm:text-sm text-muted-foreground font-medium mb-1 truncate">
                                                                 {item.variantName}
                                                             </p>
                                                             {item.variantAttributes && (
@@ -218,15 +222,15 @@ export function CartView() {
                                                     )}
 
                                                     <div className="flex flex-col">
-                                                        <p className="text-pink-600 font-bold text-base sm:text-lg">
+                                                        <p className="text-pink-600 dark:text-pink-400 font-bold text-base sm:text-lg">
                                                             LKR {item.price.toLocaleString()}
                                                         </p>
                                                         {item.originalPrice && item.originalPrice > item.price && (
                                                             <div className="flex items-center gap-2">
-                                                                <p className="text-xs text-gray-400 line-through">
+                                                                <p className="text-xs text-muted-foreground line-through">
                                                                     LKR {item.originalPrice.toLocaleString()}
                                                                 </p>
-                                                                <Badge className="text-[10px] px-1.5 py-0 h-4 bg-green-100 text-green-700 hover:bg-green-100 border-none">
+                                                                <Badge className="text-[10px] px-1.5 py-0 h-4 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 hover:bg-green-100 border-none">
                                                                     {Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% OFF
                                                                 </Badge>
                                                             </div>
@@ -237,36 +241,36 @@ export function CartView() {
                                                 {/* Controls - Mobile Optimized */}
                                                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-4">
                                                     {/* Quantity Controls */}
-                                                    <div className="flex items-center border-2 border-gray-200 rounded-lg overflow-hidden w-full sm:w-auto">
+                                                    <div className="flex items-center border-2 border-border rounded-lg overflow-hidden w-full sm:w-auto bg-card">
                                                         <button
                                                             onClick={() => updateQuantity(item.productId, item.quantity - 1, item.variantId)}
                                                             disabled={item.quantity <= 1}
-                                                            className="p-2 sm:p-2.5 hover:bg-pink-50 transition-colors flex-1 sm:flex-none disabled:opacity-40 disabled:cursor-not-allowed"
+                                                            className="p-2 sm:p-2.5 hover:bg-muted transition-colors flex-1 sm:flex-none disabled:opacity-40 disabled:cursor-not-allowed"
                                                         >
-                                                            <Minus className="h-4 w-4 text-gray-600 mx-auto" />
+                                                            <Minus className="h-4 w-4 text-foreground mx-auto" />
                                                         </button>
-                                                        <span className="px-4 py-2 font-semibold text-gray-900 min-w-[60px] text-center">
+                                                        <span className="px-4 py-2 font-semibold text-foreground min-w-[60px] text-center bg-transparent">
                                                             {item.quantity}
                                                         </span>
                                                         <button
                                                             onClick={() => updateQuantity(item.productId, item.quantity + 1, item.variantId)}
-                                                            className={`p-2 sm:p-2.5 hover:bg-pink-50 transition-colors flex-1 sm:flex-none ${item.maxStock !== undefined && item.quantity >= item.maxStock ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                                            className={`p-2 sm:p-2.5 hover:bg-muted transition-colors flex-1 sm:flex-none ${item.maxStock !== undefined && item.quantity >= item.maxStock ? 'opacity-40 cursor-not-allowed' : ''}`}
                                                         >
-                                                            <Plus className="h-4 w-4 text-gray-600 mx-auto" />
+                                                            <Plus className="h-4 w-4 text-foreground mx-auto" />
                                                         </button>
                                                     </div>
 
                                                     {/* Item Total & Remove */}
                                                     <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
                                                         <div className="text-left sm:text-right">
-                                                            <p className="text-xs text-gray-500">Total</p>
-                                                            <p className="text-lg sm:text-xl font-bold text-gray-900">
+                                                            <p className="text-xs text-muted-foreground">Total</p>
+                                                            <p className="text-lg sm:text-xl font-bold text-foreground">
                                                                 LKR {(item.price * item.quantity).toLocaleString()}
                                                             </p>
                                                         </div>
                                                         <button
                                                             onClick={() => handleRemoveItem(item.productId, item.variantId)}
-                                                            className="p-2.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                                                            className="p-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors flex-shrink-0"
                                                         >
                                                             <Trash2 className="h-5 w-5" />
                                                         </button>
@@ -282,32 +286,32 @@ export function CartView() {
 
                     {/* Order Summary */}
                     <div className="lg:col-span-1">
-                        <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-24 border border-gray-100">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                                <Gift className="h-6 w-6 text-pink-500" />
+                        <div className="bg-card rounded-2xl shadow-lg p-6 sticky top-24 border border-border">
+                            <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
+                                <Gift className="h-6 w-6 text-pink-500 dark:text-pink-400" />
                                 Order Summary
                             </h2>
 
 
 
                             {/* Price Breakdown */}
-                            <div className="space-y-3 mb-6 pb-6 border-b">
-                                <div className="flex justify-between text-gray-600">
+                            <div className="space-y-3 mb-6 pb-6 border-b border-border">
+                                <div className="flex justify-between text-muted-foreground">
                                     <span>Subtotal ({items.length} {items.length === 1 ? 'item' : 'items'})</span>
                                     <span className="font-medium">LKR {totalPrice.toLocaleString()}</span>
                                 </div>
 
 
 
-                                <div className="flex justify-between text-gray-600">
+                                <div className="flex justify-between text-muted-foreground">
                                     <span className="flex items-center gap-1">
                                         <Truck className="h-4 w-4" />
                                         Shipping
                                     </span>
                                     {isFreeShipping ? (
-                                        <span className="font-medium text-green-600">FREE</span>
+                                        <span className="font-medium text-green-600 dark:text-green-400">FREE</span>
                                     ) : (
-                                        <span className="font-medium text-gray-900">LKR {shippingCost.toLocaleString()}</span>
+                                        <span className="font-medium text-foreground">LKR {shippingCost.toLocaleString()}</span>
                                     )}
                                 </div>
                             </div>
@@ -315,12 +319,12 @@ export function CartView() {
                             {/* Total */}
                             <div className="mb-6">
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="text-lg font-semibold text-gray-900">Total</span>
-                                    <span className="text-2xl font-bold text-gray-900">
+                                    <span className="text-lg font-semibold text-foreground">Total</span>
+                                    <span className="text-2xl font-bold text-foreground">
                                         LKR {finalTotal.toLocaleString()}
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-1 text-xs text-gray-500">
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                     <Truck className="h-3 w-3" />
                                     Est. delivery by {formattedDate}
                                 </div>
@@ -334,30 +338,30 @@ export function CartView() {
                                         <ChevronRight className="ml-2 h-5 w-5" />
                                     </Button>
                                 </Link>
-                                <Link href="/products">
-                                    <Button variant="outline" className="w-full py-3">
+                                <Link href="/products" className="block w-full">
+                                    <Button variant="outline" className="w-full py-3 dark:border-border dark:text-foreground">
                                         Continue Shopping
                                     </Button>
                                 </Link>
                             </div>
 
                             {/* Trust Badges */}
-                            <div className="mt-6 pt-6 border-t space-y-3">
-                                <div className="flex items-center gap-3 text-sm text-gray-600">
-                                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                                        <Truck className="h-4 w-4 text-green-600" />
+                            <div className="mt-6 pt-6 border-t border-border space-y-3">
+                                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                    <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                                        <Truck className="h-4 w-4 text-green-600 dark:text-green-400" />
                                     </div>
                                     <div>
-                                        <p className="font-medium text-gray-900">Free Shipping</p>
+                                        <p className="font-medium text-foreground">Free Shipping</p>
                                         <p className="text-xs">On orders over LKR {freeShippingThreshold.toLocaleString()}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3 text-sm text-gray-600">
-                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                                        <Gift className="h-4 w-4 text-blue-600" />
+                                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                                        <Gift className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                     </div>
                                     <div>
-                                        <p className="font-medium text-gray-900">7-Day Returns</p>
+                                        <p className="font-medium text-foreground">7-Day Returns</p>
                                         <p className="text-xs">Money-back guarantee</p>
                                     </div>
                                 </div>

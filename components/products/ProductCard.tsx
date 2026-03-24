@@ -107,10 +107,10 @@ export function ProductCard({
     return (
       <Link
         href={`/products/${product.slug}`}
-        className="group relative bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-row h-48 sm:h-56 cursor-pointer"
+        className="group relative bg-card rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-row h-48 sm:h-56 cursor-pointer"
       >
         {/* Product Image - Fixed Width */}
-        <div className="relative w-1/3 sm:w-48 md:w-56 overflow-hidden bg-gray-100 flex-shrink-0">
+        <div className="relative w-1/3 sm:w-48 md:w-56 overflow-hidden bg-muted flex-shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={primaryImage}
@@ -122,7 +122,7 @@ export function ProductCard({
           {/* Category Badge */}
           {product.category && (
             <div className="absolute top-2 left-2">
-              <span className="inline-block px-2 py-0.5 bg-white/90 text-[10px] font-medium text-gray-700 rounded-full border border-gray-100 shadow-sm">
+              <span className="inline-block px-2 py-0.5 bg-card/90 text-[10px] font-medium text-foreground/80 rounded-full border border-border shadow-sm">
                 {product.category.name}
               </span>
             </div>
@@ -133,7 +133,7 @@ export function ProductCard({
         <div className="flex-1 p-4 flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-start">
-              <h3 className="font-semibold text-gray-900 mb-1 hover:text-pink-600 transition-colors text-lg">
+              <h3 className="font-semibold text-foreground mb-1 hover:text-pink-600 transition-colors text-lg">
                 {product.name}
               </h3>
               {showWishlist && (
@@ -141,7 +141,7 @@ export function ProductCard({
                   onClick={handleWishlistToggle}
                   className={`p-1.5 rounded-full transition-all duration-200 z-10 ${isWishlisted
                     ? 'bg-pink-50 text-pink-500'
-                    : 'bg-gray-50 text-gray-400 hover:text-pink-500 hover:bg-pink-50'
+                    : 'bg-muted/50 text-muted-foreground/80 hover:text-pink-500 hover:bg-pink-50'
                     }`}
                 >
                   <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
@@ -159,7 +159,7 @@ export function ProductCard({
               </div>
             )}
 
-            <p className="text-gray-500 text-sm line-clamp-2 mb-3 hidden sm:block">
+            <p className="text-muted-foreground text-sm line-clamp-2 mb-3 hidden sm:block">
               {product.description || 'No description available.'}
             </p>
           </div>
@@ -167,20 +167,20 @@ export function ProductCard({
           <div className="flex items-end justify-between">
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-sm text-gray-500 font-medium">{product.currency}</span>
+                <span className="text-sm text-muted-foreground font-medium">{product.currency}</span>
                 {hasPriceRange && !hasDiscount && <span className="text-xs text-pink-600 font-medium whitespace-nowrap">From</span>}
-                <span className="text-xl font-bold text-gray-900 leading-tight">
+                <span className="text-xl font-bold text-foreground leading-tight">
                   {minPrice.toLocaleString()}
                 </span>
                 {minPriceSpec && (
-                  <span className="text-[10px] text-gray-400 bg-gray-50 border border-gray-100 px-1 rounded uppercase font-bold tracking-tighter">
+                  <span className="text-[10px] text-muted-foreground/80 bg-muted/50 border border-border px-1 rounded uppercase font-bold tracking-tighter">
                     {minPriceSpec}
                   </span>
                 )}
               </div>
               {hasDiscount && (
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-sm text-gray-400 line-through">
+                  <span className="text-sm text-muted-foreground/80 line-through">
                     {product.currency} {maxPrice.toLocaleString()}
                   </span>
                   <span className="text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
@@ -195,7 +195,7 @@ export function ProductCard({
                 {isOutOfStock ? (
                   <button
                     onClick={handleWishlistToggle}
-                    className={`flex-1 px-4 sm:px-6 py-2 text-sm rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center font-semibold border-2 ${isWishlisted ? 'text-red-500 border-red-300 bg-red-50' : 'text-gray-700 border-gray-300 hover:border-red-300 hover:bg-red-50 hover:text-red-500'}`}
+                    className={`flex-1 px-4 sm:px-6 py-2 text-sm rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center font-semibold border-2 ${isWishlisted ? 'text-red-500 border-red-300 bg-red-50' : 'text-foreground/80 border-border/60 hover:border-red-300 hover:bg-red-50 hover:text-red-500'}`}
                   >
                     <Heart className={`mr-2 h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
                     {isWishlisted ? 'In Wishlist' : 'Out of Stock - Add to Wishlist'}
@@ -240,7 +240,7 @@ export function ProductCard({
                         >
                           <Minus className="h-4 w-4" />
                         </button>
-                        <span className="w-8 text-center font-bold text-gray-900 text-sm">
+                        <span className="w-8 text-center font-bold text-foreground text-sm">
                           {quantity}
                         </span>
                         <button
@@ -253,7 +253,7 @@ export function ProductCard({
                     ) : (
                       <button
                         onClick={handleAddClick}
-                        className="p-2 bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 rounded-lg shadow-sm transition-all"
+                        className="p-2 bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-foreground rounded-lg shadow-sm transition-all"
                         title="Add to Cart"
                       >
                         <ShoppingBag className="h-5 w-5" />
@@ -284,10 +284,10 @@ export function ProductCard({
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="block group relative bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer"
+      className="block group relative bg-card rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer"
     >
       {/* Product Image */}
-      <div className="relative aspect-square overflow-hidden bg-gray-100">
+      <div className="relative aspect-square overflow-hidden bg-muted">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={primaryImage}
@@ -303,7 +303,7 @@ export function ProductCard({
             onClick={handleWishlistToggle}
             className={`absolute top-3 right-3 p-2 rounded-full transition-all duration-200 z-10 ${isWishlisted
               ? 'bg-pink-500 text-white opacity-100'
-              : 'bg-white/80 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 hover:bg-white'
+              : 'bg-card/80 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 hover:bg-card'
               }`}
           >
             <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
@@ -313,7 +313,7 @@ export function ProductCard({
         {/* Category Badge */}
         {product.category && (
           <div className="absolute top-3 left-3">
-            <span className="inline-block px-2 py-1 bg-white/90 text-xs font-medium text-gray-700 rounded-full border border-gray-100 shadow-sm">
+            <span className="inline-block px-2 py-1 bg-card/90 text-xs font-medium text-foreground/80 rounded-full border border-border shadow-sm">
               {product.category.name}
             </span>
           </div>
@@ -322,7 +322,7 @@ export function ProductCard({
 
       {/* Product Info */}
       <div className="p-3 sm:p-4">
-        <h3 className="font-semibold text-gray-900 mb-2 hover:text-pink-600 transition-colors line-clamp-2 min-h-[2.5rem] sm:min-h-[3rem] text-sm sm:text-base">
+        <h3 className="font-semibold text-foreground mb-2 hover:text-pink-600 transition-colors line-clamp-2 min-h-[2.5rem] sm:min-h-[3rem] text-sm sm:text-base">
           {product.name}
         </h3>
 
@@ -349,20 +349,20 @@ export function ProductCard({
         <div className="flex items-center justify-between mb-3">
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-sm text-gray-500 font-medium">{product.currency}</span>
+              <span className="text-sm text-muted-foreground font-medium">{product.currency}</span>
               {hasPriceRange && !hasDiscount && <span className="text-xs text-pink-600 font-medium">From</span>}
-              <span className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
+              <span className="text-lg sm:text-xl font-bold text-foreground leading-tight">
                 {minPrice.toLocaleString()}
               </span>
               {minPriceSpec && (
-                <span className="text-[10px] text-gray-400 bg-gray-50 border border-gray-100 px-1 rounded uppercase font-bold tracking-tighter">
+                <span className="text-[10px] text-muted-foreground/80 bg-muted/50 border border-border px-1 rounded uppercase font-bold tracking-tighter">
                   {minPriceSpec}
                 </span>
               )}
             </div>
             {hasDiscount && (
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-xs text-gray-400 line-through">
+                <span className="text-xs text-muted-foreground/80 line-through">
                   {product.currency} {maxPrice.toLocaleString()}
                 </span>
                 <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1 rounded">
@@ -379,7 +379,7 @@ export function ProductCard({
             {isOutOfStock ? (
               <button
                 onClick={handleWishlistToggle}
-                className={`flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center font-semibold border-2 ${isWishlisted ? 'text-red-500 border-red-300 bg-red-50' : 'text-gray-700 border-gray-300 hover:border-red-300 hover:bg-red-50 hover:text-red-500'}`}
+                className={`flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center font-semibold border-2 ${isWishlisted ? 'text-red-500 border-red-300 bg-red-50' : 'text-foreground/80 border-border/60 hover:border-red-300 hover:bg-red-50 hover:text-red-500'}`}
               >
                 <Heart className={`mr-1.5 h-3.5 w-3.5 ${isWishlisted ? 'fill-current' : ''}`} />
                 {isWishlisted ? 'In Wishlist' : 'Add to Wishlist'}
@@ -424,7 +424,7 @@ export function ProductCard({
                     >
                       <Minus className="h-3 w-3" />
                     </button>
-                    <span className="w-6 text-center font-bold text-gray-900 text-xs">
+                    <span className="w-6 text-center font-bold text-foreground text-xs">
                       {quantity}
                     </span>
                     <button
@@ -437,7 +437,7 @@ export function ProductCard({
                 ) : (
                   <button
                     onClick={handleAddClick}
-                    className="p-2 bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 rounded-lg shadow-sm transition-all"
+                    className="p-2 bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-foreground rounded-lg shadow-sm transition-all"
                     title="Add to Cart"
                   >
                     <ShoppingBag className="h-4 w-4" />

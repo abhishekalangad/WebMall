@@ -70,11 +70,11 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
 
     return (
         <div className="min-h-screen">
-            <section className="relative min-h-[600px] lg:h-[800px] bg-[#fffcf9] overflow-hidden flex items-center">
+            <section className="relative min-h-[600px] lg:h-[800px] bg-[#fffcf9] dark:bg-background overflow-hidden flex items-center">
                 {/* Decorative Background Elements */}
-                <div className="absolute top-0 right-0 w-1/2 h-full bg-[#fdf2f8]/50 skew-x-[-12deg] translate-x-32 z-0" />
-                <div className="absolute top-[10%] left-[5%] w-64 h-64 bg-pink-100/40 rounded-full blur-3xl z-0 animate-pulse" />
-                <div className="absolute bottom-[10%] right-[15%] w-96 h-96 bg-yellow-50/60 rounded-full blur-3xl z-0" />
+                <div className="absolute top-0 right-0 w-1/2 h-full bg-[#fdf2f8]/50 dark:bg-pink-950/20 skew-x-[-12deg] translate-x-32 z-0" />
+                <div className="absolute top-[10%] left-[5%] w-64 h-64 bg-pink-100/40 dark:bg-pink-900/20 rounded-full blur-3xl z-0 animate-pulse" />
+                <div className="absolute bottom-[10%] right-[15%] w-96 h-96 bg-yellow-50/60 dark:bg-yellow-900/10 rounded-full blur-3xl z-0" />
 
                 {banners.length > 0 ? (
                     <div className="relative w-full max-w-7xl mx-auto px-6 lg:px-12 z-10">
@@ -91,12 +91,12 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                         exit={{ y: -20, opacity: 0 }}
                                         transition={{ duration: 0.6 }}
                                     >
-                                        <span className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 text-xs font-bold tracking-[0.2em] uppercase text-pink-500 bg-pink-50 rounded-full">
+                                        <span className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 text-xs font-bold tracking-[0.2em] uppercase text-pink-500 bg-pink-50 dark:bg-pink-950/50 rounded-full">
                                             <Sparkles className="w-3.5 h-3.5" />
                                             New Arrival
                                         </span>
 
-                                        <h1 className="text-5xl md:text-7xl font-playfair font-bold text-gray-900 mb-8 leading-[1.1]">
+                                        <h1 className="text-5xl md:text-7xl font-playfair font-bold text-gray-900 dark:text-white mb-8 leading-[1.1]">
                                             {banners[currentSlide].title.split(' ').map((word, i) => (
                                                 <motion.span
                                                     key={i}
@@ -114,7 +114,7 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 0.7 }}
                                             transition={{ delay: 0.5 }}
-                                            className="text-lg md:text-xl text-gray-600 mb-10 max-w-lg mx-auto lg:mx-0 leading-relaxed"
+                                            className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-10 max-w-lg mx-auto lg:mx-0 leading-relaxed"
                                         >
                                             {banners[currentSlide].subtitle}
                                         </motion.p>
@@ -126,13 +126,13 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                             className="flex flex-col sm:flex-row items-center gap-6 justify-center lg:justify-start"
                                         >
                                             <Link href={banners[currentSlide].ctaLink || '/products'}>
-                                                <Button size="lg" className="h-14 px-10 rounded-full bg-gray-900 text-white hover:bg-black hover:scale-105 transition-all duration-300 font-bold shadow-xl">
+                                                <Button size="lg" className="h-14 px-10 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-black dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 font-bold shadow-xl">
                                                     {banners[currentSlide].ctaText || 'Shop Now'}
                                                     <ArrowRight className="ml-2 h-5 w-5" />
                                                 </Button>
                                             </Link>
 
-                                            <Link href="/products" className="text-gray-900 font-semibold border-b-2 border-pink-200 hover:border-pink-400 transition-all py-1">
+                                            <Link href="/products" className="text-gray-900 dark:text-white font-semibold border-b-2 border-pink-200 dark:border-pink-800 hover:border-pink-400 dark:hover:border-pink-600 transition-all py-1">
                                                 View Collection
                                             </Link>
                                         </motion.div>
@@ -162,9 +162,9 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                             <motion.div
                                                 animate={{ y: [0, -10, 0] }}
                                                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                                                className="absolute top-8 right-8 w-24 h-24 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-center p-2 shadow-lg border border-white/20"
+                                                className="absolute top-8 right-8 w-24 h-24 bg-white/90 dark:bg-black/80 backdrop-blur-md rounded-full flex items-center justify-center text-center p-2 shadow-lg border border-white/20 dark:border-white/10"
                                             >
-                                                <span className="text-[10px] font-bold text-gray-900 leading-tight uppercase tracking-tighter">
+                                                <span className="text-[10px] font-bold text-gray-900 dark:text-gray-100 leading-tight uppercase tracking-tighter">
                                                     Authentic<br />Sri Lankan<br />Craft
                                                 </span>
                                             </motion.div>
@@ -177,15 +177,15 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                             initial={{ x: 50, opacity: 0 }}
                                             animate={{ x: 0, opacity: 1 }}
                                             transition={{ delay: 1 }}
-                                            className="absolute -bottom-6 -left-6 bg-white p-4 rounded-2xl shadow-xl hidden md:block"
+                                            className="absolute -bottom-6 -left-6 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-xl hidden md:block border border-transparent dark:border-gray-700"
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center text-pink-500">
+                                                <div className="w-10 h-10 bg-pink-100 dark:bg-pink-900/40 rounded-full flex items-center justify-center text-pink-500">
                                                     <Star className="w-5 h-5 fill-current" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs font-bold text-gray-900">Top Rated</p>
-                                                    <p className="text-[10px] text-gray-500">Selected by customers</p>
+                                                    <p className="text-xs font-bold text-gray-900 dark:text-white">Top Rated</p>
+                                                    <p className="text-[10px] text-gray-500 dark:text-gray-400">Selected by customers</p>
                                                 </div>
                                             </div>
                                         </motion.div>
@@ -202,13 +202,13 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                         <button
                                             key={idx}
                                             onClick={() => setCurrentSlide(idx)}
-                                            className={`h-1 rounded-full transition-all duration-500 ${idx === currentSlide ? 'w-12 bg-gray-900' : 'w-4 bg-gray-200'}`}
+                                            className={`h-1 rounded-full transition-all duration-500 ${idx === currentSlide ? 'w-12 bg-gray-900 dark:bg-white' : 'w-4 bg-gray-200 dark:bg-gray-700'}`}
                                         />
                                     ))}
                                 </div>
                                 <div className="hidden lg:flex gap-2 ml-4">
-                                    <button onClick={prevSlide} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><ChevronLeft className="w-5 h-5" /></button>
-                                    <button onClick={nextSlide} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><ChevronRight className="w-5 h-5" /></button>
+                                    <button onClick={prevSlide} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-foreground"><ChevronLeft className="w-5 h-5" /></button>
+                                    <button onClick={nextSlide} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-foreground"><ChevronRight className="w-5 h-5" /></button>
                                 </div>
                             </div>
                         )}
@@ -218,47 +218,47 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
 
 
             {/* Features Section */}
-            <section className="py-12 md:py-20 bg-white">
+            <section className="py-12 md:py-20 bg-background">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="text-center p-6">
                             <div className="w-16 h-16 bg-gradient-to-br from-pink-300 to-yellow-300 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                <Sparkles className="h-8 w-8 text-white" />
+                                <Sparkles className="h-8 w-8 text-black" />
                             </div>
-                            <h3 className="text-xl font-semibold mb-2">Premium Quality</h3>
-                            <p className="text-gray-600">Carefully selected accessories made with the finest materials and craftsmanship.</p>
+                            <h3 className="text-xl font-semibold text-foreground mb-2">Premium Quality</h3>
+                            <p className="text-muted-foreground">Carefully selected accessories made with the finest materials and craftsmanship.</p>
                         </div>
                         <div className="text-center p-6">
                             <div className="w-16 h-16 bg-gradient-to-br from-green-300 to-blue-300 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                <Truck className="h-8 w-8 text-white" />
+                                <Truck className="h-8 w-8 text-black" />
                             </div>
-                            <h3 className="text-xl font-semibold mb-2">Fast Delivery</h3>
-                            <p className="text-gray-600">Quick and reliable delivery across Sri Lanka with careful packaging.</p>
+                            <h3 className="text-xl font-semibold text-foreground mb-2">Fast Delivery</h3>
+                            <p className="text-muted-foreground">Quick and reliable delivery across Sri Lanka with careful packaging.</p>
                         </div>
                         <div className="text-center p-6">
                             <div className="w-16 h-16 bg-gradient-to-br from-purple-300 to-pink-300 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                <Shield className="h-8 w-8 text-white" />
+                                <Shield className="h-8 w-8 text-black" />
                             </div>
-                            <h3 className="text-xl font-semibold mb-2">Secure Shopping</h3>
-                            <p className="text-gray-600">Safe and secure payment options with buyer protection guarantee.</p>
+                            <h3 className="text-xl font-semibold text-foreground mb-2">Secure Shopping</h3>
+                            <p className="text-muted-foreground">Safe and secure payment options with buyer protection guarantee.</p>
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* Categories Section */}
-            <section className="py-12 md:py-20 bg-gray-50">
+            <section className="py-12 md:py-20 bg-muted/30">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
-                        <h2 className="text-4xl font-playfair font-bold text-gray-900 mb-4">Shop by Category</h2>
-                        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                        <h2 className="text-4xl font-playfair font-bold text-foreground mb-4">Shop by Category</h2>
+                        <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
                             Explore our diverse collection of fashion accessories, each category carefully curated for style and quality.
                         </p>
                     </div>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                         {initialCategories.map((category) => (
                             <Link key={category.id} href={`/products?category=${category.slug}`} className="group">
-                                <div className="relative aspect-square rounded-2xl overflow-hidden bg-white shadow-sm group-hover:shadow-lg transition-all duration-300">
+                                <div className="relative aspect-square rounded-2xl overflow-hidden bg-card shadow-sm border border-border group-hover:shadow-lg transition-all duration-300">
                                     {category.image ? (
                                         <Image
                                             src={category.image}
@@ -285,11 +285,11 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
             </section>
 
             {/* Featured Products Section */}
-            <section className="py-12 md:py-20 bg-white">
+            <section className="py-12 md:py-20 bg-background">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
-                        <h2 className="text-4xl font-playfair font-bold text-gray-900 mb-4">Featured Products</h2>
-                        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                        <h2 className="text-4xl font-playfair font-bold text-foreground mb-4">Featured Products</h2>
+                        <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
                             Discover our most popular and trending accessories, loved by customers across Sri Lanka.
                         </p>
                     </div>
@@ -307,7 +307,7 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                     </div>
                     <div className="text-center">
                         <Link href="/products">
-                            <Button size="lg" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                            <Button size="lg" variant="outline" className="border-border text-foreground hover:bg-muted">
                                 View All Products
                                 <ArrowRight className="ml-2 h-5 w-5" />
                             </Button>

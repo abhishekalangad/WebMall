@@ -383,6 +383,10 @@ export async function POST(request: NextRequest) {
       }
 
       return order
+    }, 
+    {
+      maxWait: 10000, // 10s wait time
+      timeout: 30000  // 30s timeout for bulk orders
     })
 
     return NextResponse.json(created, { status: 201 })

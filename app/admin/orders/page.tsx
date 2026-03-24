@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSiteConfig } from '@/contexts/SiteConfigContext'
 import { useRouter } from 'next/navigation'
@@ -9,7 +9,8 @@ import { Card } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Package2, Eye, Loader2, X, Download, FileSpreadsheet } from 'lucide-react'
+import { Package2, Eye, Loader2, X, Download, FileSpreadsheet, KanbanSquare, LayoutGrid, List } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface OrderItem {
   id: string
@@ -121,24 +122,26 @@ async function exportSingleOrderToExcel(order: Order, shippingBaseRate: number) 
 
   // Items table
   addSection('ORDER ITEMS')
-  const headerRow = ws.addRow(['Product', 'Variant', 'Quantity', 'Unit Price (LKR)', 'Total (LKR)'])
+  const headerRow = ws.addRow(['S.No', 'Product', 'Variant', 'Quantity', 'Unit Price (LKR)', 'Total (LKR)'])
   headerRow.font = { bold: true }
   headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E7FF' } }
   headerRow.alignment = { horizontal: 'center' }
 
   const subtotal = order.items.reduce((acc, i) => acc + Number(i.total), 0)
 
-  order.items.forEach(item => {
+  order.items.forEach((item, index) => {
     const row = ws.addRow([
+      index + 1,
       item.product.name,
       item.variantName || item.variant?.name || '—',
       item.quantity,
       Number(item.price),
       Number(item.total),
     ])
-    row.getCell(3).alignment = { horizontal: 'center' }
-    row.getCell(4).numFmt = '#,##0.00'
+    row.getCell(1).alignment = { horizontal: 'center' }
+    row.getCell(4).alignment = { horizontal: 'center' }
     row.getCell(5).numFmt = '#,##0.00'
+    row.getCell(6).numFmt = '#,##0.00'
   })
 
   ws.addRow([])
@@ -146,12 +149,16 @@ async function exportSingleOrderToExcel(order: Order, shippingBaseRate: number) 
   // Totals
   const discount = Number(order.couponUsage?.discountAmount || 0)
   const shipping = Math.max(0, Number(order.totalAmount) - (subtotal - discount))
+  const totalQty = order.items.reduce((acc, i) => acc + i.quantity, 0)
 
   const addTotal = (label: string, value: number, bold = false) => {
-    const row = ws.addRow(['', '', '', label, value])
-    row.getCell(4).font = { bold }
+    const row = ws.addRow(['', '', '', '', label, value])
     row.getCell(5).font = { bold }
-    row.getCell(5).numFmt = '#,##0.00'
+    row.getCell(6).font = { bold: bold, color: bold ? { argb: 'FFFF0000' } : undefined } // Highlight total value differently? Actually user said "just highlight it its value also". Let's use blue/red or just bold
+    if (bold) {
+        row.getCell(6).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } } // Highlight yellow background
+    }
+    row.getCell(6).numFmt = '#,##0.00'
   }
 
   addTotal('Subtotal (LKR)', subtotal)
@@ -159,16 +166,31 @@ async function exportSingleOrderToExcel(order: Order, shippingBaseRate: number) 
     addTotal(`Discount (${order.couponUsage?.coupon.code || 'COUPON'}) (LKR)`, -discount)
   }
   addTotal(shipping === 0 ? 'Shipping (FREE)' : 'Shipping (LKR)', shipping)
-  addTotal('TOTAL (LKR)', Number(order.totalAmount), true)
+
+  // Append a dedicated Total Qty row right under the items, but exactly alongside the final total row
+  const finalRow = ws.addRow(['', '', 'Total Qty:', totalQty, 'TOTAL (LKR)', Number(order.totalAmount)])
+  
+  // Format the Qty block
+  finalRow.getCell(3).font = { bold: true }
+  finalRow.getCell(3).alignment = { horizontal: 'right' }
+  finalRow.getCell(4).font = { bold: true, color: { argb: 'FF1D4ED8' } } // Blue text
+  finalRow.getCell(4).alignment = { horizontal: 'center' }
+  finalRow.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E7FF' } } // Light blue BG
+  
+  // Format the Money block
+  finalRow.getCell(5).font = { bold: true }
+  finalRow.getCell(6).font = { bold: true, color: { argb: 'FFB91C1C' } } // Red text
+  finalRow.getCell(6).numFmt = '#,##0.00'
+  finalRow.getCell(6).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } } // Light red BG
 
   // Column widths
   ws.columns = [
-    { width: 35 },
-    { width: 20 },
-    { width: 10 },
-    { width: 22 },
-    { width: 18 },
-    { width: 10 },
+    { width: 8 },  // S.No
+    { width: 35 }, // Product
+    { width: 20 }, // Variant
+    { width: 12 }, // Qty
+    { width: 22 }, // Unit price
+    { width: 22 }, // Total
   ]
 
   const buffer = await wb.xlsx.writeBuffer()
@@ -286,6 +308,41 @@ export default function AdminOrdersPage() {
   const loadingMoreRef = useRef(false)
 
   const [searchQuery, setSearchQuery] = useState('')
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list')
+  const lastOrderIdRef = useRef<string | null>(null)
+  const [draggedOrderId, setDraggedOrderId] = useState<string | null>(null)
+
+  // Real-time Order Engine
+  useEffect(() => {
+    if (!user || user.role !== 'admin') return;
+    
+    const interval = setInterval(async () => {
+      try {
+        const token = await accessToken()
+        const headers = (token ? { 'Authorization': `Bearer ${token}` } : {}) as HeadersInit
+        const res = await fetch(`/api/orders?page=1&limit=1`, { headers })
+        const data = await res.json()
+        if (res.ok && data.orders?.length > 0) {
+          const newestOrderId = data.orders[0].id
+          if (lastOrderIdRef.current && lastOrderIdRef.current !== newestOrderId) {
+            toast.success("🚨 New Order Arrived!", {
+               description: `Order #${data.orders[0].orderNumber} was just placed.`,
+               duration: 8000,
+            })
+            // Play a soft ding sound if possible
+            try { new Audio('/ding.mp3').play().catch(() => {}) } catch(e) {}
+            // Refetch to update the board automatically!
+            fetchOrders()
+          }
+          lastOrderIdRef.current = newestOrderId
+        }
+      } catch (error) {
+        // silent fail on polling
+      }
+    }, 10000)
+
+    return () => clearInterval(interval)
+  }, [user, accessToken])
 
   const filteredOrders = orders.filter(order => {
     const q = searchQuery.toLowerCase()
@@ -413,8 +470,42 @@ export default function AdminOrdersPage() {
       case 'shipped': return 'bg-purple-100 text-purple-800'
       case 'delivered': return 'bg-green-100 text-green-800'
       case 'cancelled': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
+      default: return 'bg-muted text-foreground/90'
     }
+  }
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggedOrderId(id)
+    e.dataTransfer.effectAllowed = 'move'
+    // Optional: set a drag image or transparent ghost
+    if (e.target instanceof HTMLElement) {
+      e.target.style.opacity = '0.4'
+    }
+  }
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    setDraggedOrderId(null)
+    if (e.target instanceof HTMLElement) {
+      e.target.style.opacity = '1'
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault() // Necessary to allow dropping
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = async (e: React.DragEvent, newStatus: string) => {
+    e.preventDefault()
+    if (!draggedOrderId) return
+    
+    // Optimistic UI Update for Kanban dragging
+    const orderToMove = orders.find(o => o.id === draggedOrderId)
+    if (orderToMove && orderToMove.status !== newStatus) {
+        setOrders(prev => prev.map(o => o.id === draggedOrderId ? { ...o, status: newStatus } : o))
+        await handleStatusUpdate(draggedOrderId, newStatus)
+    }
+    setDraggedOrderId(null)
   }
 
   const handleExportAll = async () => {
@@ -460,17 +551,35 @@ export default function AdminOrdersPage() {
           {/* Search */}
           <div className="relative flex-1 md:w-72">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+              <svg className="h-5 w-5 text-muted-foreground/80" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
               </svg>
             </div>
             <input
               type="text"
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-pink-500 focus:border-pink-500 sm:text-sm"
+              className="block w-full pl-10 pr-3 py-2 border border-border rounded-md leading-5 bg-card placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-pink-500 focus:border-pink-500 sm:text-sm"
               placeholder="Search orders, customers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+          </div>
+
+          {/* View Toggles */}
+          <div className="flex items-center bg-muted rounded-lg p-1 shrink-0">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground/80'}`}
+              title="List View"
+            >
+              <List className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('kanban')}
+              className={`p-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'kanban' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground/80'}`}
+              title="Kanban Board View"
+            >
+              <KanbanSquare className="h-4 w-4" />
+            </button>
           </div>
 
           {/* Export All Button */}
@@ -487,8 +596,10 @@ export default function AdminOrdersPage() {
         </div>
       </div>
 
-      {/* Desktop Table */}
-      <Card className="hidden md:block">
+      {viewMode === 'list' ? (
+        <div className="w-full space-y-6">
+          {/* Desktop Table */}
+          <Card className="hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -507,9 +618,9 @@ export default function AdminOrdersPage() {
                 <TableCell>
                   <div>
                     <div className="font-medium">{order.user?.name || 'N/A'}</div>
-                    <div className="text-sm text-gray-500">{order.user?.email || 'No email'}</div>
+                    <div className="text-sm text-muted-foreground">{order.user?.email || 'No email'}</div>
                     {order.user?.phone && (
-                      <div className="text-sm text-gray-500">{order.user?.phone}</div>
+                      <div className="text-sm text-muted-foreground">{order.user?.phone}</div>
                     )}
                   </div>
                 </TableCell>
@@ -557,7 +668,7 @@ export default function AdminOrdersPage() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="font-semibold">{order.orderNumber}</div>
-                <div className="text-sm text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</div>
+                <div className="text-sm text-muted-foreground">{new Date(order.createdAt).toLocaleDateString()}</div>
               </div>
               <Badge className={getStatusBadgeColor(order.status)}>
                 {order.status}
@@ -567,7 +678,7 @@ export default function AdminOrdersPage() {
             <div className="text-sm">
               <div className="font-medium mb-1">Customer</div>
               <div>{order.user?.name || 'N/A'}</div>
-              <div className="text-gray-500">{order.user?.email || 'No email'}</div>
+              <div className="text-muted-foreground">{order.user?.email || 'No email'}</div>
             </div>
 
             <div className="flex items-center justify-between font-medium">
@@ -603,16 +714,66 @@ export default function AdminOrdersPage() {
       <div ref={sentinelRef} className="py-2" />
 
       {loadingMore && (
-        <div className="flex items-center justify-center py-6 gap-3 text-gray-500">
+        <div className="flex items-center justify-center py-6 gap-3 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin text-pink-500" />
           <span className="text-sm font-medium">Loading more orders…</span>
         </div>
       )}
 
       {!hasMore && orders.length > 0 && !loading && (
-        <p className="text-center text-xs text-gray-400 py-4">
+        <p className="text-center text-xs text-muted-foreground/80 py-4">
           All {orders.length} orders loaded
         </p>
+      )}
+        </div>
+      ) : (
+        <div className="flex gap-4 overflow-x-auto pb-6 min-h-[calc(100vh-250px)] w-full">
+           {['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'].map((status) => (
+               <div
+                   key={status}
+                   onDragOver={handleDragOver}
+                   onDrop={(e) => handleDrop(e, status)}
+                   className="flex shrink-0 flex-col w-[320px] bg-muted/50 rounded-xl border border-border shadow-inner"
+               >
+                  <div className="p-4 border-b border-border flex items-center justify-between bg-card rounded-t-xl sticky top-0 z-10">
+                     <h3 className="font-bold uppercase text-xs tracking-wider text-foreground/80">{status}</h3>
+                     <Badge className={getStatusBadgeColor(status)}>
+                        {filteredOrders.filter(o => o.status === status).length}
+                     </Badge>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-[150px]">
+                     {filteredOrders.filter(o => o.status === status).map(order => (
+                         <div
+                            key={order.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, order.id)}
+                            onDragEnd={handleDragEnd}
+                            onClick={() => setSelectedOrder(order)}
+                            className={`bg-card p-4 rounded-lg shadow-sm border-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-all active:scale-95 ${draggedOrderId === order.id ? 'border-pink-500 opacity-50 scale-95' : 'border-transparent hover:border-pink-200'}`}
+                         >
+                            <div className="flex justify-between items-start mb-2">
+                               <span className="font-bold text-foreground text-sm">{order.orderNumber}</span>
+                               <span className="text-[10px] text-muted-foreground/80 font-bold uppercase tracking-wide">{new Date(order.createdAt).toLocaleDateString()}</span>
+                            </div>
+                            <div className="text-sm text-muted-foreground mb-3 truncate leading-snug">
+                               <span className="font-semibold text-foreground/90">{order.user?.name || 'N/A'}</span><br/>
+                               {order.user?.email}
+                            </div>
+                            <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+                               <span className="text-xs font-semibold text-muted-foreground/80 bg-muted px-2 py-1 rounded-md">{order.items.reduce((acc, i) => acc + i.quantity, 0)} items</span>
+                               <span className="font-bold text-foreground">{order.currency} {Number(order.totalAmount).toLocaleString()}</span>
+                            </div>
+                         </div>
+                     ))}
+                     {filteredOrders.filter(o => o.status === status).length === 0 && (
+                        <div className="h-full flex items-center justify-center p-8 text-center border-2 border-dashed border-border rounded-lg">
+                           <span className="text-xs text-muted-foreground/80 font-semibold italic">Drop orders here</span>
+                        </div>
+                     )}
+                  </div>
+               </div>
+           ))}
+        </div>
       )}
 
       {/* ── Order Detail Modal ── */}
@@ -621,12 +782,12 @@ export default function AdminOrdersPage() {
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) setSelectedOrder(null) }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Order Details</h2>
-                <p className="text-sm text-gray-500 mt-0.5">{selectedOrder.orderNumber}</p>
+                <h2 className="text-xl font-bold text-foreground">Order Details</h2>
+                <p className="text-sm text-muted-foreground mt-0.5">{selectedOrder.orderNumber}</p>
               </div>
               <div className="flex items-center gap-2">
                 {/* Export single order */}
@@ -643,7 +804,7 @@ export default function AdminOrdersPage() {
                 </Button>
                 <button
                   onClick={() => setSelectedOrder(null)}
-                  className="ml-1 h-8 w-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+                  className="ml-1 h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground/80 hover:text-foreground/80 transition-colors"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -654,36 +815,36 @@ export default function AdminOrdersPage() {
             <div className="overflow-y-auto flex-1 p-6 space-y-6">
               {/* Top info grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-                  <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide mb-3">Customer</h3>
+                <div className="bg-muted/50 rounded-xl p-4 space-y-2">
+                  <h3 className="font-semibold text-foreground/80 text-sm uppercase tracking-wide mb-3">Customer</h3>
                   <div className="text-sm space-y-1">
-                    <div><span className="text-gray-500">Name:</span> <span className="font-medium">{selectedOrder.user?.name || 'N/A'}</span></div>
-                    <div><span className="text-gray-500">Email:</span> <span className="font-medium">{selectedOrder.user?.email || 'No email'}</span></div>
+                    <div><span className="text-muted-foreground">Name:</span> <span className="font-medium">{selectedOrder.user?.name || 'N/A'}</span></div>
+                    <div><span className="text-muted-foreground">Email:</span> <span className="font-medium">{selectedOrder.user?.email || 'No email'}</span></div>
                     {selectedOrder.user?.phone && (
-                      <div><span className="text-gray-500">Phone:</span> <span className="font-medium">{selectedOrder.user.phone}</span></div>
+                      <div><span className="text-muted-foreground">Phone:</span> <span className="font-medium">{selectedOrder.user.phone}</span></div>
                     )}
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-                  <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide mb-3">Order Info</h3>
+                <div className="bg-muted/50 rounded-xl p-4 space-y-2">
+                  <h3 className="font-semibold text-foreground/80 text-sm uppercase tracking-wide mb-3">Order Info</h3>
                   <div className="text-sm space-y-1">
-                    <div><span className="text-gray-500">Order #:</span> <span className="font-medium">{selectedOrder.orderNumber}</span></div>
+                    <div><span className="text-muted-foreground">Order #:</span> <span className="font-medium">{selectedOrder.orderNumber}</span></div>
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-500">Status:</span>
+                      <span className="text-muted-foreground">Status:</span>
                       <Badge className={getStatusBadgeColor(selectedOrder.status)}>{selectedOrder.status}</Badge>
                     </div>
-                    <div><span className="text-gray-500">Payment:</span> <span className="font-medium">{selectedOrder.paymentMethod}</span></div>
-                    <div><span className="text-gray-500">Date:</span> <span className="font-medium">{new Date(selectedOrder.createdAt).toLocaleString()}</span></div>
-                    <div><span className="text-gray-500">Total:</span> <span className="font-bold">{selectedOrder.currency} {Number(selectedOrder.totalAmount).toLocaleString()}</span></div>
+                    <div><span className="text-muted-foreground">Payment:</span> <span className="font-medium">{selectedOrder.paymentMethod}</span></div>
+                    <div><span className="text-muted-foreground">Date:</span> <span className="font-medium">{new Date(selectedOrder.createdAt).toLocaleString()}</span></div>
+                    <div><span className="text-muted-foreground">Total:</span> <span className="font-bold">{selectedOrder.currency} {Number(selectedOrder.totalAmount).toLocaleString()}</span></div>
                   </div>
                 </div>
               </div>
 
               {/* Shipping Address */}
               {selectedOrder.shippingAddress && (
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide mb-3">Shipping Address</h3>
+                <div className="bg-muted/50 rounded-xl p-4">
+                  <h3 className="font-semibold text-foreground/80 text-sm uppercase tracking-wide mb-3">Shipping Address</h3>
                   <div className="text-sm space-y-1">
                     <div className="font-medium">
                       {selectedOrder.shippingAddress.firstName} {selectedOrder.shippingAddress.lastName}
@@ -692,10 +853,10 @@ export default function AdminOrdersPage() {
                     <div>{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.postalCode}</div>
                     <div>{selectedOrder.shippingAddress.district}</div>
                     {selectedOrder.shippingAddress.phone && (
-                      <div className="text-gray-500">Phone: {selectedOrder.shippingAddress.phone}</div>
+                      <div className="text-muted-foreground">Phone: {selectedOrder.shippingAddress.phone}</div>
                     )}
                     {selectedOrder.shippingAddress.email && (
-                      <div className="text-gray-500">Email: {selectedOrder.shippingAddress.email}</div>
+                      <div className="text-muted-foreground">Email: {selectedOrder.shippingAddress.email}</div>
                     )}
                   </div>
                 </div>
@@ -705,17 +866,17 @@ export default function AdminOrdersPage() {
               {selectedOrder.notes && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
                   <h3 className="font-semibold text-amber-700 text-sm uppercase tracking-wide mb-2">Customer Notes</h3>
-                  <p className="text-sm text-gray-700">{selectedOrder.notes}</p>
+                  <p className="text-sm text-foreground/80">{selectedOrder.notes}</p>
                 </div>
               )}
 
               {/* Items — Desktop */}
               <div>
-                <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide mb-3">Order Items</h3>
+                <h3 className="font-semibold text-foreground/80 text-sm uppercase tracking-wide mb-3">Order Items</h3>
                 <div className="hidden md:block rounded-xl overflow-hidden border">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-gray-50">
+                      <TableRow className="bg-muted/50">
                         <TableHead>Product</TableHead>
                         <TableHead>Quantity</TableHead>
                         <TableHead>Unit Price</TableHead>
@@ -727,7 +888,7 @@ export default function AdminOrdersPage() {
                         <TableRow key={item.id}>
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden shrink-0">
+                              <div className="h-10 w-10 rounded-md bg-muted overflow-hidden shrink-0">
                                 {item.product.images?.[0]?.url && (
                                   <img src={item.product.images[0].url} alt={item.product.name} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }} />
                                 )}
@@ -736,7 +897,7 @@ export default function AdminOrdersPage() {
                                 <div className="font-medium text-sm">
                                   {item.product.name}
                                   {(item.variantName || item.variant?.name) && (
-                                    <span className="ml-2 text-xs text-gray-500 font-normal">
+                                    <span className="ml-2 text-xs text-muted-foreground font-normal">
                                       ({item.variantName || item.variant?.name})
                                     </span>
                                   )}
@@ -762,8 +923,8 @@ export default function AdminOrdersPage() {
                         const shippingBaseRate = settings?.shippingBaseRate || 350
                         return (
                           <>
-                            <TableRow className="bg-gray-50/60">
-                              <TableCell colSpan={3} className="font-medium text-right text-gray-600">Subtotal:</TableCell>
+                            <TableRow className="bg-muted/50/60">
+                              <TableCell colSpan={3} className="font-medium text-right text-muted-foreground">Subtotal:</TableCell>
                               <TableCell className="font-medium">{selectedOrder.currency} {subtotal.toLocaleString('en-LK')}</TableCell>
                             </TableRow>
                             {discount > 0 && (
@@ -774,11 +935,11 @@ export default function AdminOrdersPage() {
                                 <TableCell>− {selectedOrder.currency} {discount.toLocaleString('en-LK')}</TableCell>
                               </TableRow>
                             )}
-                            <TableRow className="bg-gray-50/60">
-                              <TableCell colSpan={3} className="font-medium text-right text-gray-600">Shipping:</TableCell>
+                            <TableRow className="bg-muted/50/60">
+                              <TableCell colSpan={3} className="font-medium text-right text-muted-foreground">Shipping:</TableCell>
                               <TableCell>
                                 {shipping === 0
-                                  ? <span className="text-green-600 font-medium">FREE <span className="line-through text-gray-400 text-xs font-normal">{selectedOrder.currency} {shippingBaseRate}</span></span>
+                                  ? <span className="text-green-600 font-medium">FREE <span className="line-through text-muted-foreground/80 text-xs font-normal">{selectedOrder.currency} {shippingBaseRate}</span></span>
                                   : `${selectedOrder.currency} ${shipping.toLocaleString('en-LK')}`}
                               </TableCell>
                             </TableRow>
@@ -796,7 +957,7 @@ export default function AdminOrdersPage() {
                 {/* Items — Mobile */}
                 <div className="md:hidden space-y-3">
                   {selectedOrder.items.map((item) => (
-                    <div key={item.id} className="border rounded-lg p-3 bg-gray-50">
+                    <div key={item.id} className="border rounded-lg p-3 bg-muted/50">
                       <div className="flex gap-3">
                         <div className="h-14 w-14 rounded-md bg-gray-200 overflow-hidden shrink-0">
                           {item.product.images?.[0]?.url && (
@@ -807,14 +968,14 @@ export default function AdminOrdersPage() {
                           <div className="font-medium text-sm truncate">
                             {item.product.name}
                             {(item.variantName || item.variant?.name) && (
-                              <span className="ml-1 text-xs text-gray-500 font-normal">
+                              <span className="ml-1 text-xs text-muted-foreground font-normal">
                                 ({item.variantName || item.variant?.name})
                               </span>
                             )}
                           </div>
-                          <div className="flex justify-between text-sm text-gray-600 mt-1">
+                          <div className="flex justify-between text-sm text-muted-foreground mt-1">
                             <span>{item.quantity} × {selectedOrder.currency} {Number(item.price).toLocaleString('en-LK')}</span>
-                            <span className="font-bold text-gray-900">{selectedOrder.currency} {Number(item.total).toLocaleString('en-LK')}</span>
+                            <span className="font-bold text-foreground">{selectedOrder.currency} {Number(item.total).toLocaleString('en-LK')}</span>
                           </div>
                         </div>
                       </div>
@@ -829,7 +990,7 @@ export default function AdminOrdersPage() {
                     const shippingBaseRate = settings?.shippingBaseRate || 350
                     return (
                       <div className="border-t pt-3 space-y-2 text-sm">
-                        <div className="flex justify-between text-gray-600">
+                        <div className="flex justify-between text-muted-foreground">
                           <span>Subtotal</span>
                           <span>{selectedOrder.currency} {subtotal.toLocaleString('en-LK')}</span>
                         </div>
@@ -839,11 +1000,11 @@ export default function AdminOrdersPage() {
                             <span>- {selectedOrder.currency} {discount.toLocaleString('en-LK')}</span>
                           </div>
                         )}
-                        <div className="flex justify-between text-gray-600">
+                        <div className="flex justify-between text-muted-foreground">
                           <span>Shipping</span>
                           <span>
                             {shipping === 0
-                              ? <><span className="line-through text-gray-400 mr-1">{selectedOrder.currency} {shippingBaseRate}</span><span className="text-green-600 font-medium">FREE</span></>
+                              ? <><span className="line-through text-muted-foreground/80 mr-1">{selectedOrder.currency} {shippingBaseRate}</span><span className="text-green-600 font-medium">FREE</span></>
                               : `${selectedOrder.currency} ${shipping.toLocaleString('en-LK')}`}
                           </span>
                         </div>

@@ -175,8 +175,8 @@ export default function AdminCouponsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-12">
-            <div className="bg-white border-b mb-8">
+        <div className="min-h-screen bg-muted/50 pb-12">
+            <div className="bg-card border-b mb-8">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -186,13 +186,13 @@ export default function AdminCouponsPage() {
                                 </Button>
                             </Link>
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-900">Coupons</h1>
-                                <p className="text-gray-500 mt-1">Manage discount coupons and promotional codes</p>
+                                <h1 className="text-3xl font-bold text-foreground">Coupons</h1>
+                                <p className="text-muted-foreground mt-1">Manage discount coupons and promotional codes</p>
                             </div>
                         </div>
                         <Button
                             onClick={() => setShowForm(true)}
-                            className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900"
+                            className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-foreground"
                         >
                             <Plus className="h-4 w-4 mr-2" />
                             Create Coupon
@@ -207,8 +207,8 @@ export default function AdminCouponsPage() {
                     <Card className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Total Coupons</p>
-                                <p className="text-2xl font-bold text-gray-900">{coupons.length}</p>
+                                <p className="text-sm text-muted-foreground">Total Coupons</p>
+                                <p className="text-2xl font-bold text-foreground">{coupons.length}</p>
                             </div>
                             <Tag className="h-8 w-8 text-pink-500" />
                         </div>
@@ -216,7 +216,7 @@ export default function AdminCouponsPage() {
                     <Card className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Active Coupons</p>
+                                <p className="text-sm text-muted-foreground">Active Coupons</p>
                                 <p className="text-2xl font-bold text-green-600">
                                     {coupons.filter(c => c.status === 'active' && !isExpired(c.expiryDate)).length}
                                 </p>
@@ -227,7 +227,7 @@ export default function AdminCouponsPage() {
                     <Card className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Total Uses</p>
+                                <p className="text-sm text-muted-foreground">Total Uses</p>
                                 <p className="text-2xl font-bold text-blue-600">
                                     {coupons.reduce((sum, c) => sum + c.timesUsed, 0)}
                                 </p>
@@ -238,7 +238,7 @@ export default function AdminCouponsPage() {
                     <Card className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Expired</p>
+                                <p className="text-sm text-muted-foreground">Expired</p>
                                 <p className="text-2xl font-bold text-red-600">
                                     {coupons.filter(c => isExpired(c.expiryDate)).length}
                                 </p>
@@ -252,7 +252,7 @@ export default function AdminCouponsPage() {
                 {showForm && (
                     <Card className="p-6 mb-8">
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold text-gray-900">
+                            <h2 className="text-xl font-bold text-foreground">
                                 {editingCoupon ? 'Edit Coupon' : 'Create New Coupon'}
                             </h2>
                             <Button variant="ghost" onClick={resetForm}>
@@ -262,7 +262,7 @@ export default function AdminCouponsPage() {
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-foreground/80 mb-2">
                                         Coupon Code *
                                     </label>
                                     <Input
@@ -273,13 +273,13 @@ export default function AdminCouponsPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-foreground/80 mb-2">
                                         Discount Type *
                                     </label>
                                     <select
                                         value={formData.discountType}
                                         onChange={(e) => setFormData({ ...formData, discountType: e.target.value as any })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                        className="w-full px-3 py-2 border border-border rounded-md"
                                         required
                                     >
                                         <option value="percentage">Percentage (%)</option>
@@ -287,7 +287,7 @@ export default function AdminCouponsPage() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-foreground/80 mb-2">
                                         Discount Value *
                                     </label>
                                     <Input
@@ -301,7 +301,7 @@ export default function AdminCouponsPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-foreground/80 mb-2">
                                         Expiry Date *
                                     </label>
                                     <Input
@@ -312,7 +312,7 @@ export default function AdminCouponsPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-foreground/80 mb-2">
                                         Usage Limit
                                     </label>
                                     <Input
@@ -323,7 +323,7 @@ export default function AdminCouponsPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-foreground/80 mb-2">
                                         Minimum Order (LKR)
                                     </label>
                                     <Input
@@ -334,26 +334,26 @@ export default function AdminCouponsPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-foreground/80 mb-2">
                                         Status
                                     </label>
                                     <select
                                         value={formData.status}
                                         onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                        className="w-full px-3 py-2 border border-border rounded-md"
                                     >
                                         <option value="active">Active</option>
                                         <option value="inactive">Inactive</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-foreground/80 mb-2">
                                         Usage Type *
                                     </label>
                                     <select
                                         value={formData.usageType}
                                         onChange={(e) => setFormData({ ...formData, usageType: e.target.value as any })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                        className="w-full px-3 py-2 border border-border rounded-md"
                                         required
                                     >
                                         <option value="one_per_user">One Per User (Email Tracked)</option>
@@ -363,7 +363,7 @@ export default function AdminCouponsPage() {
                                 </div>
                                 {formData.usageType !== 'unlimited' && (
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        <label className="block text-sm font-medium text-foreground/80 mb-2">
                                             Max Uses Per User
                                         </label>
                                         <Input
@@ -392,28 +392,28 @@ export default function AdminCouponsPage() {
                 <Card className="overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-50 border-b">
+                            <thead className="bg-muted/50 border-b">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Discount</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expiry</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usage</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Min Order</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Code</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Discount</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Expiry</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Usage</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Min Order</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
                                 {coupons.map((coupon) => (
-                                    <tr key={coupon.id} className="hover:bg-gray-50">
+                                    <tr key={coupon.id} className="hover:bg-muted/50">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center">
                                                 <Tag className="h-4 w-4 text-pink-500 mr-2" />
-                                                <span className="font-mono font-semibold text-gray-900">{coupon.code}</span>
+                                                <span className="font-mono font-semibold text-foreground">{coupon.code}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="font-medium text-gray-900">
+                                            <span className="font-medium text-foreground">
                                                 {coupon.discountType === 'percentage'
                                                     ? `${coupon.discountValue}%`
                                                     : `LKR ${coupon.discountValue}`}
@@ -421,24 +421,24 @@ export default function AdminCouponsPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-sm">
-                                                <div className="text-gray-900">{new Date(coupon.expiryDate).toLocaleDateString()}</div>
+                                                <div className="text-foreground">{new Date(coupon.expiryDate).toLocaleDateString()}</div>
                                                 {isExpired(coupon.expiryDate) && (
                                                     <Badge className="mt-1 bg-red-100 text-red-700">Expired</Badge>
                                                 )}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="text-sm text-gray-900">
+                                            <span className="text-sm text-foreground">
                                                 {coupon.timesUsed} / {coupon.usageLimit}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="text-sm text-gray-900">
+                                            <span className="text-sm text-foreground">
                                                 LKR {coupon.minimumOrder.toLocaleString()}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <Badge className={coupon.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
+                                            <Badge className={coupon.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-muted text-foreground/80'}>
                                                 {coupon.status}
                                             </Badge>
                                         </td>

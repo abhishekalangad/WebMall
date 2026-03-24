@@ -182,7 +182,7 @@ export default function AdminUserDetailPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-muted/50 flex items-center justify-center">
                 <div className="w-10 h-10 border-4 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
             </div>
         )
@@ -190,7 +190,7 @@ export default function AdminUserDetailPage() {
 
     if (!user) {
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+            <div className="min-h-screen bg-muted/50 flex flex-col items-center justify-center p-4">
                 <AlertCircle className="w-12 h-12 text-slate-300 mb-4" />
                 <h2 className="text-xl font-bold text-slate-900">User Not Found</h2>
                 <Button onClick={() => router.push('/admin/users')} className="mt-4">
@@ -201,9 +201,9 @@ export default function AdminUserDetailPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-12">
+        <div className="min-h-screen bg-muted/50 pb-12">
             {/* Header */}
-            <div className="bg-white border-b sticky top-0 z-10">
+            <div className="bg-card border-b sticky top-0 z-10">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                     <div className="flex items-center gap-4">
                         <Button variant="ghost" onClick={() => router.push('/admin/users')} className="p-2 h-auto text-slate-500 hover:text-slate-900">
@@ -465,7 +465,7 @@ export default function AdminUserDetailPage() {
                                 <p className="text-3xl font-bold">{user._count.orders}</p>
                                 <p className="text-sm opacity-90 font-medium uppercase mt-1">Total Orders</p>
                             </Card>
-                            <Card className="p-6 bg-white border-none shadow-sm">
+                            <Card className="p-6 bg-card border-none shadow-sm">
                                 <p className="text-3xl font-bold text-slate-900">{user._count.reviews}</p>
                                 <p className="text-sm text-slate-500 font-medium uppercase mt-1">Reviews Posted</p>
                             </Card>
@@ -477,7 +477,7 @@ export default function AdminUserDetailPage() {
                             <div className="space-y-4">
                                 {user.orders.map(order => (
                                     <Card key={order.id} className="p-6 border-none shadow-sm hover:shadow-md transition-all group">
-                                        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-4 pb-4 border-b border-gray-100">
+                                        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-4 pb-4 border-b border-border/50">
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <Package className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
@@ -516,7 +516,7 @@ export default function AdminUserDetailPage() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-12 bg-white rounded-xl border border-dashed border-gray-200">
+                            <div className="flex flex-col items-center justify-center py-12 bg-card rounded-xl border border-dashed border-border">
                                 <ShoppingBag className="w-12 h-12 text-slate-200 mb-3" />
                                 <p className="text-slate-500 font-medium">No orders found</p>
                             </div>

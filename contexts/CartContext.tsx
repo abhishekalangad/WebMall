@@ -25,6 +25,7 @@ interface CartContextType {
   removeItem: (productId: string, variantId?: string) => void
   updateQuantity: (productId: string, quantity: number, variantId?: string) => void
   clearCart: () => void
+  refreshCartData: () => Promise<void>
   totalItems: number
   totalPrice: number
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void
@@ -359,6 +360,63 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, getAuthToken])
 
+  const refreshCartData = useCallback(async () => {
+    if (items.length === 0) return
+
+    try {
+      if (user) {
+        // Logged-in users can just reload from server (which is already validated)
+        const token = await getAuthToken()
+        if (token) {
+          const response = await fetch('/api/cart', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          if (response.ok) {
+            const data = await response.json()
+            if (data.items) {
+              setItems(data.items)
+            }
+          }
+        }
+      } else {
+        // For guests, we must fetch product data and update the cached cart items
+        const productIds = Array.from(new Set(items.map(item => item.productId)))
+        const response = await fetch(`/api/products?ids=${productIds.join(',')}&limit=all`)
+        if (response.ok) {
+          const data = await response.json()
+          const products = data.products || []
+          
+          if (products.length > 0) {
+            const updatedItems = items.map(item => {
+              const product = products.find((p: any) => p.id === item.productId)
+              if (!product) return item // Product might have been deleted
+              
+              const variant = product.variants?.find((v: any) => v.id === item.variantId)
+              const productPrice = Number(product.price || 0)
+              const variantPrice = variant?.priceOverride ? Number(variant.priceOverride) : null
+              const finalPrice = variantPrice !== null ? variantPrice : productPrice
+              
+              return {
+                 ...item,
+                 name: product.name,
+                 price: finalPrice,
+                 originalPrice: productPrice > finalPrice ? productPrice : undefined,
+                 image: (variant?.images && variant.images.length > 0)
+                    ? variant.images[0].url
+                    : (variant?.image || product.images?.[0]?.url || item.image),
+                 slug: product.slug,
+                 maxStock: variant ? variant.stock : product.stock
+              }
+            })
+            setItems(updatedItems)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to refresh cart data:', error)
+    }
+  }, [items, user])
+
   // Calculate total items (safe with integers)
   const totalItems = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
 
@@ -375,10 +433,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     removeItem,
     updateQuantity,
     clearCart,
+    refreshCartData,
     totalItems,
     totalPrice,
     showToast,
-  }), [items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice, showToast])
+  }), [items, addItem, removeItem, updateQuantity, clearCart, refreshCartData, totalItems, totalPrice, showToast])
 
   return (
     <CartContext.Provider value={contextValue}>

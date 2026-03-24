@@ -34,10 +34,10 @@ export default function AdminDashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [dashboardData, setDashboardData] = useState<any>(null)
   const [stats, setStats] = useState([
-    { title: 'Total Sales', value: 'LKR 0', change: '+0%', trend: 'up', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50', iconBg: 'bg-emerald-100' },
-    { title: 'Active Orders', value: '0', change: '+0', trend: 'up', icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-50', iconBg: 'bg-blue-100' },
-    { title: 'Total Products', value: '0', change: '+0', trend: 'up', icon: Package, color: 'text-purple-600', bg: 'bg-purple-50', iconBg: 'bg-purple-100' },
-    { title: 'Total Customers', value: '0', change: '+0%', trend: 'up', icon: Users, color: 'text-orange-600', bg: 'bg-orange-50', iconBg: 'bg-orange-100' },
+    { title: 'Total Sales', value: 'LKR 0', change: '+0%', trend: 'up', icon: DollarSign, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50/50 dark:bg-emerald-950/20', iconBg: 'bg-emerald-100 dark:bg-emerald-900/40' },
+    { title: 'Active Orders', value: '0', change: '+0', trend: 'up', icon: ShoppingBag, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50/50 dark:bg-blue-950/20', iconBg: 'bg-blue-100 dark:bg-blue-900/40' },
+    { title: 'Total Products', value: '0', change: '+0', trend: 'up', icon: Package, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50/50 dark:bg-purple-950/20', iconBg: 'bg-purple-100 dark:bg-purple-900/40' },
+    { title: 'Total Customers', value: '0', change: '+0%', trend: 'up', icon: Users, color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50/50 dark:bg-orange-950/20', iconBg: 'bg-orange-100 dark:bg-orange-900/40' },
   ])
 
   useEffect(() => {
@@ -70,11 +70,11 @@ export default function AdminDashboardPage() {
             title: 'Total Sales',
             value: s.totalSales,
             change: s.salesChange || '+0%',
-            trend: 'up',
+            trend: s.salesTrend || 'up',
             icon: DollarSign,
-            color: 'text-emerald-600',
-            bg: 'bg-emerald-50',
-            iconBg: 'bg-emerald-100'
+            color: 'text-emerald-600 dark:text-emerald-400',
+            bg: 'bg-emerald-50/50 dark:bg-emerald-950/20',
+            iconBg: 'bg-emerald-100 dark:bg-emerald-900/40'
           },
           {
             title: 'Active Orders',
@@ -82,9 +82,9 @@ export default function AdminDashboardPage() {
             change: s.pendingOrders > 0 ? `${s.pendingOrders} pending` : 'No pending',
             trend: s.activeOrders > 0 ? 'up' : 'neutral',
             icon: ShoppingBag,
-            color: 'text-blue-600',
-            bg: 'bg-blue-50',
-            iconBg: 'bg-blue-100'
+            color: 'text-blue-600 dark:text-blue-400',
+            bg: 'bg-blue-50/50 dark:bg-blue-950/20',
+            iconBg: 'bg-blue-100 dark:bg-blue-900/40'
           },
           {
             title: 'Total Products',
@@ -92,9 +92,9 @@ export default function AdminDashboardPage() {
             change: `${s.activeProducts || 0} active`,
             trend: 'up',
             icon: Package,
-            color: 'text-purple-600',
-            bg: 'bg-purple-50',
-            iconBg: 'bg-purple-100'
+            color: 'text-purple-600 dark:text-purple-400',
+            bg: 'bg-purple-50/50 dark:bg-purple-950/20',
+            iconBg: 'bg-purple-100 dark:bg-purple-900/40'
           },
           {
             title: 'Total Customers',
@@ -102,9 +102,9 @@ export default function AdminDashboardPage() {
             change: s.newCustomers ? `+${s.newCustomers} new` : '0 new',
             trend: 'up',
             icon: Users,
-            color: 'text-orange-600',
-            bg: 'bg-orange-50',
-            iconBg: 'bg-orange-100'
+            color: 'text-orange-600 dark:text-orange-400',
+            bg: 'bg-orange-50/50 dark:bg-orange-950/20',
+            iconBg: 'bg-orange-100 dark:bg-orange-900/40'
           },
         ])
       }
@@ -121,7 +121,7 @@ export default function AdminDashboardPage() {
 
   if (loading || !ready) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -130,9 +130,9 @@ export default function AdminDashboardPage() {
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="w-16 h-16 border-4 border-gray-300 border-t-gray-900 rounded-full"
+            className="w-16 h-16 border-4 border-border border-t-foreground rounded-full"
           />
-          <p className="text-gray-600 font-semibold text-lg">Loading Dashboard...</p>
+          <p className="text-muted-foreground font-semibold text-lg">Loading Dashboard...</p>
         </motion.div>
       </div>
     )
@@ -227,15 +227,15 @@ export default function AdminDashboardPage() {
   ]
 
   const colorClasses = {
-    purple: { text: 'text-purple-600', bg: 'bg-purple-50', hover: 'group-hover:bg-purple-100', border: 'border-purple-200' },
-    indigo: { text: 'text-indigo-600', bg: 'bg-indigo-50', hover: 'group-hover:bg-indigo-100', border: 'border-indigo-200' },
-    blue: { text: 'text-blue-600', bg: 'bg-blue-50', hover: 'group-hover:bg-blue-100', border: 'border-blue-200' },
-    pink: { text: 'text-pink-600', bg: 'bg-pink-50', hover: 'group-hover:bg-pink-100', border: 'border-pink-200' },
-    orange: { text: 'text-orange-600', bg: 'bg-orange-50', hover: 'group-hover:bg-orange-100', border: 'border-orange-200' },
-    green: { text: 'text-green-600', bg: 'bg-green-50', hover: 'group-hover:bg-green-100', border: 'border-green-200' },
-    gray: { text: 'text-gray-600', bg: 'bg-gray-50', hover: 'group-hover:bg-gray-100', border: 'border-gray-200' },
-    emerald: { text: 'text-emerald-600', bg: 'bg-emerald-50', hover: 'group-hover:bg-emerald-100', border: 'border-emerald-200' },
-    teal: { text: 'text-teal-600', bg: 'bg-teal-50', hover: 'group-hover:bg-teal-100', border: 'border-teal-200' },
+    purple: { text: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-950/30', hover: 'group-hover:bg-purple-100 dark:group-hover:bg-purple-900/50', border: 'border-purple-200 dark:border-purple-900' },
+    indigo: { text: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-950/30', hover: 'group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50', border: 'border-indigo-200 dark:border-indigo-900' },
+    blue: { text: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', hover: 'group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50', border: 'border-blue-200 dark:border-blue-900' },
+    pink: { text: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-50 dark:bg-pink-950/30', hover: 'group-hover:bg-pink-100 dark:group-hover:bg-pink-900/50', border: 'border-pink-200 dark:border-pink-900' },
+    orange: { text: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-950/30', hover: 'group-hover:bg-orange-100 dark:group-hover:bg-orange-900/50', border: 'border-orange-200 dark:border-orange-900' },
+    green: { text: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-950/30', hover: 'group-hover:bg-green-100 dark:group-hover:bg-green-900/50', border: 'border-green-200 dark:border-green-900' },
+    gray: { text: 'text-muted-foreground', bg: 'bg-muted/50', hover: 'group-hover:bg-muted', border: 'border-border' },
+    emerald: { text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30', hover: 'group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/50', border: 'border-emerald-200 dark:border-emerald-900' },
+    teal: { text: 'text-teal-600 dark:text-teal-400', bg: 'bg-teal-50 dark:bg-teal-950/30', hover: 'group-hover:bg-teal-100 dark:group-hover:bg-teal-900/50', border: 'border-teal-200 dark:border-teal-900' },
   }
 
   const containerVariants = {
@@ -258,9 +258,9 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 pb-12">
+    <div className="min-h-screen bg-background pb-12 relative">
       {/* Animated Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-40">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-40 dark:opacity-10">
         <motion.div
           animate={{
             scale: [1, 1.2, 1],
@@ -271,7 +271,7 @@ export default function AdminDashboardPage() {
             repeat: Infinity,
             ease: "linear"
           }}
-          className="absolute -top-1/4 -right-1/4 w-1/2 h-1/2 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full blur-3xl"
+          className="absolute -top-1/4 -right-1/4 w-1/2 h-1/2 bg-gradient-to-br from-purple-500/30 to-pink-500/30 dark:from-purple-900/40 dark:to-pink-900/40 rounded-full blur-3xl"
         />
         <motion.div
           animate={{
@@ -283,7 +283,7 @@ export default function AdminDashboardPage() {
             repeat: Infinity,
             ease: "linear"
           }}
-          className="absolute -bottom-1/4 -left-1/4 w-1/2 h-1/2 bg-gradient-to-tr from-blue-200 to-emerald-200 rounded-full blur-3xl"
+          className="absolute -bottom-1/4 -left-1/4 w-1/2 h-1/2 bg-gradient-to-tr from-blue-500/30 to-emerald-500/30 dark:from-blue-900/40 dark:to-emerald-900/40 rounded-full blur-3xl"
         />
       </div>
 
@@ -291,7 +291,7 @@ export default function AdminDashboardPage() {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white/80 backdrop-blur-md border-b border-gray-200 mb-8 sticky top-0 z-40 shadow-sm"
+        className="bg-card/80 backdrop-blur-md border-b border-border mb-8 sticky top-0 z-40 shadow-sm"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -300,7 +300,7 @@ export default function AdminDashboardPage() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent"
+                className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground via-foreground/90 to-foreground bg-clip-text text-transparent"
               >
                 Admin Command Center
               </motion.h1>
@@ -308,9 +308,9 @@ export default function AdminDashboardPage() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 }}
-                className="text-gray-600 mt-2 flex items-center gap-2"
+                className="text-muted-foreground mt-2 flex items-center gap-2"
               >
-                <span>Welcome back, <span className="font-semibold text-gray-900">{user?.name}</span>.</span>
+                <span>Welcome back, <span className="font-semibold text-foreground">{user?.name}</span>.</span>
                 <span className="hidden sm:inline">Here's what's happening today.</span>
               </motion.p>
             </div>
@@ -324,7 +324,7 @@ export default function AdminDashboardPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleRefresh}
-                className="flex items-center px-4 py-2.5 bg-white border border-gray-300 hover:border-gray-400 text-gray-700 font-medium rounded-xl transition-all shadow-sm hover:shadow"
+                className="flex items-center px-4 py-2.5 bg-card border border-border hover:border-gray-400 text-foreground/80 font-medium rounded-xl transition-all shadow-sm hover:shadow"
               >
                 <RefreshCcw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
                 Refresh
@@ -333,7 +333,7 @@ export default function AdminDashboardPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => window.location.href = '/api/admin/export/orders'}
-                className="flex items-center px-4 py-2.5 bg-white border border-gray-300 hover:border-gray-400 text-gray-700 font-medium rounded-xl transition-all shadow-sm hover:shadow"
+                className="flex items-center px-4 py-2.5 bg-card border border-border hover:border-gray-400 text-foreground/80 font-medium rounded-xl transition-all shadow-sm hover:shadow"
               >
                 <BarChart3 className="w-4 h-4 mr-2" />
                 Export Report
@@ -342,7 +342,7 @@ export default function AdminDashboardPage() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center px-5 py-2.5 bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl"
+                  className="flex items-center px-5 py-2.5 bg-foreground text-background font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Product
@@ -368,10 +368,10 @@ export default function AdminDashboardPage() {
               whileHover={{ y: -5, scale: 1.02 }}
               transition={{ duration: 0.3 }}
             >
-              <Card className={`p-6 border-none shadow-lg hover:shadow-xl transition-all ${stat.bg} relative overflow-hidden group`}>
+              <Card className={`p-6 border-none shadow-sm hover:shadow-xl transition-all ${stat.bg} relative overflow-hidden group`}>
                 {/* Animated gradient overlay */}
                 <motion.div
-                  className="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 />
 
                 <div className="relative z-10">
@@ -387,7 +387,7 @@ export default function AdminDashboardPage() {
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.5 + index * 0.1 }}
-                      className={`flex items-center text-xs font-bold ${stat.trend === 'up' ? 'text-green-600' : 'text-red-600'} bg-white/80 px-2.5 py-1 rounded-full shadow-sm`}
+                      className={`flex items-center text-xs font-bold ${stat.trend === 'up' ? 'text-green-600' : 'text-red-600'} bg-card/80 px-2.5 py-1 rounded-full shadow-sm`}
                     >
                       {stat.change}
                       {stat.trend === 'up' ? (
@@ -397,12 +397,12 @@ export default function AdminDashboardPage() {
                       )}
                     </motion.span>
                   </div>
-                  <p className="text-sm font-semibold text-gray-600 mb-1">{stat.title}</p>
+                  <p className="text-sm font-semibold text-muted-foreground mb-1">{stat.title}</p>
                   <motion.h3
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3 + index * 0.1 }}
-                    className="text-2xl md:text-3xl font-bold text-gray-900"
+                    className="text-2xl md:text-3xl font-bold text-foreground"
                   >
                     {stat.value}
                   </motion.h3>
@@ -420,12 +420,12 @@ export default function AdminDashboardPage() {
           className="mb-6"
         >
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Management Modules</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground">Management Modules</h2>
             {messageStats.new > 0 && (
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="flex items-center gap-2 px-4 py-2 bg-pink-100 text-pink-700 rounded-full text-sm font-semibold"
+                className="flex items-center gap-2 px-4 py-2 bg-pink-100 dark:bg-pink-950/50 text-pink-700 dark:text-pink-400 rounded-full text-sm font-semibold"
               >
                 <Bell className="w-4 h-4 animate-pulse" />
                 {messageStats.new} new message{messageStats.new > 1 ? 's' : ''}
@@ -450,7 +450,7 @@ export default function AdminDashboardPage() {
                 transition={{ duration: 0.3 }}
               >
                 <Link href={item.href}>
-                  <Card className={`group p-6 hover:shadow-2xl transition-all border-2 ${item.highlight ? 'border-pink-300 shadow-lg' : 'border-transparent'} cursor-pointer relative overflow-hidden bg-white`}>
+                  <Card className={`group p-6 hover:shadow-2xl transition-all border-2 ${item.highlight ? 'border-pink-300 shadow-lg' : 'border-transparent'} cursor-pointer relative overflow-hidden bg-card`}>
                     {/* Animated background */}
                     <motion.div
                       className={`absolute inset-0 ${colors.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
@@ -475,14 +475,14 @@ export default function AdminDashboardPage() {
                           <item.icon className={`w-6 h-6 ${colors.text} transition-colors`} />
                         </motion.div>
                         <div className="text-right">
-                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{item.badge}</p>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{item.badge}</p>
                           <p className={`text-xl font-bold ${colors.text}`}>{item.count}</p>
                         </div>
                       </div>
-                      <h3 className={`text-xl font-bold text-gray-900 ${colors.text} transition-colors mb-2`}>
+                      <h3 className={`text-xl font-bold text-foreground ${colors.text} transition-colors mb-2`}>
                         {item.title}
                       </h3>
-                      <p className="text-gray-600 text-sm leading-relaxed">{item.description}</p>
+                      <p className="text-muted-foreground text-sm leading-relaxed">{item.description}</p>
 
                       {item.highlight && (
                         <motion.div

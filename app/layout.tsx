@@ -12,6 +12,7 @@ import { Toaster } from '@/components/ui/toaster'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { VerificationOverlay } from '@/components/auth/VerificationOverlay'
 import { SiteConfigProvider } from '@/contexts/SiteConfigContext'
+import { ThemeProvider } from '@/components/ThemeProvider'
 import { SITE_URL } from '@/lib/constants'
 
 const inter = Inter({
@@ -124,7 +125,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable} ${dancingScript.variable} ${greatVibes.variable}`}>
+    <html lang="en" className={`${inter.variable} ${playfair.variable} ${dancingScript.variable} ${greatVibes.variable}`} suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
         <ScrollbarHandler />
         <ErrorBoundary>
@@ -132,13 +133,15 @@ export default function RootLayout({
             <SiteConfigProvider>
               <CartProvider>
                 <WishlistProvider>
-                  <div className="flex flex-col min-h-screen">
-                    <Header />
-                    <main className="flex-1">
-                      {children}
-                    </main>
-                    <Footer />
-                  </div>
+                  <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+                    <div className="flex flex-col min-h-screen bg-background text-foreground transition-colors duration-300">
+                      <Header />
+                      <main className="flex-1">
+                        {children}
+                      </main>
+                      <Footer />
+                    </div>
+                  </ThemeProvider>
                   <Suspense fallback={null}>
                     <VerificationOverlay />
                   </Suspense>

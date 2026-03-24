@@ -48,61 +48,61 @@ function WaitingApprovalContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-yellow-50 flex items-center justify-center px-4">
-      <Card className="w-full max-w-2xl p-8">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <Card className="w-full max-w-2xl p-8 bg-card border-border shadow-md">
         <div className="text-center">
           {/* Header */}
           <div className="mb-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-yellow-300 to-orange-300 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Clock className="h-10 w-10 text-white" />
+            <div className="w-20 h-20 bg-muted border border-border rounded-full flex items-center justify-center mx-auto mb-6">
+              <Clock className="h-10 w-10 text-muted-foreground" />
             </div>
-            <h1 className="text-3xl font-bold font-playfair text-gray-900 mb-2">
+            <h1 className="text-3xl font-bold font-playfair text-foreground mb-2">
               Waiting for Email Confirmation
             </h1>
-            <p className="text-gray-600 text-lg">
+            <p className="text-muted-foreground text-lg">
               Please check your email and click the confirmation link
             </p>
           </div>
 
           {/* Status Card */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-8 mb-8 border-2 border-blue-200">
+          <div className="bg-muted/30 rounded-2xl p-8 mb-8 border border-border">
             <div className="flex items-center justify-center mb-4">
-              <Mail className="h-8 w-8 text-blue-500 mr-3" />
-              <h2 className="text-xl font-semibold text-gray-800">Check Your Email</h2>
+              <Mail className="h-8 w-8 text-primary mr-3" />
+              <h2 className="text-xl font-semibold text-foreground">Check Your Email</h2>
             </div>
 
-            <p className="text-gray-600 mb-6">
-              We've sent a verification link to <strong className="text-blue-600">{email}</strong>
+            <p className="text-muted-foreground mb-6">
+              We've sent a verification link to <strong className="text-foreground">{email}</strong>
             </p>
 
-            <div className="bg-white rounded-lg p-6 mb-6 border border-blue-200">
+            <div className="bg-card rounded-lg p-6 mb-6 border border-border">
               <div className="flex items-center justify-center mb-4">
-                <CheckCircle className="h-6 w-6 text-green-500 mr-2" />
-                <span className="font-semibold text-gray-800">Next Steps:</span>
+                <CheckCircle className="h-6 w-6 text-emerald-500 mr-2" />
+                <span className="font-semibold text-foreground">Next Steps:</span>
               </div>
-              <ul className="text-left text-gray-600 space-y-2">
+              <ul className="text-left text-muted-foreground space-y-2">
                 <li className="flex items-start">
-                  <span className="text-blue-500 mr-2">1.</span>
+                  <span className="text-primary mr-2">1.</span>
                   Check your email inbox (and spam folder)
                 </li>
                 <li className="flex items-start">
-                  <span className="text-blue-500 mr-2">2.</span>
+                  <span className="text-primary mr-2">2.</span>
                   Click the verification link in the email
                 </li>
                 <li className="flex items-start">
-                  <span className="text-blue-500 mr-2">3.</span>
+                  <span className="text-primary mr-2">3.</span>
                   Your account will be activated automatically
                 </li>
               </ul>
             </div>
 
             {/* Timer */}
-            <div className="bg-white rounded-lg p-4 border border-blue-200">
+            <div className="bg-card rounded-lg p-4 border border-border">
               <div className="flex items-center justify-center mb-2">
-                <Clock className="h-5 w-5 text-gray-500 mr-2" />
-                <span className="text-sm text-gray-600">Time elapsed:</span>
+                <Clock className="h-5 w-5 text-muted-foreground mr-2" />
+                <span className="text-sm text-muted-foreground">Time elapsed:</span>
               </div>
-              <div className="text-2xl font-mono font-bold text-blue-600">
+              <div className="text-2xl font-mono font-bold text-primary">
                 {formatTime(timeElapsed)}
               </div>
             </div>
@@ -113,7 +113,7 @@ function WaitingApprovalContent() {
             <Button
               onClick={handleCheckStatus}
               disabled={isChecking}
-              className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold py-3"
+              className="w-full bg-foreground text-background hover:bg-muted-foreground font-semibold py-3"
             >
               {isChecking ? (
                 <>
@@ -130,13 +130,13 @@ function WaitingApprovalContent() {
 
             <div className="flex gap-3">
               <Link href="/login" className="flex-1">
-                <Button variant="outline" className="w-full border-gray-300 text-gray-700 hover:bg-gray-50">
+                <Button variant="outline" className="w-full border-border text-foreground hover:bg-muted">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Login
                 </Button>
               </Link>
               <Link href="/" className="flex-1">
-                <Button variant="outline" className="w-full border-gray-300 text-gray-700 hover:bg-gray-50">
+                <Button variant="outline" className="w-full border-border text-foreground hover:bg-muted">
                   Continue Shopping
                 </Button>
               </Link>
@@ -144,12 +144,12 @@ function WaitingApprovalContent() {
           </div>
 
           {/* Help Section */}
-          <div className="mt-8 p-6 bg-gray-50 rounded-lg">
-            <h3 className="font-semibold text-gray-800 mb-2">Need Help?</h3>
-            <p className="text-sm text-gray-600 mb-4">
+          <div className="mt-8 p-6 bg-muted/50 border border-border rounded-lg">
+            <h3 className="font-semibold text-foreground mb-2">Need Help?</h3>
+            <p className="text-sm text-muted-foreground mb-4">
               If you didn't receive the email or are having trouble, please contact our support team.
             </p>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground">
               <p>📧 support@webmall.com</p>
               <p>📞 +94 11 234 5678</p>
             </div>
@@ -163,8 +163,8 @@ function WaitingApprovalContent() {
 export default function WaitingApprovalPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-yellow-50 flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-pink-300 border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>
       <WaitingApprovalContent />

@@ -1,0 +1,404 @@
+================================================================================
+  WEBMALL - COMPLETE WEBSITE TECH STACK
+  Sri Lankan Fashion Accessories E-Commerce Platform
+================================================================================
+
+Last Updated : May 2026
+Project Root : WebMall/
+Website URL  : https://web-mall-sand.vercel.app
+
+"WebMall is a full-stack e-commerce website built with Next.js and TypeScript — so the same language runs on both the frontend and backend. 
+For the UI, I used React with Tailwind CSS and shadcn/ui components. The database is PostgreSQL hosted on Supabase, and I interact with it using Prisma ORM. 
+Authentication is also handled through Supabase Auth. The whole thing is deployed on Vercel with automatic CI/CD. 
+Since Next.js handles both the server and the client, I didn't need a separate backend — API routes, server components, and the React UI all live in one codebase."
+
+"why Next.js?" — say "because it gives me SSR, API routes, and image optimization out of the box, so I didn't need to set up a separate Express or Django server."
+================================================================================
+  LANGUAGES AT A GLANCE
+================================================================================
+
+  Backend Language  : TypeScript / JavaScript (Node.js runtime)
+                      - All server-side API routes, database queries, and
+                        server components are written in TypeScript (.ts)
+                      - Runs on Node.js via the Next.js server layer
+                      - Prisma ORM queries, auth logic, and business rules
+                        all execute server-side in TypeScript
+
+  Frontend Language : TypeScript + TSX (React / Next.js)
+                      - All UI components are written in TypeScript with JSX
+                        syntax (.tsx files)
+                      - React 18 is the UI rendering library
+                      - Client components use React hooks and context API
+                      - Styled with Tailwind CSS utility classes
+
+  Why the Same Language for Both?
+                      Next.js is a full-stack framework built entirely around
+                      JavaScript/TypeScript, which means both the server and
+                      the browser naturally share the same language. Here is
+                      why this is a deliberate and practical choice:
+
+                      1. UNIFIED CODEBASE
+                         A single language across the entire project means one
+                         team, one repo, and no context-switching between a
+                         separate backend language (e.g. Python, Java, PHP)
+                         and a frontend language. All code lives together.
+
+                      2. SHARED TYPE DEFINITIONS
+                         TypeScript interfaces and types (e.g. Product, Order,
+                         User) are defined once and reused by both API route
+                         handlers (server) and React components (client),
+                         eliminating mismatches between what the API returns
+                         and what the UI expects.
+
+                      3. NEXT.JS FULL-STACK MODEL
+                         Next.js deliberately blurs the server/client boundary.
+                         Server Components fetch data on the server; Client
+                         Components render in the browser. Both are written in
+                         the same .tsx syntax — the framework decides at build
+                         time what runs where.
+
+                      4. CODE REUSE
+                         Validation schemas (Zod), utility functions, constants,
+                         and data models are written once and imported by both
+                         API routes and UI components without any translation
+                         layer or duplication.
+
+                      5. DEVELOPER EXPERIENCE
+                         One language means one linter (ESLint), one type
+                         checker (TypeScript), one build tool (Next.js/SWC),
+                         and one package manager (npm). This drastically
+                         reduces tooling complexity.
+
+                      6. ECOSYSTEM
+                         The JavaScript/TypeScript npm ecosystem is the largest
+                         in the world. Every library needed — from Prisma (DB)
+                         to Framer Motion (animation) to Zod (validation) — is
+                         available as a TypeScript-first package, with full
+                         type support out of the box.
+
+--------------------------------------------------------------------------------
+  1. CORE FRAMEWORK & RUNTIME
+--------------------------------------------------------------------------------
+
+  Framework     : Next.js (v16.x)
+                  - App Router architecture (app/ directory)
+                  - Server-Side Rendering (SSR) + Static Generation (SSG)
+                  - Turbopack enabled for faster local development
+                  - API Routes via app/api/ directory
+                  - Route-level loading.tsx and error.tsx support
+                  - Image optimization with next/image (WebP + AVIF formats)
+
+  Language      : TypeScript (v5.x)
+                  - Strict type checking
+                  - Compiled with tsc
+
+  Runtime       : Node.js
+                  - Server-side Prisma queries run in Next.js server components
+
+--------------------------------------------------------------------------------
+  2. FRONTEND - UI & STYLING
+--------------------------------------------------------------------------------
+
+  CSS Framework : Tailwind CSS (v3.3.3)
+                  - JIT (Just-in-Time) compilation
+                  - Custom design tokens via CSS variables (HSL color system)
+                  - Dark mode support via class strategy
+                  - tailwindcss-animate plugin for entrance animations
+                  - Custom keyframes: accordion-down, accordion-up
+
+  Component Library : shadcn/ui
+                  - Built on top of Radix UI primitives
+                  - Full set of accessible, unstyled headless components:
+                    * Accordion, Alert Dialog, Aspect Ratio, Avatar
+                    * Checkbox, Collapsible, Context Menu, Dialog
+                    * Dropdown Menu, Hover Card, Label, Menubar
+                    * Navigation Menu, Popover, Progress, Radio Group
+                    * Scroll Area, Select, Separator, Slider, Switch
+                    * Tabs, Toast, Toggle, Toggle Group, Tooltip
+
+  Radix UI      : @radix-ui/* (v1-v2 range)
+                  - Full suite of primitives underpinning shadcn/ui
+                  - Fully accessible (WAI-ARIA compliant)
+
+  Animation     : Framer Motion (v12.x)
+                  - Hero banner slide transitions (AnimatePresence + motion.div)
+                  - Staggered word animations on homepage hero
+                  - Floating badge pulse animations
+                  - Scale and fade entrance effects across the site
+
+  Icons         : Lucide React (v0.446)
+                  - Consistent icon set used across all UI elements
+
+  Carousel      : Embla Carousel (v8.x)
+                  - embla-carousel-react + embla-carousel-autoplay
+                  - Used for product image galleries
+
+  Drag & Drop   : @hello-pangea/dnd (v18.x)
+                  - Admin panel drag-to-reorder for banners/images
+
+  Date Handling : date-fns (v3.x)
+                  - Order date formatting, coupon expiry display
+
+  Charts        : Recharts (v2.x)
+                  - Admin analytics dashboard (sales charts, revenue graphs)
+
+  Toasts        : Sonner (v1.x)
+                  - Non-blocking notification toasts
+
+  OTP Input     : input-otp (v1.x)
+                  - Email verification code entry
+
+  Image Crop    : react-easy-crop (v5.x)
+                  - Profile picture circular crop tool
+
+  Date Picker   : react-day-picker (v8.x)
+                  - Order filters, date-range selection
+
+  Command Menu  : cmdk (v1.x)
+                  - Keyboard-first command palette UI
+
+  Drawer        : vaul (v0.9.x)
+                  - Mobile-friendly bottom drawer component
+
+  Resizable     : react-resizable-panels (v2.x)
+                  - Admin panel layout panels
+
+  Fonts         : Google Fonts (via next/font)
+                  - Inter           (body text)
+                  - Playfair Display (headings, editorial titles)
+                  - Dancing Script   (decorative cursive accents)
+                  - Great Vibes      (brand cursive, logo text)
+
+  Theming       : next-themes (v0.3)
+                  - System-aware dark/light mode
+                  - Class-based theme toggling, no flash on load
+
+  CSS Utilities : clsx + tailwind-merge + class-variance-authority (CVA)
+                  - Conditional className composition
+                  - Variant-based component styling
+
+--------------------------------------------------------------------------------
+  3. BACKEND - API & SERVER
+--------------------------------------------------------------------------------
+
+  API Layer     : Next.js API Routes (app/api/)
+                  - RESTful endpoints co-located with the app
+                  - Server Actions for form mutations (Next.js 14+ pattern)
+
+  Key API Routes:
+    /api/products/        - Product CRUD
+    /api/categories/      - Category management
+    /api/cart/            - Cart operations
+    /api/wishlist/        - Wishlist operations
+    /api/orders/          - Order creation & management
+    /api/admin/           - Admin-only endpoints (dashboard, users, analytics)
+    /api/coupons/         - Coupon validation & usage tracking
+    /api/reviews/         - Product reviews
+    /api/messages/        - Contact messages (user <-> admin)
+    /api/settings/        - Site config (store name, shipping rates, socials)
+    /api/upload/          - Image upload to Supabase Storage
+
+--------------------------------------------------------------------------------
+  4. DATABASE & ORM
+--------------------------------------------------------------------------------
+
+  Database      : PostgreSQL
+                  - Hosted on Supabase (managed Postgres)
+                  - UUID primary keys (uuid_generate_v4())
+                  - Snake_case column naming convention
+
+  ORM           : Prisma (v6.x)
+                  - prisma-client-js generator
+                  - multiSchema preview feature enabled
+                  - Schema at prisma/schema.prisma
+                  - CamelCase model names mapped to snake_case DB tables
+
+  Database Models (Tables):
+    users              - Customer accounts, roles (customer/admin)
+    categories         - Product top-level categories
+    subcategories      - Nested subcategories under each category
+    products           - Product listings (price, stock, status)
+    product_images     - Multiple images per product (with position ordering)
+    product_variants   - SKU-based variants (color, size, etc.) with attributes JSON
+    carts              - One cart per user
+    cart_items         - Items in a cart (product + optional variant)
+    wishlists          - One wishlist per user
+    wishlist_items     - Items in a wishlist
+    orders             - Customer orders (shipping address JSON, payment method)
+    order_items        - Line items per order
+    reviews            - Star ratings + comments per product per user
+    contact_messages   - User contact form submissions with admin reply support
+    site_settings      - Single-row store config (shipping rates, social URLs, nav)
+    hero_banners       - Homepage rotating hero banners with CTA config
+    coupons            - Discount codes (fixed/percent, usage limits, expiry)
+    coupon_usage       - Per-user coupon redemption tracking
+    inventory_items    - Internal stock tracking
+
+--------------------------------------------------------------------------------
+  5. AUTHENTICATION & BACKEND-AS-A-SERVICE
+--------------------------------------------------------------------------------
+
+  Auth Provider : Supabase Auth
+                  - Email/password authentication
+                  - JWT-based session management
+                  - Email verification flow
+                  - Password reset via email link
+
+  Supabase SDK  : @supabase/supabase-js (v2.x)
+                  - Used for auth, Realtime subscriptions, and Storage
+                  - @supabase/realtime-js (v2.x) - live order/message updates
+
+  Storage       : Supabase Storage
+                  - Product images
+                  - Category images
+                  - Hero banner images
+                  - User profile pictures
+                  - Gallery/about page images
+
+  Password Hash : bcryptjs (v3.x)
+                  - Local password hashing for custom auth flows
+
+  JWT           : jsonwebtoken (v9.x)
+                  - Custom token generation for admin sessions
+
+--------------------------------------------------------------------------------
+  6. FORMS & VALIDATION
+--------------------------------------------------------------------------------
+
+  Form Library  : React Hook Form (v7.x)
+                  - Performant, uncontrolled form state management
+                  - Used across login, register, checkout, admin forms
+
+  Validation    : Zod (v3.x)
+                  - Schema-based input validation
+                  - Integrated with RHF via @hookform/resolvers
+
+  Precision Math: decimal.js (v10.x)
+                  - Accurate price calculations (avoids floating-point errors)
+
+--------------------------------------------------------------------------------
+  7. EXPORTS & REPORTING
+--------------------------------------------------------------------------------
+
+  Excel Export  : ExcelJS (v4.x)
+                  - Admin can export orders, user data to .xlsx files
+
+--------------------------------------------------------------------------------
+  8. STATE MANAGEMENT & CONTEXT
+--------------------------------------------------------------------------------
+
+  Pattern       : React Context API (no external state library)
+  
+  Contexts:
+    AuthContext        - Current user session, login/logout
+    CartContext        - Cart items, add/remove/update operations
+    WishlistContext    - Wishlist items management
+    SiteConfigContext  - Store settings + hero banners (fetched once at root)
+
+--------------------------------------------------------------------------------
+  9. DEPLOYMENT & INFRASTRUCTURE
+--------------------------------------------------------------------------------
+
+  Hosting       : Vercel
+                  - Automatic CI/CD from Git repository
+                  - Edge network for global delivery
+                  - Environment variables managed in Vercel dashboard
+
+  Analytics     : Vercel Analytics (@vercel/analytics v1.x)
+                  - Page view tracking, web vitals reporting
+
+  Image CDN     : Supabase Storage CDN + next/image optimization
+                  - Automatic WebP/AVIF conversion
+                  - Responsive srcset generation
+                  - Lazy loading with priority hints
+
+  SEO           : Built-in Next.js Metadata API
+                  - Per-page title templates ("%s | WebMall")
+                  - OpenGraph + Twitter card meta tags
+                  - robots.ts + sitemap.ts auto-generation
+                  - Canonical URLs
+
+--------------------------------------------------------------------------------
+  10. DEVELOPER TOOLING
+--------------------------------------------------------------------------------
+
+  Linting       : ESLint (v8.x)
+                  - eslint-config-next rule set
+
+  Type Checking : TypeScript compiler (tsc --noEmit)
+                  - Run via npm run typecheck
+
+  Build Tool    : Next.js built-in (Webpack + SWC)
+                  - @next/swc-wasm-nodejs for fast Rust-based compilation
+                  - Turbopack for dev server (experimental)
+
+  PostCSS       : postcss + autoprefixer
+                  - Vendor-prefix automation for CSS
+
+  Package Mgr   : npm
+                  - postinstall hook runs "prisma generate" automatically
+
+--------------------------------------------------------------------------------
+  11. ARCHITECTURE OVERVIEW
+--------------------------------------------------------------------------------
+
+  Pattern       : Hybrid SSR + CSR (Next.js App Router)
+
+    - Server Components  : Data fetching pages (products, home, categories)
+                           No client-side bundle shipped for pure data pages
+    - Client Components  : Interactive UIs (cart, wishlist, auth forms, admin)
+                           Marked with 'use client' directive
+    - API Routes         : Stateless REST handlers for mutations and reads
+                           that need auth checks or DB access from client
+
+  Folder Structure:
+    app/                 - Pages, layouts, API routes (Next.js App Router)
+    components/          - Shared React components
+      ui/                - shadcn/ui primitive components
+      layout/            - Header, Footer, ScrollbarHandler
+      products/          - ProductCard, product-related UI
+      home/              - InstagramShowcase, home-specific widgets
+      admin/             - Admin dashboard components
+      auth/              - Auth overlay, verification components
+    contexts/            - React Context providers
+    hooks/               - Custom React hooks
+    lib/                 - Prisma client, utility functions, constants
+    prisma/              - Schema and migrations
+    public/              - Static assets (logo, OG image)
+    types/               - Shared TypeScript type definitions
+
+--------------------------------------------------------------------------------
+  12. KEY FEATURES IMPLEMENTED
+--------------------------------------------------------------------------------
+
+  Customer-Facing:
+    - Animated homepage hero banner (auto-rotating carousel)
+    - Category browsing with image cards
+    - Product listing with search, filter by category, sort, grid/list view
+    - Product detail page with variant selection (color, size, etc.)
+    - Shopping cart with quantity management
+    - Wishlist functionality
+    - Checkout with COD payment + address management
+    - Order history and detailed order tracking
+    - Product reviews and ratings
+    - Contact form with admin reply notifications
+    - User profile with picture crop upload
+    - Dark / light mode toggle (system-aware)
+
+  Admin Panel:
+    - Dashboard with sales analytics (Recharts graphs)
+    - Product management (add, edit, delete, image upload, variant config)
+    - Category & subcategory management with drag-to-reorder
+    - Hero banner management with live preview
+    - Order management with status updates
+    - Customer user management
+    - Coupon/discount code management
+    - Contact message inbox with reply system
+    - Inventory tracking
+    - Gallery management for About page
+    - Site settings (store info, shipping rates, social links, navigation)
+    - Export orders to Excel (.xlsx)
+
+================================================================================
+  END OF TECH STACK DOCUMENT
+================================================================================

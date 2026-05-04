@@ -73,7 +73,7 @@ export function Footer() {
   }
 
   return (
-    <footer className="bg-gray-900 text-white relative overflow-hidden">
+    <footer className="bg-gray-900 text-white relative overflow-hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
       {/* Animated Background */}
       <div className="absolute inset-0 opacity-5 pointer-events-none">
         <motion.div

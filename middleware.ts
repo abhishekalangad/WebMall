@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 /**
- * Next.js Proxy (formerly Middleware) for CSRF Protection and Security Headers
+ * Next.js Middleware for CSRF Protection and Security Headers
  * Runs before requests reach API routes
  */
-export function proxy(request: NextRequest) {
-    const { pathname, origin } = request.nextUrl
+export function middleware(request: NextRequest) {
+    const { pathname } = request.nextUrl
     const method = request.method
 
     // Only apply CSRF protection to API routes with state-changing methods
@@ -86,13 +86,10 @@ export function proxy(request: NextRequest) {
     // For all responses, add security headers
     const response = NextResponse.next()
 
-    // Security headers
     response.headers.set('X-Frame-Options', 'DENY')
     response.headers.set('X-Content-Type-Options', 'nosniff')
     response.headers.set('X-XSS-Protection', '1; mode=block')
     response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-
-    // Permissions Policy (formerly Feature-Policy)
     response.headers.set(
         'Permissions-Policy',
         'camera=(), microphone=(), geolocation=()'
@@ -101,12 +98,10 @@ export function proxy(request: NextRequest) {
     return response
 }
 
-// Configure which routes the middleware should run on
+// Configure which routes the middleware runs on
 export const config = {
     matcher: [
-        // Match all API routes
         '/api/:path*',
-        // Exclude static files and images
         '/((?!_next/static|_next/image|favicon.ico).*)',
     ],
 }

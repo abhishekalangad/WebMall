@@ -58,6 +58,18 @@ const greatVibes = Great_Vibes({
 //   ];
 // }
 
+// Viewport config — required for proper mobile rendering
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
+  ],
+}
+
 export const metadata: Metadata = {
   title: {
     default: 'WebMall - Sri Lankan Fashion Accessories',
@@ -127,7 +139,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable} ${dancingScript.variable} ${greatVibes.variable}`} suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
-        <ScrollbarHandler />
+        <Suspense fallback={null}><ScrollbarHandler /></Suspense>
         <ErrorBoundary>
           <AuthProvider>
             <SiteConfigProvider>

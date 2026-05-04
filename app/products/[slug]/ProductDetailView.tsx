@@ -1125,7 +1125,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
             </div>
 
             {/* Sticky Mobile Add to Cart - Only shows on mobile */}
-            <div className="fixed bottom-0 left-0 right-0 bg-background border-t-2 border-border p-4 lg:hidden shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] z-50">
+            <div className="fixed bottom-0 left-0 right-0 bg-background border-t-2 border-border p-4 lg:hidden shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] z-50 safe-bottom" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
                 <div className="flex items-center justify-between gap-4 max-w-7xl mx-auto">
                     {/* Product Info */}
                     <div className="flex-1 min-w-0">

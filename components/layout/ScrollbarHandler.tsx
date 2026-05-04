@@ -1,8 +1,17 @@
 'use client'
 
 import { useEffect } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
 
 export function ScrollbarHandler() {
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    // Scroll to top on every route / query-string change
+    useEffect(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    }, [pathname, searchParams])
+
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             const threshold = 50 // pixels from right edge

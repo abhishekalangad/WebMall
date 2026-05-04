@@ -331,7 +331,7 @@ export default function AdminCategoriesContent() {
                         {categories.map((category) => (
                             <Fragment key={category.id}>
                                 {/* Category Row */}
-                                <TableRow className="bg-gray-50">
+                                <TableRow className="bg-muted/50">
                                     <TableCell>
                                         <button
                                             onClick={() => toggleCategoryExpansion(category.id)}
@@ -348,7 +348,7 @@ export default function AdminCategoriesContent() {
                                     <TableCell>{category.description || 'N/A'}</TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm text-gray-600">
+                                            <span className="text-sm text-muted-foreground">
                                                 {category.subcategories?.length || 0} subcategories
                                             </span>
                                             <Button
@@ -385,12 +385,12 @@ export default function AdminCategoriesContent() {
                                             <TableCell></TableCell>
                                             <TableCell className="pl-8">
                                                 <div className="flex items-center gap-2">
-                                                    <Layers className="h-3 w-3 text-gray-400" />
+                                                    <Layers className="h-3 w-3 text-muted-foreground/80" />
                                                     <span className="text-sm">{subcategory.name}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-sm">{subcategory.description || 'N/A'}</TableCell>
-                                            <TableCell className="text-sm text-gray-500">
+                                            <TableCell className="text-sm text-muted-foreground">
                                                 {subcategory._count?.products || 0} products
                                             </TableCell>
                                             <TableCell>

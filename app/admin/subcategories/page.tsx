@@ -215,14 +215,14 @@ export default function AdminSubcategoriesPage() {
                             <TableRow key={subcategory.id}>
                                 <TableCell className="font-medium">{subcategory.name}</TableCell>
                                 <TableCell>
-                                    <span className="text-sm bg-gray-100 px-2 py-1 rounded">
+                                    <span className="text-sm bg-muted px-2 py-1 rounded">
                                         {subcategory.category.name}
                                     </span>
                                 </TableCell>
                                 <TableCell>{subcategory.slug}</TableCell>
                                 <TableCell>{subcategory.description || 'N/A'}</TableCell>
                                 <TableCell>
-                                    <span className="text-sm text-gray-600">
+                                    <span className="text-sm text-muted-foreground">
                                         {subcategory._count.products} products
                                     </span>
                                 </TableCell>

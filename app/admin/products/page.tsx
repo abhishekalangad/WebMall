@@ -432,7 +432,7 @@ export default function AdminProductsPage() {
               setFormData(prev => ({ ...prev, categoryId: categories[0]?.id || '' }))
               setShowAddForm(true)
             }}
-            className="w-full sm:w-auto bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold h-11 sm:h-10"
+            className="w-full sm:w-auto bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-foreground font-semibold h-11 sm:h-10"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Product
@@ -494,13 +494,13 @@ export default function AdminProductsPage() {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               {/* Search */}
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground/80 h-4 w-4" />
                 <Input
                   type="search"
                   placeholder="Search products..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 h-10 text-sm border-0 focus-visible:ring-0 bg-gray-50"
+                  className="pl-10 pr-4 h-10 text-sm border-0 focus-visible:ring-0 bg-muted/50"
                 />
               </div>
 
@@ -508,7 +508,7 @@ export default function AdminProductsPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full sm:w-48 h-10 px-3 py-2 text-sm border-0 bg-gray-50 rounded-md focus:outline-none focus:ring-0"
+                className="w-full sm:w-48 h-10 px-3 py-2 text-sm border-0 bg-muted/50 rounded-md focus:outline-none focus:ring-0"
               >
                 <option value="All">All Categories</option>
                 {categories.map((category) => (
@@ -621,14 +621,14 @@ export default function AdminProductsPage() {
                       </td>
 
                       {/* Price */}
-                      <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap overflow-hidden">
+                      <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap overflow-hidden">
                         <div className="font-medium">{product.currency} {product.price.toLocaleString()}</div>
                       </td>
 
                       {/* Stock */}
                       <td className="px-4 py-3 whitespace-nowrap overflow-hidden">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-900">{product.stock}</span>
+                          <span className="text-sm font-medium text-foreground">{product.stock}</span>
                           {product.stock === 0 ? (
                             <Badge className="bg-red-100 text-red-800 text-xs">Out of Stock</Badge>
                           ) : product.stock < 10 ? (
@@ -734,18 +734,18 @@ export default function AdminProductsPage() {
                 <div className="p-4">
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <h3 className="font-semibold text-gray-900 line-clamp-1" title={product.name}>
+                      <h3 className="font-semibold text-foreground line-clamp-1" title={product.name}>
                         {product.name}
                       </h3>
-                      <p className="text-sm text-gray-500">{product.category?.name || 'Uncategorized'}</p>
+                      <p className="text-sm text-muted-foreground">{product.category?.name || 'Uncategorized'}</p>
                     </div>
-                    <p className="font-bold text-gray-900 whitespace-nowrap ml-2">
+                    <p className="font-bold text-foreground whitespace-nowrap ml-2">
                       {product.currency} {product.price.toLocaleString()}
                     </p>
                   </div>
 
                   {/* Quick Stats */}
-                  <div className="flex items-center gap-3 text-xs text-gray-500 mb-4 pb-4 border-b">
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mb-4 pb-4 border-b">
                     <div className="flex items-center gap-1">
                       <Package className="h-3 w-3" />
                       {product.stock} Stock
@@ -767,7 +767,7 @@ export default function AdminProductsPage() {
                       className="w-full"
                       title="View Page"
                     >
-                      <Eye className="h-4 w-4 text-gray-600" />
+                      <Eye className="h-4 w-4 text-muted-foreground" />
                     </Button>
                     <Button
                       variant="outline"
@@ -810,9 +810,9 @@ export default function AdminProductsPage() {
         {/* No Results */}
         {filteredProducts.length === 0 && !loading && (
           <Card className="p-12 text-center mt-6">
-            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-            <p className="text-gray-600 mb-4">
+            <Package className="h-12 w-12 text-muted-foreground/80 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No products found</h3>
+            <p className="text-muted-foreground mb-4">
               Try adjusting your search or add a new product
             </p>
           </Card>
@@ -823,7 +823,7 @@ export default function AdminProductsPage() {
 
         {/* Loading More Spinner */}
         {loadingMore && (
-          <div className="flex items-center justify-center py-6 gap-3 text-gray-500">
+          <div className="flex items-center justify-center py-6 gap-3 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin text-pink-500" />
             <span className="text-sm font-medium">Loading more products…</span>
           </div>
@@ -831,7 +831,7 @@ export default function AdminProductsPage() {
 
         {/* End of list indicator */}
         {!hasMore && products.length > 0 && !loading && (
-          <p className="text-center text-xs text-gray-400 py-4">
+          <p className="text-center text-xs text-muted-foreground/80 py-4">
             All {products.length} products loaded
           </p>
         )}
@@ -862,7 +862,7 @@ export default function AdminProductsPage() {
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 pb-2 border-b">
                       <Package className="h-5 w-5 text-pink-500" />
-                      <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
+                      <h3 className="text-lg font-semibold text-foreground">Basic Information</h3>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -909,9 +909,9 @@ export default function AdminProductsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="subcategoryId" className="text-sm font-medium">
-                          Subcategory <span className="text-gray-400">(Optional)</span>
+                          Subcategory <span className="text-muted-foreground/80">(Optional)</span>
                           {formData.categoryId && (
-                            <span className="ml-2 text-xs text-gray-500">
+                            <span className="ml-2 text-xs text-muted-foreground">
                               ({subcategories.filter(sub => sub.categoryId === formData.categoryId).length} available)
                             </span>
                           )}
@@ -920,7 +920,7 @@ export default function AdminProductsPage() {
                           id="subcategoryId"
                           value={formData.subcategoryId || ''}
                           onChange={(e) => setFormData({ ...formData, subcategoryId: e.target.value })}
-                          className="mt-1.5 w-full h-10 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                          className="mt-1.5 w-full h-10 px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 disabled:bg-muted/50 disabled:text-muted-foreground disabled:cursor-not-allowed"
                           disabled={!formData.categoryId}
                         >
                           <option value="">No subcategory</option>
@@ -933,7 +933,7 @@ export default function AdminProductsPage() {
                             ))}
                         </select>
                         {!formData.categoryId && (
-                          <p className="text-xs text-gray-500 mt-1">Select a category first</p>
+                          <p className="text-xs text-muted-foreground mt-1">Select a category first</p>
                         )}
                         {formData.categoryId && subcategories.filter(sub => sub.categoryId === formData.categoryId).length === 0 && (
                           <p className="text-xs text-amber-600 mt-1">
@@ -949,13 +949,13 @@ export default function AdminProductsPage() {
                         id="description"
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        className="mt-1.5 w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                        className="mt-1.5 w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
                         rows={3}
                         maxLength={200}
                         placeholder="Brief description that appears in product listings"
                         required
                       />
-                      <p className="text-xs text-gray-500 mt-1">{formData.description.length}/200 characters</p>
+                      <p className="text-xs text-muted-foreground mt-1">{formData.description.length}/200 characters</p>
                     </div>
                   </div>
 
@@ -966,19 +966,19 @@ export default function AdminProductsPage() {
                         <svg className="h-5 w-5 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        <h3 className="text-lg font-semibold text-gray-900">Product Images</h3>
+                        <h3 className="text-lg font-semibold text-foreground">Product Images</h3>
                         <Badge variant="destructive" className="text-xs">Required</Badge>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600">Upload high-quality images. The first image will be the main product image.</p>
+                    <p className="text-sm text-muted-foreground">Upload high-quality images. The first image will be the main product image.</p>
 
                     <MultiImageUpload
                       images={formData.images}
                       onChange={(images) => setFormData({ ...formData, images })}
                     />
 
-                    <div className="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
-                      <svg className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                      <svg className="h-4 w-4 text-muted-foreground/80 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <div>
@@ -995,7 +995,7 @@ export default function AdminProductsPage() {
                       <svg className="h-5 w-5 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <h3 className="text-lg font-semibold text-gray-900">Pricing & Inventory</h3>
+                      <h3 className="text-lg font-semibold text-foreground">Pricing & Inventory</h3>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1012,7 +1012,7 @@ export default function AdminProductsPage() {
                           placeholder="0.00"
                           required
                         />
-                        <p className="text-xs text-gray-500 mt-1">Base price for this product</p>
+                        <p className="text-xs text-muted-foreground mt-1">Base price for this product</p>
                       </div>
 
                       <div>
@@ -1060,10 +1060,10 @@ export default function AdminProductsPage() {
                         id="inStock"
                         checked={formData.inStock}
                         onChange={(e) => setFormData({ ...formData, inStock: e.target.checked })}
-                        className="h-4 w-4 rounded border-gray-300 text-pink-600 focus:ring-pink-500"
+                        className="h-4 w-4 rounded border-border text-pink-600 focus:ring-pink-500"
                       />
                       <Label htmlFor="inStock" className="text-sm font-medium cursor-pointer">Mark as Active</Label>
-                      <p className="text-xs text-gray-500">(Product will be visible to customers)</p>
+                      <p className="text-xs text-muted-foreground">(Product will be visible to customers)</p>
                     </div>
                   </div>
 
@@ -1074,11 +1074,11 @@ export default function AdminProductsPage() {
                         <svg className="h-5 w-5 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
                         </svg>
-                        <h3 className="text-lg font-semibold text-gray-900">Product Variants</h3>
+                        <h3 className="text-lg font-semibold text-foreground">Product Variants</h3>
                         <Badge variant="outline" className="text-xs">Optional</Badge>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600">Create variants for different colors, sizes, or styles. Each variant can have its own price and stock.</p>
+                    <p className="text-sm text-muted-foreground">Create variants for different colors, sizes, or styles. Each variant can have its own price and stock.</p>
 
                     <ProductVariants
                       variants={formData.variants}
@@ -1103,7 +1103,7 @@ export default function AdminProductsPage() {
                     <Button
                       type="submit"
                       disabled={submitting}
-                      className="w-full sm:w-auto h-11 sm:h-10 bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold"
+                      className="w-full sm:w-auto h-11 sm:h-10 bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-foreground font-semibold"
                     >
                       {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       <Save className="h-4 w-4 mr-2" />
@@ -1229,7 +1229,7 @@ export default function AdminProductsPage() {
                       </div>
 
                       <div>
-                        <Label className="text-xs font-medium">Description <span className="text-gray-400">(Optional)</span></Label>
+                        <Label className="text-xs font-medium">Description <span className="text-muted-foreground/80">(Optional)</span></Label>
                         <textarea
                           value={sub.description}
                           onChange={(e) => setNewCategoryForm(prev => ({
@@ -1238,12 +1238,12 @@ export default function AdminProductsPage() {
                           }))}
                           rows={2}
                           placeholder="Brief description"
-                          className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
+                          className="mt-1 w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
                         />
                       </div>
 
                       <div>
-                        <Label className="text-xs font-medium">Image <span className="text-gray-400">(Optional)</span></Label>
+                        <Label className="text-xs font-medium">Image <span className="text-muted-foreground/80">(Optional)</span></Label>
                         <div className="mt-1">
                           <ImageUpload
                             onUploadComplete={(url) => setNewCategoryForm(prev => ({
@@ -1274,7 +1274,7 @@ export default function AdminProductsPage() {
                 <Button
                   type="button"
                   disabled={savingCategory || !newCategoryForm.name.trim()}
-                  className="flex-1 h-10 bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold"
+                  className="flex-1 h-10 bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-foreground font-semibold"
                   onClick={async () => {
                     if (!newCategoryForm.name.trim()) return
                     setSavingCategory(true)

@@ -5,7 +5,7 @@ import type { NextRequest } from 'next/server'
  * Next.js Middleware for CSRF Protection and Security Headers
  * Runs before requests reach API routes
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl
     const method = request.method
 

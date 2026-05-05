@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Loader2, Upload, X } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
+import ImageCropper from '@/components/ui/ImageCropper'
 
 interface ImageUploadProps {
     onUploadComplete: (url: string) => void
@@ -12,6 +13,9 @@ interface ImageUploadProps {
     bucket?: string
     autoReset?: boolean
     maxSizeMB?: number
+    cropEnabled?: boolean
+    cropAspectRatio?: number
+    circularCrop?: boolean
 }
 
 export function ImageUpload({
@@ -19,10 +23,14 @@ export function ImageUpload({
     currentImageUrl,
     bucket = 'products',
     autoReset = false,
-    maxSizeMB = 5
+    maxSizeMB = 5,
+    cropEnabled = false,
+    cropAspectRatio = 1,
+    circularCrop = false
 }: ImageUploadProps) {
     const [uploading, setUploading] = useState(false)
     const [preview, setPreview] = useState<string | null>(currentImageUrl || null)
+    const [imageToCrop, setImageToCrop] = useState<string | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const { accessToken } = useAuth()
 
@@ -54,10 +62,34 @@ export function ImageUpload({
             return
         }
 
+        if (cropEnabled) {
+            const objectUrl = URL.createObjectURL(file)
+            setImageToCrop(objectUrl)
+        } else {
+            await processUpload(file)
+        }
+    }
+
+    const handleCropComplete = async (croppedImageUrl: string) => {
+        setImageToCrop(null)
+        
+        // Convert base64 to File object
+        const arr = croppedImageUrl.split(',')
+        const mimeMatch = arr[0].match(/:(.*?);/)
+        const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg'
+        const bstr = atob(arr[1])
+        let n = bstr.length
+        const u8arr = new Uint8Array(n)
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n)
+        }
+        const file = new File([u8arr], 'cropped.jpg', { type: mime })
+        
+        await processUpload(file)
+    }
+
+    const processUpload = async (file: File | Blob) => {
         // Preview
-        // We use createObjectURL for preview, but release it when component unmounts or changes?
-        // React handles memory reasonably well, but for huge files on tablet this might be heavy.
-        // However, this is standard pattern.
         const objectUrl = URL.createObjectURL(file)
         setPreview(objectUrl)
 
@@ -182,6 +214,16 @@ export function ImageUpload({
                 accept="image/png, image/jpeg, image/jpg, image/webp, image/heic, image/heif, .heic, .heif"
                 className="hidden"
             />
+            
+            {imageToCrop && (
+                <ImageCropper
+                    image={imageToCrop}
+                    onCropComplete={handleCropComplete}
+                    onCancel={() => setImageToCrop(null)}
+                    aspectRatio={cropAspectRatio}
+                    circularCrop={circularCrop}
+                />
+            )}
         </div>
     )
 }

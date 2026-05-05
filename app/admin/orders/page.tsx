@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Package2, Eye, Loader2, X, Download, FileSpreadsheet, KanbanSquare, LayoutGrid, List } from 'lucide-react'
+import { Package2, Eye, Loader2, X, Download, FileSpreadsheet, FileText, KanbanSquare, List } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface OrderItem {
@@ -58,6 +58,43 @@ interface Order {
   }
 }
 
+// ─── Shared watermark helper ─────────────────────────────────────────────────
+
+async function getWatermarkImageId(wb: any): Promise<number | null> {
+  try {
+    const res = await fetch('/logo-no-bg.png')
+    if (!res.ok) return null
+    // Draw logo at 15% opacity by converting to a faded canvas image
+    const origBuffer = await res.arrayBuffer()
+    const blob = new Blob([origBuffer], { type: 'image/png' })
+    const url = URL.createObjectURL(blob)
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image()
+      i.onload = () => resolve(i)
+      i.onerror = reject
+      i.src = url
+    })
+    URL.revokeObjectURL(url)
+    const canvas = document.createElement('canvas')
+    // Shrink to ~200px to keep it small
+    const SIZE = 200
+    canvas.width = SIZE
+    canvas.height = SIZE
+    const ctx = canvas.getContext('2d')!
+    ctx.globalAlpha = 0.12 // 12% opacity = very transparent
+    ctx.drawImage(img, 0, 0, SIZE, SIZE)
+    const dataUrl = canvas.toDataURL('image/png')
+    const b64 = dataUrl.split(',')[1]
+    const bstr = atob(b64)
+    const u8 = new Uint8Array(bstr.length)
+    for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i)
+    return wb.addImage({ buffer: u8.buffer, extension: 'png' })
+  } catch (e) {
+    console.warn('Watermark failed', e)
+    return null
+  }
+}
+
 // ─── Excel helpers ────────────────────────────────────────────────────────────
 
 async function exportSingleOrderToExcel(order: Order, shippingBaseRate: number) {
@@ -68,11 +105,14 @@ async function exportSingleOrderToExcel(order: Order, shippingBaseRate: number) 
 
   const ws = wb.addWorksheet('Order Details')
 
-  // ---- Header section ----
+  const wmId = await getWatermarkImageId(wb)
+  if (wmId !== null) ws.addBackgroundImage(wmId)
+
+  // ---- Header section ---- (light pink: #FCE7F3 = pink-100)
   const addSection = (title: string) => {
     const row = ws.addRow([title])
-    row.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } }
-    row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6366F1' } }
+    row.font = { bold: true, size: 11, color: { argb: 'FF9D174D' } } // dark pink text
+    row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCE7F3' } } // pink-100
     ws.mergeCells(`A${row.number}:F${row.number}`)
     return row
   }
@@ -80,7 +120,7 @@ async function exportSingleOrderToExcel(order: Order, shippingBaseRate: number) 
   const addKV = (key: string, value: string | number) => {
     const row = ws.addRow([key, String(value)])
     row.getCell(1).font = { bold: true }
-    row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } }
+    row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } }
   }
 
   // Order info
@@ -123,8 +163,8 @@ async function exportSingleOrderToExcel(order: Order, shippingBaseRate: number) 
   // Items table
   addSection('ORDER ITEMS')
   const headerRow = ws.addRow(['S.No', 'Product', 'Variant', 'Quantity', 'Unit Price (LKR)', 'Total (LKR)'])
-  headerRow.font = { bold: true }
-  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E7FF' } }
+  headerRow.font = { bold: true, color: { argb: 'FF9D174D' } }
+  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF1F8' } } // very light pink
   headerRow.alignment = { horizontal: 'center' }
 
   const subtotal = order.items.reduce((acc, i) => acc + Number(i.total), 0)
@@ -173,9 +213,9 @@ async function exportSingleOrderToExcel(order: Order, shippingBaseRate: number) 
   // Format the Qty block
   finalRow.getCell(3).font = { bold: true }
   finalRow.getCell(3).alignment = { horizontal: 'right' }
-  finalRow.getCell(4).font = { bold: true, color: { argb: 'FF1D4ED8' } } // Blue text
+  finalRow.getCell(4).font = { bold: true, color: { argb: 'FFDB2777' } } // pink-600
   finalRow.getCell(4).alignment = { horizontal: 'center' }
-  finalRow.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E7FF' } } // Light blue BG
+  finalRow.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCE7F3' } } // pink-100
   
   // Format the Money block
   finalRow.getCell(5).font = { bold: true }
@@ -197,6 +237,220 @@ async function exportSingleOrderToExcel(order: Order, shippingBaseRate: number) 
   downloadBuffer(buffer, `Order_${order.orderNumber}.xlsx`)
 }
 
+async function exportSingleOrderToPDF(order: Order, shippingBaseRate: number) {
+  const jsPDF = (await import('jspdf')).default
+  const autoTable = (await import('jspdf-autotable')).default
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+
+  // ── Watermark ──────────────────────────────────────────────────────────
+  let watermarkDataUrl: string | null = null
+  try {
+    const res = await fetch('/logo-no-bg.png')
+    if (res.ok) {
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const i = new Image(); i.onload = () => resolve(i); i.onerror = reject; i.src = url
+      })
+      URL.revokeObjectURL(url)
+      const c = document.createElement('canvas'); c.width = 400; c.height = 400
+      const ctx = c.getContext('2d')!
+      ctx.globalAlpha = 0.10
+      ctx.drawImage(img, 0, 0, 400, 400)
+      watermarkDataUrl = c.toDataURL('image/png')
+    }
+  } catch (e) { /* skip */ }
+
+  const PINK       = [219, 39, 119]  as [number, number, number]
+  const DARK_PINK  = [157, 23, 77]   as [number, number, number]
+  const LIGHT_PINK = [252, 231, 243] as [number, number, number]
+  const W = 210
+  const H = 297
+
+  const drawWatermark = () => {
+    if (!watermarkDataUrl) return
+    const size = 130
+    doc.addImage(watermarkDataUrl, 'PNG', (W - size) / 2, (H - size) / 2, size, size)
+  }
+
+  // ── Page 1 watermark ──────────────────────────────────────────────────
+  drawWatermark()
+
+  // ── Company header block ───────────────────────────────────────────────
+  // Full-width pink top bar
+  doc.setFillColor(...PINK)
+  doc.rect(0, 0, W, 26, 'F')
+
+  // Company name — large centred
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(16); doc.setFont('helvetica', 'bold')
+  doc.text('WEB MALL Pvt Ltd', W / 2, 11, { align: 'center' })
+
+  // Sub-line: document title left, metadata right
+  doc.setFontSize(8); doc.setFont('helvetica', 'normal')
+  doc.text('Order Report', 14, 20)
+  doc.text(`Order: ${order.orderNumber}  |  ${new Date(order.createdAt).toLocaleDateString()}`, W - 14, 20, { align: 'right' })
+
+  let y = 32
+
+  // ── ORDER INFORMATION ─────────────────────────────────────────────────
+  const sectionBar = (title: string, full = true, x2?: number) => {
+    const rx = full ? 14 : (x2 ?? 14)
+    const rw = full ? W - 28 : W / 2 - 18
+    doc.setFillColor(...LIGHT_PINK)
+    doc.rect(rx, y, rw, 7, 'F')
+    doc.setTextColor(...DARK_PINK); doc.setFontSize(8.5); doc.setFont('helvetica', 'bold')
+    doc.text(title, rx + 2, y + 5)
+  }
+
+  sectionBar('ORDER INFORMATION')
+  y += 10
+  doc.setTextColor(30, 30, 30); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5)
+
+  const kvFull = (k: string, v: string) => {
+    doc.setFont('helvetica', 'bold'); doc.text(`${k}:`, 16, y)
+    doc.setFont('helvetica', 'normal'); doc.text(v, 58, y)
+    y += 5.5
+  }
+  kvFull('Order Number', order.orderNumber)
+  kvFull('Status', order.status.toUpperCase())
+  kvFull('Payment', order.paymentMethod.toUpperCase())
+  kvFull('Date', new Date(order.createdAt).toLocaleString())
+  y += 4
+
+  // ── CUSTOMER INFO + SHIPPING ADDRESS (side by side) ───────────────────
+  const colLeft  = 14
+  const colRight = W / 2 + 3
+  const colW     = W / 2 - 17
+
+  // Two section bars at same y
+  doc.setFillColor(...LIGHT_PINK)
+  doc.rect(colLeft,  y, colW, 7, 'F')
+  doc.rect(colRight, y, colW, 7, 'F')
+  doc.setTextColor(...DARK_PINK); doc.setFontSize(8.5); doc.setFont('helvetica', 'bold')
+  doc.text('CUSTOMER INFORMATION', colLeft + 2, y + 5)
+  doc.text('SHIPPING ADDRESS', colRight + 2, y + 5)
+  y += 10
+
+  doc.setTextColor(30, 30, 30); doc.setFontSize(8)
+
+  // kv helpers that WRAP long values instead of truncating
+  const maxValW = colW - 22  // available width for value text in mm
+
+  const kvL = (k: string, v: string, rowOffset: number) => {
+    const baseY = y + rowOffset * 5.5
+    doc.setFont('helvetica', 'bold'); doc.text(`${k}:`, colLeft + 2, baseY)
+    doc.setFont('helvetica', 'normal')
+    const lines = doc.splitTextToSize(v, maxValW)
+    doc.text(lines, colLeft + 20, baseY)
+  }
+  const kvR = (k: string, v: string, rowOffset: number) => {
+    const baseY = y + rowOffset * 5.5
+    doc.setFont('helvetica', 'bold'); doc.text(`${k}:`, colRight + 2, baseY)
+    doc.setFont('helvetica', 'normal')
+    const lines = doc.splitTextToSize(v, maxValW)
+    doc.text(lines, colRight + 20, baseY)
+  }
+
+  kvL('Name',  order.user?.name  || 'N/A', 0)
+  kvL('Email', order.user?.email || 'N/A', 1)
+  kvL('Phone', order.user?.phone || 'N/A', 2)
+
+  const sa = order.shippingAddress || {}
+  const saName = `${sa.firstName || ''} ${sa.lastName || ''}`.trim() || 'N/A'
+  kvR('Name',    saName, 0)
+  kvR('Address', sa.address || 'N/A', 1)
+  kvR('City',    `${sa.city || ''}, ${sa.district || ''} ${sa.postalCode || ''}`.trim() || 'N/A', 2)
+  kvR('Phone',   sa.phone || 'N/A', 3)
+
+  // Give enough vertical space — address may wrap to 2 lines, so add extra padding
+  y += 4 * 5.5 + 10
+
+  const subtotal = order.items.reduce((a, i) => a + Number(i.total), 0)
+  const discount = Number(order.couponUsage?.discountAmount || 0)
+  const shipping = Math.max(0, Number(order.totalAmount) - (subtotal - discount))
+
+  // ── Table ──────────────────────────────────────────────────────────────
+  autoTable(doc, {
+    startY: y,
+    head: [['Sl No.', 'Product', 'Variant', 'Qty', 'Unit Price (LKR)', 'Total (LKR)']],
+    body: order.items.map((item, idx) => [
+      idx + 1,
+      item.product.name,
+      item.variantName || item.variant?.name || '—',
+      item.quantity,
+      Number(item.price).toLocaleString('en-LK'),
+      Number(item.total).toLocaleString('en-LK'),
+    ]),
+    // NO foot here — we draw totals manually below so they only appear once (last page)
+    headStyles: {
+      fillColor: PINK,
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 8.5,
+      halign: 'center',
+    },
+    alternateRowStyles: { fillColor: [255, 249, 253] },
+    // top: 14 reserves space for the compact header on continuation pages (pages 2+)
+    margin: { left: 14, right: 14, top: 14 },
+    styles: { fontSize: 8, overflow: 'linebreak', cellPadding: 2 },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 14 },
+      1: { cellWidth: 70 },
+      2: { cellWidth: 28 },
+      3: { halign: 'center', cellWidth: 10 },
+      4: { halign: 'right',  cellWidth: 30 },
+      5: { halign: 'right',  cellWidth: 30 },
+      // 14+70+28+10+30+30 = 182 = 210-14-14 ✓
+    },
+    didDrawPage: (data) => {
+      // Watermark on every page
+      drawWatermark()
+
+      // Page number at bottom centre — every page
+      const totalPages = (doc as any).internal.getNumberOfPages()
+      doc.setFontSize(7.5); doc.setFont('helvetica', 'normal')
+      doc.setTextColor(130, 130, 130)
+      doc.text(`Page ${data.pageNumber} of ${totalPages}`, W / 2, H - 5, { align: 'center' })
+    },
+  })
+
+  // ── Totals block — drawn ONCE after table ends (last page only) ─────────
+  const finalY = (doc as any).lastAutoTable.finalY + 4
+  const totalsX = 14 + 12 + 60 + 28 + 10  // start at column 5 (Unit Price col start)
+  const labelX  = totalsX                   // label column
+  const valueX  = W - 14                    // right edge
+
+  const totalRows: [string, string][] = [
+    ['Subtotal (LKR)', subtotal.toLocaleString('en-LK')],
+    ...(discount > 0
+      ? [[`Discount (${order.couponUsage?.coupon.code || ''})`, `- ${discount.toLocaleString('en-LK')}`] as [string, string]]
+      : []),
+    ['Shipping (LKR)', shipping === 0 ? 'FREE' : shipping.toLocaleString('en-LK')],
+  ]
+
+  doc.setFontSize(8.5)
+  let ty = finalY
+  totalRows.forEach(([label, value]) => {
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(60, 60, 60)
+    doc.text(label, labelX, ty)
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(...DARK_PINK)
+    doc.text(value, valueX, ty, { align: 'right' })
+    ty += 6
+  })
+
+  // TOTAL row — bigger, with a top border line
+  ty += 1
+  doc.setDrawColor(...DARK_PINK)
+  doc.setLineWidth(0.4)
+  doc.line(labelX, ty - 2, W - 14, ty - 2)
+  doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...DARK_PINK)
+  doc.text('TOTAL (LKR)', labelX, ty + 4)
+  doc.text(Number(order.totalAmount).toLocaleString('en-LK'), valueX, ty + 4, { align: 'right' })
+
+  doc.save(`Order_${order.orderNumber}.pdf`)
+}
+
 async function exportAllOrdersToExcel(orders: Order[]) {
   const ExcelJS = (await import('exceljs')).default
   const wb = new ExcelJS.Workbook()
@@ -205,7 +459,10 @@ async function exportAllOrdersToExcel(orders: Order[]) {
 
   const ws = wb.addWorksheet('All Orders')
 
-  // Header row
+  const wmId = await getWatermarkImageId(wb)
+  if (wmId !== null) ws.addBackgroundImage(wmId)
+
+  // Header row — light pink
   const headerRow = ws.addRow([
     'Order Number', 'Date', 'Status', 'Payment',
     'Customer Name', 'Customer Email', 'Customer Phone',
@@ -213,8 +470,8 @@ async function exportAllOrdersToExcel(orders: Order[]) {
     'Items (Summary)', 'Subtotal (LKR)', 'Discount (LKR)', 'Shipping (LKR)', 'Total (LKR)',
     'Coupon Code', 'Notes'
   ])
-  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } }
-  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6366F1' } }
+  headerRow.font = { bold: true, color: { argb: 'FF9D174D' } } // dark pink text
+  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCE7F3' } } // pink-100
   headerRow.alignment = { horizontal: 'center', wrapText: true }
 
   orders.forEach(order => {
@@ -278,6 +535,101 @@ async function exportAllOrdersToExcel(orders: Order[]) {
   downloadBuffer(buffer, `WebMall_Orders_${new Date().toISOString().split('T')[0]}.xlsx`)
 }
 
+async function exportAllOrdersToPDF(orders: Order[], periodLabel: string) {
+  const jsPDF = (await import('jspdf')).default
+  const autoTable = (await import('jspdf-autotable')).default
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+
+  // Load watermark once
+  let watermarkDataUrl: string | null = null
+  try {
+    const res = await fetch('/logo-no-bg.png')
+    if (res.ok) {
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const i = new Image(); i.onload = () => resolve(i); i.onerror = reject; i.src = url
+      })
+      URL.revokeObjectURL(url)
+      const c = document.createElement('canvas'); c.width = 400; c.height = 400
+      const ctx = c.getContext('2d')!; ctx.globalAlpha = 0.10
+      ctx.drawImage(img, 0, 0, 400, 400)
+      watermarkDataUrl = c.toDataURL('image/png')
+    }
+  } catch (e) { /* skip */ }
+
+  const PINK       = [219, 39, 119]  as [number, number, number]
+  const DARK_PINK  = [157, 23, 77]   as [number, number, number]
+  const LIGHT_PINK = [252, 231, 243] as [number, number, number]
+  const W = 210
+  const H = 297
+
+  const drawWatermark = () => {
+    if (!watermarkDataUrl) return
+    const size = 130
+    doc.addImage(watermarkDataUrl, 'PNG', (W - size) / 2, (H - size) / 2, size, size)
+  }
+
+  // Page 1: watermark + company header
+  drawWatermark()
+  doc.setFillColor(...PINK)
+  doc.rect(0, 0, W, 26, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(16); doc.setFont('helvetica', 'bold')
+  doc.text('WEB MALL Pvt Ltd', W / 2, 11, { align: 'center' })
+  doc.setFontSize(8); doc.setFont('helvetica', 'normal')
+  doc.text('All Orders Report', 14, 20)
+  doc.text(`Period: ${periodLabel}  ·  ${orders.length} orders`, W - 14, 20, { align: 'right' })
+
+  autoTable(doc, {
+    startY: 32,
+    head: [['Sl No.', 'Order No.', 'Date', 'Status', 'Payment', 'Customer', 'Email', 'Total (LKR)']],
+    body: orders.map((order, idx) => [
+      idx + 1,
+      order.orderNumber,
+      new Date(order.createdAt).toLocaleDateString(),
+      order.status.toUpperCase(),
+      order.paymentMethod.toUpperCase(),
+      order.user?.name || 'N/A',
+      order.user?.email || 'N/A',
+      Number(order.totalAmount).toLocaleString('en-LK'),
+    ]),
+    headStyles: {
+      fillColor: PINK,
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 8.5,
+      halign: 'center',
+    },
+    alternateRowStyles: { fillColor: [255, 249, 253] },
+    margin: { left: 14, right: 14, top: 14 },
+    styles: { fontSize: 8, overflow: 'ellipsize', cellPadding: 2 },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 10 },  // Sl No.      10
+      1: { cellWidth: 30 },                     // Order No.   30
+      2: { halign: 'center', cellWidth: 20 },   // Date        20
+      3: { halign: 'center', cellWidth: 18 },   // Status      18
+      4: { halign: 'center', cellWidth: 16 },   // Payment     16
+      5: { cellWidth: 24 },                     // Customer    24
+      6: { cellWidth: 42 },                     // Email       42
+      7: { halign: 'right',  cellWidth: 22 },   // Total       22
+      // 10+30+20+18+16+24+42+22 = 182 = 210-14-14 ✓
+    },
+    didDrawPage: (data) => {
+      // Watermark on every page
+      drawWatermark()
+
+      // Page number at bottom centre — every page
+      const totalPages = (doc as any).internal.getNumberOfPages()
+      doc.setFontSize(7.5); doc.setFont('helvetica', 'normal')
+      doc.setTextColor(130, 130, 130)
+      doc.text(`Page ${data.pageNumber} of ${totalPages}`, W / 2, H - 5, { align: 'center' })
+    },
+  })
+
+  doc.save(`WebMall_Orders_${new Date().toISOString().split('T')[0]}.pdf`)
+}
+
 function downloadBuffer(buffer: ArrayBuffer, filename: string) {
   const blob = new Blob([buffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -302,7 +654,59 @@ export default function AdminOrdersPage() {
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(1)
   const [exportingAll, setExportingAll] = useState(false)
+  const [exportingAllPdf, setExportingAllPdf] = useState(false)
   const [exportingSingle, setExportingSingle] = useState(false)
+  const [exportingSinglePdf, setExportingSinglePdf] = useState(false)
+
+  // ── Export date range state (mirrors analytics filter style) ──
+  const [rangeType, setRangeType]     = useState<'preset' | 'month' | 'custom'>('preset')
+  const [preset, setPreset]           = useState('All Time')
+  const [exportMonth, setExportMonth] = useState(() => new Date().toLocaleString('default', { month: 'long' }))
+  const [exportYear, setExportYear]   = useState(() => String(new Date().getFullYear()))
+  const [customFrom, setCustomFrom]   = useState('')
+  const [customTo, setCustomTo]       = useState('')
+
+  const monthList = ['January','February','March','April','May','June','July','August','September','October','November','December']
+  const yearList  = Array.from({ length: 5 }, (_, i) => String(new Date().getFullYear() - i))
+
+  // Reactive range — recomputed whenever any filter state changes
+  const exportRange = useMemo(() => {
+    const today = new Date()
+    const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+    if (rangeType === 'preset') {
+      if (preset === 'Today') {
+        const s = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+        return { from: s, to: today, label: `Today (${fmt(today)})` }
+      } else if (preset === 'Last 7 Days') {
+        const s = new Date(today); s.setDate(s.getDate() - 6); s.setHours(0,0,0,0)
+        return { from: s, to: today, label: `${fmt(s)} – ${fmt(today)}` }
+      } else if (preset === 'Last 30 Days') {
+        const s = new Date(today); s.setDate(s.getDate() - 29); s.setHours(0,0,0,0)
+        return { from: s, to: today, label: `${fmt(s)} – ${fmt(today)}` }
+      } else if (preset === 'This Month') {
+        const s = new Date(today.getFullYear(), today.getMonth(), 1)
+        return { from: s, to: today, label: `${s.toLocaleString('default',{month:'long'})} ${today.getFullYear()}` }
+      } else if (preset === 'This Year') {
+        const s = new Date(today.getFullYear(), 0, 1)
+        return { from: s, to: today, label: `Year ${today.getFullYear()}` }
+      }
+      return { from: null, to: null, label: `All Time (as of ${fmt(today)})` }
+    } else if (rangeType === 'month') {
+      const monthIdx = monthList.indexOf(exportMonth)
+      const yr = parseInt(exportYear)
+      const s = new Date(yr, monthIdx, 1)
+      const e = new Date(yr, monthIdx + 1, 0, 23, 59, 59)
+      return { from: s, to: e, label: `${exportMonth} ${exportYear}` }
+    } else {
+      const s = customFrom ? new Date(customFrom) : null
+      const e = customTo   ? new Date(customTo + 'T23:59:59') : null
+      const label = s || e
+        ? `${s ? fmt(s) : 'Start'} – ${e ? fmt(e) : 'Today'}`
+        : `All Time (as of ${fmt(today)})`
+      return { from: s, to: e, label }
+    }
+  }, [rangeType, preset, exportMonth, exportYear, customFrom, customTo])
+
   const LIMIT = 20
   const sentinelRef = useRef<HTMLDivElement>(null)
   const loadingMoreRef = useRef(false)
@@ -344,9 +748,15 @@ export default function AdminOrdersPage() {
     return () => clearInterval(interval)
   }, [user, accessToken])
 
+  // Convert a DB ISO date string to local YYYY-MM-DD — respects user's local timezone
+  const toLocalDate = (iso: string) => {
+    const d = new Date(iso)
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  }
+
   const filteredOrders = orders.filter(order => {
     const q = searchQuery.toLowerCase()
-    return (
+    const matchesSearch = (
       order.orderNumber.toLowerCase().includes(q) ||
       (order.user?.name || '').toLowerCase().includes(q) ||
       (order.user?.email || '').toLowerCase().includes(q) ||
@@ -354,6 +764,51 @@ export default function AdminOrdersPage() {
       (order.shippingAddress?.phone || '').includes(q) ||
       (order.status || '').toLowerCase().includes(q)
     )
+    if (!matchesSearch) return false
+
+    // Date range filter — uses local date strings to avoid UTC/IST timezone issues
+    const orderDate = toLocalDate(order.createdAt)
+    const _ml = ['January','February','March','April','May','June','July','August','September','October','November','December']
+    const today = new Date()
+    const tStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
+
+    if (rangeType === 'preset') {
+      if (preset === 'All Time') return true
+      if (preset === 'Today') return orderDate === tStr
+      if (preset === 'Last 7 Days') {
+        const d = new Date(today); d.setDate(d.getDate() - 6)
+        const from = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+        return orderDate >= from && orderDate <= tStr
+      }
+      if (preset === 'Last 30 Days') {
+        const d = new Date(today); d.setDate(d.getDate() - 29)
+        const from = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+        return orderDate >= from && orderDate <= tStr
+      }
+      if (preset === 'This Month') {
+        const from = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`
+        return orderDate >= from && orderDate <= tStr
+      }
+      if (preset === 'This Year') {
+        return orderDate >= `${today.getFullYear()}-01-01` && orderDate <= tStr
+      }
+    }
+
+    if (rangeType === 'month') {
+      const idx = _ml.indexOf(exportMonth), yr = parseInt(exportYear)
+      const lastDay = new Date(yr, idx + 1, 0).getDate()
+      const from = `${yr}-${String(idx+1).padStart(2,'0')}-01`
+      const to   = `${yr}-${String(idx+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`
+      return orderDate >= from && orderDate <= to
+    }
+
+    if (rangeType === 'custom') {
+      if (customFrom && orderDate < customFrom) return false
+      if (customTo   && orderDate > customTo)   return false
+      return true
+    }
+
+    return true
   })
 
   useEffect(() => {
@@ -508,21 +963,109 @@ export default function AdminOrdersPage() {
     setDraggedOrderId(null)
   }
 
+  const todayStr = () => toLocalDate(new Date().toISOString())
+  const offsetDays = (n: number) => {
+    const d = new Date(); d.setDate(d.getDate() + n)
+    return toLocalDate(d.toISOString())
+  }
+
+  // Returns { filterFn, label } — filterFn filters orders by local date
+  const computeExportFilter = () => {
+    const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+    const _ml = ['January','February','March','April','May','June','July','August','September','October','November','December']
+    const today = new Date()
+
+    if (rangeType === 'preset') {
+      if (preset === 'All Time') {
+        return { filterFn: null, label: `All Time (as of ${fmt(today)})` }
+      }
+      if (preset === 'Today') {
+        const d = todayStr()
+        return { filterFn: (o: Order) => toLocalDate(o.createdAt) === d, label: `Today (${fmt(today)})` }
+      }
+      if (preset === 'Last 7 Days') {
+        const from = offsetDays(-6), to = todayStr()
+        return { filterFn: (o: Order) => toLocalDate(o.createdAt) >= from && toLocalDate(o.createdAt) <= to,
+          label: `${fmt(new Date(from))} – ${fmt(today)}` }
+      }
+      if (preset === 'Last 30 Days') {
+        const from = offsetDays(-29), to = todayStr()
+        return { filterFn: (o: Order) => toLocalDate(o.createdAt) >= from && toLocalDate(o.createdAt) <= to,
+          label: `${fmt(new Date(from))} – ${fmt(today)}` }
+      }
+      if (preset === 'This Month') {
+        const from = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`
+        const to = todayStr()
+        return { filterFn: (o: Order) => toLocalDate(o.createdAt) >= from && toLocalDate(o.createdAt) <= to,
+          label: `${today.toLocaleString('default',{month:'long'})} ${today.getFullYear()}` }
+      }
+      if (preset === 'This Year') {
+        const from = `${today.getFullYear()}-01-01`, to = todayStr()
+        return { filterFn: (o: Order) => toLocalDate(o.createdAt) >= from && toLocalDate(o.createdAt) <= to,
+          label: `Year ${today.getFullYear()}` }
+      }
+    }
+
+    if (rangeType === 'month') {
+      const idx = _ml.indexOf(exportMonth), yr = parseInt(exportYear)
+      const from = `${yr}-${String(idx+1).padStart(2,'0')}-01`
+      const lastDay = new Date(yr, idx+1, 0).getDate()
+      const to   = `${yr}-${String(idx+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`
+      return { filterFn: (o: Order) => toLocalDate(o.createdAt) >= from && toLocalDate(o.createdAt) <= to,
+        label: `${exportMonth} ${exportYear}` }
+    }
+
+    // custom
+    const from = customFrom || null
+    const to   = customTo   || null
+    const label = from || to
+      ? `${from ? fmt(new Date(from)) : 'Start'} – ${to ? fmt(new Date(to)) : 'Today'}`
+      : `All Time (as of ${fmt(today)})`
+    return { filterFn: (o: Order) =>
+      (!from || toLocalDate(o.createdAt) >= from) &&
+      (!to   || toLocalDate(o.createdAt) <= to), label }
+  }
+
   const handleExportAll = async () => {
     setExportingAll(true)
     try {
-      // Fetch all orders for export (no pagination limit)
       const token = await accessToken()
       const headers = (token ? { 'Authorization': `Bearer ${token}` } : {}) as HeadersInit
       const res = await fetch(`/api/orders?limit=all`, { headers })
       const data = await res.json()
-      await exportAllOrdersToExcel(data.orders || orders)
+      const { filterFn, label } = computeExportFilter()
+      let allOrders: Order[] = data.orders || orders
+      console.log('[ExportExcel] total:', allOrders.length, 'preset:', preset, 'sample:', allOrders[0]?.createdAt, 'local:', allOrders[0] ? toLocalDate(allOrders[0].createdAt) : '-', 'today:', todayStr())
+      if (filterFn) allOrders = allOrders.filter(filterFn)
+      console.log('[ExportExcel] after filter:', allOrders.length)
+      await exportAllOrdersToExcel(allOrders)
     } catch (e) {
       console.error('Export failed', e)
     } finally {
       setExportingAll(false)
     }
   }
+
+  const handleExportAllPdf = async () => {
+    setExportingAllPdf(true)
+    try {
+      const token = await accessToken()
+      const headers = (token ? { 'Authorization': `Bearer ${token}` } : {}) as HeadersInit
+      const res = await fetch(`/api/orders?limit=all`, { headers })
+      const data = await res.json()
+      const { filterFn, label } = computeExportFilter()
+      let allOrders: Order[] = data.orders || orders
+      console.log('[ExportPDF] total:', allOrders.length, 'preset:', preset, 'sample:', allOrders[0]?.createdAt, 'local:', allOrders[0] ? toLocalDate(allOrders[0].createdAt) : '-', 'today:', todayStr())
+      if (filterFn) allOrders = allOrders.filter(filterFn)
+      console.log('[ExportPDF] after filter:', allOrders.length)
+      await exportAllOrdersToPDF(allOrders, label)
+    } catch (e) {
+      console.error('Export failed', e)
+    } finally {
+      setExportingAllPdf(false)
+    }
+  }
+
 
   const handleExportSingle = async (order: Order) => {
     setExportingSingle(true)
@@ -532,6 +1075,17 @@ export default function AdminOrdersPage() {
       console.error('Export failed', e)
     } finally {
       setExportingSingle(false)
+    }
+  }
+
+  const handleExportSinglePdf = async (order: Order) => {
+    setExportingSinglePdf(true)
+    try {
+      await exportSingleOrderToPDF(order, settings?.shippingBaseRate || 350)
+    } catch (e) {
+      console.error('Export failed', e)
+    } finally {
+      setExportingSinglePdf(false)
     }
   }
 
@@ -582,18 +1136,113 @@ export default function AdminOrdersPage() {
             </button>
           </div>
 
-          {/* Export All Button */}
+          {/* Export All Buttons */}
           <Button
             onClick={handleExportAll}
-            disabled={exportingAll || orders.length === 0}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shrink-0"
+            disabled={exportingAll || exportingAllPdf || orders.length === 0}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shrink-0"
+            title="Export all orders to Excel"
           >
             {exportingAll
               ? <Loader2 className="h-4 w-4 animate-spin" />
               : <FileSpreadsheet className="h-4 w-4" />}
-            Export All
+            <span className="hidden sm:inline">Excel</span>
+          </Button>
+          <Button
+            onClick={handleExportAllPdf}
+            disabled={exportingAll || exportingAllPdf || orders.length === 0}
+            className="bg-rose-600 hover:bg-rose-700 text-white gap-1.5 shrink-0"
+            title="Export all orders to PDF"
+          >
+            {exportingAllPdf
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <FileText className="h-4 w-4" />}
+            <span className="hidden sm:inline">PDF</span>
           </Button>
         </div>
+      </div>
+
+      {/* ── Export Date Range Filter (analytics-style) ── */}
+      <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl border border-border bg-card shadow-sm">
+        <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground/70 shrink-0">
+          <svg className="h-4 w-4 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+          Export Range:
+        </div>
+
+        {/* Type selector */}
+        <select
+          className="bg-card border border-border rounded-lg px-3 py-1.5 text-sm font-semibold text-foreground/80 outline-none focus:ring-2 focus:ring-pink-300 transition-all"
+          value={rangeType}
+          onChange={e => setRangeType(e.target.value as 'preset' | 'month' | 'custom')}
+        >
+          <option value="preset">Preset Range</option>
+          <option value="month">Month &amp; Year</option>
+          <option value="custom">Custom Dates</option>
+        </select>
+
+        {/* Preset picker */}
+        {rangeType === 'preset' && (
+          <select
+            className="bg-card border border-border rounded-lg px-3 py-1.5 text-sm font-semibold text-foreground/80 outline-none focus:ring-2 focus:ring-pink-300 transition-all"
+            value={preset}
+            onChange={e => setPreset(e.target.value)}
+          >
+            <option>All Time</option>
+            <option>Today</option>
+            <option>Last 7 Days</option>
+            <option>Last 30 Days</option>
+            <option>This Month</option>
+            <option>This Year</option>
+          </select>
+        )}
+
+        {/* Month + Year picker */}
+        {rangeType === 'month' && (
+          <div className="flex gap-2">
+            <select
+              className="bg-card border border-border rounded-lg px-3 py-1.5 text-sm font-semibold text-foreground/80 outline-none focus:ring-2 focus:ring-pink-300 transition-all"
+              value={exportMonth}
+              onChange={e => setExportMonth(e.target.value)}
+            >
+              {monthList.map(m => <option key={m}>{m}</option>)}
+            </select>
+            <select
+              className="bg-card border border-border rounded-lg px-3 py-1.5 text-sm font-semibold text-foreground/80 outline-none focus:ring-2 focus:ring-pink-300 transition-all"
+              value={exportYear}
+              onChange={e => setExportYear(e.target.value)}
+            >
+              {yearList.map(y => <option key={y}>{y}</option>)}
+            </select>
+          </div>
+        )}
+
+        {/* Custom date pickers */}
+        {rangeType === 'custom' && (
+          <div className="flex items-center gap-2">
+            <input
+              type="date" value={customFrom}
+              onChange={e => setCustomFrom(e.target.value)}
+              className="text-sm border border-border rounded-lg px-2 py-1.5 bg-card outline-none focus:ring-2 focus:ring-pink-300"
+            />
+            <span className="text-muted-foreground text-xs font-medium">→</span>
+            <input
+              type="date" value={customTo}
+              onChange={e => setCustomTo(e.target.value)}
+              className="text-sm border border-border rounded-lg px-2 py-1.5 bg-card outline-none focus:ring-2 focus:ring-pink-300"
+            />
+            {(customFrom || customTo) && (
+              <button onClick={() => { setCustomFrom(''); setCustomTo('') }}
+                className="text-xs text-muted-foreground hover:text-rose-600 underline transition-colors ml-1">
+                Clear
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Live preview label */}
+        <span className="ml-auto text-xs text-muted-foreground/70 italic hidden sm:block">
+          {exportRange.label}
+        </span>
       </div>
 
       {viewMode === 'list' ? (
@@ -790,17 +1439,30 @@ export default function AdminOrdersPage() {
                 <p className="text-sm text-muted-foreground mt-0.5">{selectedOrder.orderNumber}</p>
               </div>
               <div className="flex items-center gap-2">
-                {/* Export single order */}
+                {/* Export single order — Excel + PDF */}
                 <Button
                   size="sm"
                   onClick={() => handleExportSingle(selectedOrder)}
-                  disabled={exportingSingle}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+                  disabled={exportingSingle || exportingSinglePdf}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+                  title="Export to Excel"
                 >
                   {exportingSingle
                     ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    : <Download className="h-3.5 w-3.5" />}
-                  Export Excel
+                    : <FileSpreadsheet className="h-3.5 w-3.5" />}
+                  Excel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => handleExportSinglePdf(selectedOrder)}
+                  disabled={exportingSingle || exportingSinglePdf}
+                  className="bg-rose-600 hover:bg-rose-700 text-white gap-1.5"
+                  title="Export to PDF"
+                >
+                  {exportingSinglePdf
+                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    : <FileText className="h-3.5 w-3.5" />}
+                  PDF
                 </Button>
                 <button
                   onClick={() => setSelectedOrder(null)}

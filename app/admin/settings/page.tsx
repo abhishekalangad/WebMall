@@ -690,6 +690,8 @@ export default function AdminSettingsPage() {
                                                                 setBanners(newBanners)
                                                             }}
                                                             bucket="site-assets"
+                                                            cropEnabled={true}
+                                                            cropAspectRatio={4 / 5}
                                                         />
                                                     </div>
 
@@ -1044,6 +1046,8 @@ export default function AdminSettingsPage() {
                                         currentImageUrl=""
                                         bucket="about-photos"
                                         autoReset={true}
+                                        cropEnabled={true}
+                                        cropAspectRatio={16 / 9}
                                         onUploadComplete={(url) => {
                                             if (url) {
                                                 setSettings(prev => ({

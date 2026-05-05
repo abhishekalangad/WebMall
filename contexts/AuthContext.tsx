@@ -115,6 +115,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
+    // Suppress and handle Supabase auto-refresh background errors
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const err = event.reason;
+      if (err && err.name === 'AuthApiError' && (err.message.includes('Refresh Token') || err.message.includes('refresh'))) {
+        event.preventDefault(); // Prevent Next.js error overlay
+        console.warn('Caught invalid refresh token error, clearing session...');
+        
+        // Clear local storage manually to break the refresh loop
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+            localStorage.removeItem(key);
+          }
+        });
+        
+        clearSession().then(() => {
+           window.location.reload();
+        });
+      }
+    };
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    return () => {
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
+  useEffect(() => {
     // ── 1. Subscribe to auth state changes (the canonical Supabase pattern) ──
     // This fires immediately with the current session and on every future change.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

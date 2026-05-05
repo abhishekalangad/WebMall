@@ -86,7 +86,8 @@ export function proxy(request: NextRequest) {
     // For all responses, add security headers
     const response = NextResponse.next()
 
-    response.headers.set('X-Frame-Options', 'DENY')
+    // Use CSP frame-ancestors instead of X-Frame-Options to allow Vercel Dashboard preview
+    response.headers.set('Content-Security-Policy', "frame-ancestors 'self' https://vercel.com https://*.vercel.com");
     response.headers.set('X-Content-Type-Options', 'nosniff')
     response.headers.set('X-XSS-Protection', '1; mode=block')
     response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')

@@ -52,14 +52,14 @@ export default async function ProductsPage() {
       }>
         <ProductsView
           initialProducts={[]}
-          initialCategories={['All']}
+          initialCategories={[]}
         />
       </Suspense>
     )
   }
 
   let products: any[] = []
-  let categories: Category[] = []
+  let categories: any[] = []
 
   try {
     const [fetchedProducts, fetchedCategories] = await Promise.all([
@@ -67,6 +67,7 @@ export default async function ProductsPage() {
         where: { status: 'active' },
         include: {
           category: true,
+          subcategory: true,
           images: {
             orderBy: { position: 'asc' },
             take: 1
@@ -76,7 +77,12 @@ export default async function ProductsPage() {
         orderBy: { name: 'asc' }
       }),
       prisma.category.findMany({
-        orderBy: { name: 'asc' }
+        orderBy: { name: 'asc' },
+        include: {
+          subcategories: {
+            orderBy: { name: 'asc' }
+          }
+        }
       })
     ])
     products = fetchedProducts.map(p => ({
@@ -92,8 +98,6 @@ export default async function ProductsPage() {
     console.warn('Failed to fetch products page data:', error)
   }
 
-  const categoryNames = ['All', ...categories.map((c: any) => c.name)]
-
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -105,7 +109,7 @@ export default async function ProductsPage() {
     }>
       <ProductsView
         initialProducts={products}
-        initialCategories={categoryNames}
+        initialCategories={categories}
       />
     </Suspense>
   )

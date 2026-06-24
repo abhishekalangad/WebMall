@@ -70,7 +70,7 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
 
     return (
         <div className="min-h-screen">
-            <section className="relative min-h-[600px] lg:h-[800px] bg-[#fffcf9] dark:bg-background overflow-hidden flex items-center">
+            <section className="relative min-h-[500px] lg:h-[650px] bg-[#fffcf9] dark:bg-background overflow-hidden flex items-center py-12 lg:py-0">
                 {/* Decorative Background Elements */}
                 <div className="absolute top-0 right-0 w-1/2 h-full bg-[#fdf2f8]/50 dark:bg-pink-950/20 skew-x-[-12deg] translate-x-32 z-0" />
                 <div className="absolute top-[10%] left-[5%] w-64 h-64 bg-pink-100/40 dark:bg-pink-900/20 rounded-full blur-3xl z-0 animate-pulse" />
@@ -96,7 +96,7 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                             New Arrival
                                         </span>
 
-                                        <h1 className="text-5xl md:text-7xl font-playfair font-bold text-gray-900 dark:text-white mb-8 leading-[1.1]">
+                                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-playfair font-medium text-gray-900 dark:text-white mb-6 leading-[1.2]">
                                             {banners[currentSlide].title.split(' ').map((word, i) => (
                                                 <motion.span
                                                     key={i}
@@ -114,7 +114,7 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 0.7 }}
                                             transition={{ delay: 0.5 }}
-                                            className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-10 max-w-lg mx-auto lg:mx-0 leading-relaxed"
+                                            className="text-base md:text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-lg mx-auto lg:mx-0 leading-relaxed font-sans"
                                         >
                                             {banners[currentSlide].subtitle}
                                         </motion.p>
@@ -136,6 +136,25 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                                 View Collection
                                             </Link>
                                         </motion.div>
+
+                                        {/* Pagination Progress Controls inside flow */}
+                                        {banners.length > 1 && (
+                                            <div className="mt-8 flex items-center gap-4 justify-center lg:justify-start select-none">
+                                                <div className="flex gap-2">
+                                                    {banners.map((_, idx) => (
+                                                        <button
+                                                            key={idx}
+                                                            onClick={() => setCurrentSlide(idx)}
+                                                            className={`h-1.5 rounded-full transition-all duration-500 ${idx === currentSlide ? 'w-10 bg-gray-900 dark:bg-white' : 'w-3 bg-gray-200 dark:bg-gray-700'}`}
+                                                        />
+                                                    ))}
+                                                </div>
+                                                <div className="hidden lg:flex gap-2 ml-4">
+                                                    <button onClick={prevSlide} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-foreground"><ChevronLeft className="w-5 h-5" /></button>
+                                                    <button onClick={nextSlide} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-foreground"><ChevronRight className="w-5 h-5" /></button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </motion.div>
                                 </div>
 
@@ -146,7 +165,7 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                         animate={{ scale: 1, opacity: 1, rotate: 0 }}
                                         exit={{ scale: 0.8, opacity: 0 }}
                                         transition={{ duration: 0.8, ease: "circOut" }}
-                                        className="relative aspect-[4/5] md:aspect-square lg:aspect-[4/5] rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.1)] group"
+                                        className="relative aspect-[4/5] md:aspect-square lg:aspect-[4/5] rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.1)] group max-h-[440px] lg:max-h-[500px] w-full max-w-lg mx-auto"
                                     >
                                         <Image
                                             src={banners[currentSlide].imageUrl}
@@ -194,24 +213,7 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                             </motion.div>
                         </AnimatePresence>
 
-                        {/* Pagination Progress Controls */}
-                        {banners.length > 1 && (
-                            <div className="absolute bottom-[-60px] lg:bottom-4 left-1/2 lg:left-0 -translate-x-1/2 lg:translate-x-0 flex items-center gap-4">
-                                <div className="flex gap-2">
-                                    {banners.map((_, idx) => (
-                                        <button
-                                            key={idx}
-                                            onClick={() => setCurrentSlide(idx)}
-                                            className={`h-1 rounded-full transition-all duration-500 ${idx === currentSlide ? 'w-12 bg-gray-900 dark:bg-white' : 'w-4 bg-gray-200 dark:bg-gray-700'}`}
-                                        />
-                                    ))}
-                                </div>
-                                <div className="hidden lg:flex gap-2 ml-4">
-                                    <button onClick={prevSlide} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-foreground"><ChevronLeft className="w-5 h-5" /></button>
-                                    <button onClick={nextSlide} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-foreground"><ChevronRight className="w-5 h-5" /></button>
-                                </div>
-                            </div>
-                        )}
+
                     </div>
                 ) : null}
             </section>

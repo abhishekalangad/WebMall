@@ -145,7 +145,7 @@ export default function RootLayout({
             <SiteConfigProvider>
               <CartProvider>
                 <WishlistProvider>
-                  <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+                  <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} forcedTheme="light" disableTransitionOnChange>
                     <div className="flex flex-col min-h-screen bg-background text-foreground transition-colors duration-300">
                       <Header />
                       <main className="flex-1">

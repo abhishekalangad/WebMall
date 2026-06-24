@@ -49,7 +49,7 @@ function LoginForm() {
       const redirect = searchParams.get('redirect')
 
       // Redirect based on user role (will be available after refresh)
-      router.push(redirect || '/products')
+      router.push(redirect || '/')
       router.refresh()
     } catch (error: any) {
       console.error('Login error:', error)

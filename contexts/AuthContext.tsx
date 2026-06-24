@@ -191,6 +191,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       )
       cartKeys.forEach(key => localStorage.removeItem(key))
 
+      // Clear all Supabase-related items from localStorage synchronously
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sb-') || key.includes('supabase')) {
+          localStorage.removeItem(key)
+        }
+      })
+
+      // Clear cookies to avoid stale session cookies
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+
       await supabase.auth.signOut()
       setUser(null)
       setSupabaseUser(null)

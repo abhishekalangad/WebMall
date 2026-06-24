@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { ShoppingBag, User, Menu, X, ChevronDown, LogOut, Settings, Package, Heart, Search, Mail } from 'lucide-react'
+import { ShoppingBag, User, Menu, X, ChevronDown, LogOut, Settings, Package, Heart, Search, Mail, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AuthModal } from '@/components/auth/AuthModal'
@@ -12,13 +12,12 @@ import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useSiteConfig } from '@/contexts/SiteConfigContext'
 
-import { ThemeToggle } from '@/components/ThemeToggle'
-
 function HeaderContent() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedSearchCategory, setSelectedSearchCategory] = useState('')
   const { user, signOut, loading, accessToken } = useAuth()
   const { items } = useCart()
   const itemCount = items.length
@@ -45,6 +44,21 @@ function HeaderContent() {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [])
+
+  // Sync category dropdown with URL query param on mount/navigation
+  useEffect(() => {
+    const categoryParam = searchParams.get('category')?.toLowerCase().replace(/-/g, ' ')
+    if (categoryParam) {
+      const matchingCat = categories.find((cat: any) => cat.name.toLowerCase() === categoryParam)
+      if (matchingCat) {
+        setSelectedSearchCategory(matchingCat.name)
+      } else {
+        setSelectedSearchCategory(categoryParam.charAt(0).toUpperCase() + categoryParam.slice(1))
+      }
+    } else {
+      setSelectedSearchCategory('')
+    }
+  }, [searchParams, categories])
 
   // Fetch unread messages count
   useEffect(() => {
@@ -88,10 +102,14 @@ function HeaderContent() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
+    const queryParams = new URLSearchParams()
     if (searchQuery.trim()) {
-      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`)
-      setSearchQuery('')
+      queryParams.set('search', searchQuery.trim())
     }
+    if (selectedSearchCategory) {
+      queryParams.set('category', selectedSearchCategory.toLowerCase().replace(/ /g, '-'))
+    }
+    router.push(`/products?${queryParams.toString()}`)
   }
 
   const isActive = (path: string) => pathname === path
@@ -143,10 +161,11 @@ function HeaderContent() {
       : DEFAULT_CUSTOMER_TABS)
 
   return (
-    <header className="bg-white dark:bg-gray-900 shadow-sm border-b dark:border-gray-800 sticky top-0 z-50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <header className="bg-white dark:bg-gray-900 shadow-sm border-b dark:border-gray-800 sticky top-0 z-50 font-sans" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      {/* Top Row (Logo, Search, and Action Icons) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14 sm:h-16 md:h-18">
-          {/* Left Side: Logo & Navigation Group */}
+        <div className="flex items-center justify-between h-16 sm:h-20">
+          {/* Left Side: Logo & Store Name */}
           <div className="flex items-center flex-shrink-0 min-w-0">
             <Link href="/" className="flex items-center space-x-2 sm:space-x-3">
               <img
@@ -154,7 +173,7 @@ function HeaderContent() {
                 alt={settings?.storeName || 'WebMall'}
                 className="h-9 sm:h-12 md:h-14 w-auto object-contain dark:brightness-200"
               />
-              <span className="text-xl sm:text-2xl md:text-3xl font-playfair font-bold text-gray-900 dark:text-white truncate">
+              <span className="text-xl sm:text-2xl font-playfair font-bold text-gray-900 dark:text-white truncate">
                 {configLoading ? (
                   <div className="h-8 w-24 bg-gray-200 dark:bg-gray-800 animate-pulse rounded"></div>
                 ) : (
@@ -162,51 +181,80 @@ function HeaderContent() {
                 )}
               </span>
             </Link>
-
-            {/* Desktop Navigation Grouped with Logo */}
-            {shouldShowNavigation() && !configLoading && (
-              <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8 ml-4 xl:ml-8">
-                {navItems.map((link: any, index: number) => (
-                  <Link
-                    key={index}
-                    href={link.path || '#'}
-                    className={`font-cursive text-lg xl:text-2xl whitespace-nowrap hover:text-pink-600 dark:hover:text-pink-400 transition-colors ${isActive(link.path) ? 'text-pink-600 dark:text-pink-400' : 'text-gray-600 dark:text-gray-300'}`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
-            )}
           </div>
 
-
-          {/* Center: Search Bar */}
+          {/* Center Side: Advanced Search Bar */}
           {shouldShowNavigation() && (
             <div className="hidden md:flex flex-1 items-center px-6 lg:px-12 max-w-2xl">
-              <div className="w-full">
-                <form onSubmit={handleSearch} className="relative group">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-hover:text-pink-500 transition-colors" />
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 h-10 border-none rounded-full bg-gray-100/80 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-pink-100 dark:focus:ring-pink-900 transition-all font-cursive text-lg dark:text-white"
-                  />
-                </form>
-              </div>
+              <form onSubmit={handleSearch} className="w-full flex items-center bg-gray-50 dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 pl-4 pr-1.5 py-1.5 h-11 transition-all focus-within:bg-white dark:focus-within:bg-gray-900 focus-within:ring-2 focus-within:ring-violet-100 dark:focus-within:ring-violet-900">
+                {/* Categories Dropdown */}
+                <div className="relative flex items-center bg-transparent shrink-0">
+                  <select
+                    value={selectedSearchCategory}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setSelectedSearchCategory(val)
+                      const queryParams = new URLSearchParams()
+                      if (searchQuery.trim()) {
+                        queryParams.set('search', searchQuery.trim())
+                      }
+                      if (val) {
+                        queryParams.set('category', val.toLowerCase().replace(/ /g, '-'))
+                      }
+                      router.push(`/products?${queryParams.toString()}`)
+                    }}
+                    className="appearance-none bg-transparent pl-2 pr-8 py-1.5 text-sm text-gray-700 dark:text-gray-300 focus:outline-none cursor-pointer font-sans font-medium border-none focus:ring-0 select-none"
+                  >
+                    <option value="">All Categories</option>
+                    {categories.map((cat: any) => (
+                      <option key={cat.id} value={cat.name}>{cat.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                </div>
+
+                {/* Vertical Divider */}
+                <div className="h-5 w-px bg-gray-200 dark:bg-gray-700 mx-2 shrink-0" />
+
+                {/* Search Input */}
+                <input
+                  type="text"
+                  placeholder="Search for products, practitioners, videos..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 min-w-0 bg-transparent px-3 py-1.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none border-none focus:ring-0 font-sans"
+                />
+
+                {/* Search Submit Button */}
+                <button
+                  type="submit"
+                  className="flex items-center justify-center h-8 w-8 rounded-full bg-violet-600 hover:bg-violet-700 text-white transition-colors shrink-0"
+                >
+                  <Search className="h-4 w-4" />
+                </button>
+              </form>
             </div>
           )}
 
           {/* Right Side: Actions Grouped */}
           <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 flex-shrink-0">
-            <ThemeToggle />
+
+            {/* Track Order outline button */}
+            <Link href="/orders">
+              <Button
+                variant="outline"
+                className="hidden lg:flex items-center space-x-2 h-10 px-4 rounded-full border border-gray-200 dark:border-gray-700 bg-transparent text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                <Truck className="h-4 w-4 text-gray-500" />
+                <span className="text-gray-700 dark:text-gray-300">Track Order</span>
+              </Button>
+            </Link>
 
             {user && (
-              <Link href="/wishlist" className="relative p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
-                <Heart className="h-5 w-5 sm:h-6 sm:w-6" />
+              <Link href="/wishlist" className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+                <Heart className="h-6 w-6" />
                 {wishlistItems > 0 && (
-                  <span className="absolute -top-0.5 sm:-top-1 -right-0.5 sm:-right-1 bg-red-500 text-white text-[10px] sm:text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center border-2 border-white font-bold">
+                  <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center border-2 border-white font-bold">
                     {wishlistItems}
                   </span>
                 )}
@@ -214,10 +262,10 @@ function HeaderContent() {
             )}
 
             {user && (
-              <Link href="/cart" className="relative p-1.5 sm:p-2 text-gray-600 hover:text-gray-900 transition-colors">
-                <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" />
+              <Link href="/cart" className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+                <ShoppingBag className="h-6 w-6" />
                 {itemCount > 0 && (
-                  <span className="absolute -top-0.5 sm:-top-1 -right-0.5 sm:-right-1 bg-pink-500 text-white text-[10px] sm:text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center border-2 border-white font-bold">
+                  <span className="absolute top-0 right-0 bg-violet-600 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center border-2 border-white font-bold">
                     {itemCount}
                   </span>
                 )}
@@ -225,17 +273,16 @@ function HeaderContent() {
             )}
 
             {loading ? (
-              <div className="w-6 h-6 border-2 border-pink-300 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
             ) : user ? (
               <div className="relative" ref={userMenuRef}>
                 <Button
                   variant="ghost"
-                  className="flex items-center space-x-1 sm:space-x-2 hover:bg-gray-100 rounded-full p-1.5 sm:p-2 transition-all"
+                  className="flex items-center space-x-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full p-1.5 transition-all"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 >
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center overflow-hidden border border-border bg-background shadow-sm relative">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden border border-border bg-background shadow-sm relative">
                     {user?.role === 'admin' ? (
-                      // Admin: Show WebMall transparent logo
                       <div className="w-full h-full bg-background flex items-center justify-center">
                         <img
                           src="/logo-no-bg.png"
@@ -244,21 +291,15 @@ function HeaderContent() {
                         />
                       </div>
                     ) : user?.profileImage ? (
-                      // Customer: Show profile image if available
                       <img src={user.profileImage} alt={user?.name || 'User'} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                     ) : (
-                      // Customer: Show initials if no profile image
-                      <div className="w-full h-full bg-gradient-to-br from-pink-300 to-yellow-300 flex items-center justify-center">
+                      <div className="w-full h-full bg-gradient-to-br from-violet-300 to-pink-300 flex items-center justify-center">
                         <span className="text-sm font-semibold text-gray-900">
                           {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                         </span>
                       </div>
                     )}
-                    {unreadMessages > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 h-3 w-3 bg-red-500 border-2 border-white rounded-full animate-pulse"></span>
-                    )}
                   </div>
-                  <ChevronDown className="h-4 w-4 text-gray-500" />
                 </Button>
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-64 bg-card rounded-xl shadow-xl border border-border py-3 z-[9999]">
@@ -320,25 +361,13 @@ function HeaderContent() {
                 )}
               </div>
             ) : (
-              <div className="hidden sm:flex gap-2">
-                <Link href="/register">
-                  <Button
-                    variant="outline"
-                    className="bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-200 h-9 sm:h-10 px-4 sm:px-6 text-sm sm:text-base font-semibold"
-                  >
-                    Sign Up
-                  </Button>
-                </Link>
-                <Link href="/login">
-                  <Button className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 h-9 sm:h-10 px-4 sm:px-6 text-sm sm:text-base">
-                    Sign In
-                  </Button>
-                </Link>
-              </div>
+              <Link href="/login" className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+                <User className="h-6 w-6" />
+              </Link>
             )}
 
             <button
-              className="lg:hidden p-2 text-gray-600 hover:text-gray-900 transition-colors rounded-lg hover:bg-gray-100 active:scale-95"
+              className="lg:hidden p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label="Toggle menu"
             >
@@ -346,71 +375,109 @@ function HeaderContent() {
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <div className="lg:hidden border-t py-4 bg-white shadow-lg animate-in slide-in-from-top-2 duration-200">
-            <div className="px-4 mb-4">
-              <form onSubmit={handleSearch}>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    type="search"
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 py-2 w-full border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-transparent text-base"
-                  />
-                </div>
-              </form>
-            </div>
+      {/* Bottom Row (Navigation menu & Login Button) */}
+      {shouldShowNavigation() && !configLoading && (
+        <div className="hidden lg:block border-t border-gray-100 dark:border-gray-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-12">
+              {/* Navigation Links */}
+              <nav className="flex items-center space-x-8">
+                {navItems.map((link: any, index: number) => {
+                  const active = isActive(link.path)
+                  return (
+                    <Link
+                      key={index}
+                      href={link.path || '#'}
+                      className={`relative py-3.5 text-[15px] font-medium transition-colors hover:text-violet-600 dark:hover:text-violet-400 ${active ? 'text-violet-600 dark:text-violet-400 font-semibold' : 'text-gray-700 dark:text-gray-300'}`}
+                    >
+                      {link.label}
+                      {active && (
+                        <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-violet-600 dark:bg-violet-400 rounded-full" />
+                      )}
+                    </Link>
+                  )
+                })}
+              </nav>
 
-            <div className="flex flex-col space-y-1">
-              {navItems.map((link: any, index: number) => (
-                <Link
-                  key={index}
-                  href={link.path || '#'}
-                  className={`block px-4 py-3 font-cursive text-xl sm:text-2xl transition-all rounded-lg mx-2 ${isActive(link.path) ? 'bg-pink-50 text-pink-600 font-bold' : 'text-gray-600 hover:bg-gray-50'}`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              {user && (
-                <Link href="/orders" className={`block px-4 py-3 font-cursive text-xl sm:text-2xl transition-all rounded-lg mx-2 ${isActive('/orders') ? 'bg-pink-50 text-pink-600 font-bold' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setIsMobileMenuOpen(false)}>
-                  My Orders
-                </Link>
-              )}
-              {user && (
-                <Link
-                  href={user?.role === 'admin' ? "/admin/messages" : "/profile/messages"}
-                  className={`block px-4 py-3 font-cursive text-xl sm:text-2xl transition-all rounded-lg mx-2 ${isActive(user?.role === 'admin' ? '/admin/messages' : '/profile/messages') ? 'bg-pink-50 text-pink-600 font-bold' : 'text-gray-600 hover:bg-gray-50'}`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {user?.role === 'admin' ? 'Customer Messages' : 'My Messages'}
-                </Link>
-              )}
-              {user?.role === 'admin' && (
-                <Link
-                  href="/admin"
-                  className={`block px-4 py-3 font-cursive text-xl sm:text-2xl transition-all rounded-lg mx-2 ${isActive('/admin') ? 'bg-pink-50 text-pink-600 font-bold' : 'text-gray-600 hover:bg-gray-50'}`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Admin Dashboard
-                </Link>
-              )}
+              {/* Login / Register Button */}
               {!user && (
-                <Link href="/login" className="block px-4 py-3 mx-2" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button className="w-full bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-bold">
-                    Sign In
-                  </Button>
-                </Link>
+                <div>
+                  <Link href="/login">
+                    <Button className="h-9 px-6 rounded-full bg-violet-600 hover:bg-violet-700 text-white font-medium text-[13px] transition-all shadow-sm">
+                      Login / Register
+                    </Button>
+                  </Link>
+                </div>
               )}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden border-t py-4 bg-white dark:bg-gray-900 shadow-lg animate-in slide-in-from-top-2 duration-200">
+          <div className="px-4 mb-4">
+            <form onSubmit={handleSearch}>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="search"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4 py-2 w-full border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-violet-300 dark:focus:ring-violet-900 focus:border-transparent text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                />
+              </div>
+            </form>
+          </div>
+
+          <div className="flex flex-col space-y-1">
+            {navItems.map((link: any, index: number) => (
+              <Link
+                key={index}
+                href={link.path || '#'}
+                className={`block px-4 py-3 text-base font-medium transition-all rounded-lg mx-2 ${isActive(link.path) ? 'bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
+            {user && (
+              <Link href="/orders" className={`block px-4 py-3 text-base font-medium transition-all rounded-lg mx-2 ${isActive('/orders') ? 'bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`} onClick={() => setIsMobileMenuOpen(false)}>
+                My Orders
+              </Link>
+            )}
+            {user && (
+              <Link
+                href={user?.role === 'admin' ? "/admin/messages" : "/profile/messages"}
+                className={`block px-4 py-3 text-base font-medium transition-all rounded-lg mx-2 ${isActive(user?.role === 'admin' ? '/admin/messages' : '/profile/messages') ? 'bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                {user?.role === 'admin' ? 'Customer Messages' : 'My Messages'}
+              </Link>
+            )}
+            {user?.role === 'admin' && (
+              <Link
+                href="/admin"
+                className={`block px-4 py-3 text-base font-medium transition-all rounded-lg mx-2 ${isActive('/admin') ? 'bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Admin Dashboard
+              </Link>
+            )}
+            {!user && (
+              <Link href="/login" className="block px-4 py-3 mx-2" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold">
+                  Sign In
+                </Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}

@@ -186,7 +186,7 @@ function HeaderContent() {
           {/* Center Side: Advanced Search Bar */}
           {shouldShowNavigation() && (
             <div className="hidden md:flex flex-1 items-center px-6 lg:px-12 max-w-2xl">
-              <form onSubmit={handleSearch} className="w-full flex items-center bg-gray-50 dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 pl-4 pr-1.5 py-1.5 h-11 transition-all focus-within:bg-white dark:focus-within:bg-gray-900 focus-within:ring-2 focus-within:ring-violet-100 dark:focus-within:ring-violet-900">
+              <form onSubmit={handleSearch} className="w-full flex items-center bg-gray-50 dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 pl-4 pr-0 py-[3px] h-11 transition-all focus-within:bg-white dark:focus-within:bg-gray-900 focus-within:ring-2 focus-within:ring-pink-100 dark:focus-within:ring-pink-900">
                 {/* Categories Dropdown */}
                 <div className="relative flex items-center bg-transparent shrink-0">
                   <select
@@ -228,7 +228,7 @@ function HeaderContent() {
                 {/* Search Submit Button */}
                 <button
                   type="submit"
-                  className="flex items-center justify-center h-8 w-8 rounded-full bg-violet-600 hover:bg-violet-700 text-white transition-colors shrink-0"
+                  className="flex items-center justify-center h-[38px] w-[38px] rounded-full bg-[#ec4899] hover:bg-[#db2777] text-white transition-colors shrink-0 shadow-sm translate-x-[1px]"
                 >
                   <Search className="h-4 w-4" />
                 </button>
@@ -265,7 +265,7 @@ function HeaderContent() {
               <Link href="/cart" className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
                 <ShoppingBag className="h-6 w-6" />
                 {itemCount > 0 && (
-                  <span className="absolute top-0 right-0 bg-violet-600 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center border-2 border-white font-bold">
+                  <span className="absolute top-0 right-0 bg-[#ec4899] text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center border-2 border-white font-bold">
                     {itemCount}
                   </span>
                 )}
@@ -273,7 +273,7 @@ function HeaderContent() {
             )}
 
             {loading ? (
-              <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-6 h-6 border-2 border-pink-400 border-t-transparent rounded-full animate-spin"></div>
             ) : user ? (
               <div className="relative" ref={userMenuRef}>
                 <Button
@@ -293,7 +293,7 @@ function HeaderContent() {
                     ) : user?.profileImage ? (
                       <img src={user.profileImage} alt={user?.name || 'User'} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-violet-300 to-pink-300 flex items-center justify-center">
+                      <div className="w-full h-full bg-gradient-to-br from-pink-200 to-rose-300 flex items-center justify-center">
                         <span className="text-sm font-semibold text-gray-900">
                           {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                         </span>
@@ -390,11 +390,11 @@ function HeaderContent() {
                     <Link
                       key={index}
                       href={link.path || '#'}
-                      className={`relative py-3.5 text-[15px] font-medium transition-colors hover:text-violet-600 dark:hover:text-violet-400 ${active ? 'text-violet-600 dark:text-violet-400 font-semibold' : 'text-gray-700 dark:text-gray-300'}`}
+                      className={`relative py-3.5 text-[15px] font-medium transition-colors hover:text-[#ec4899] dark:hover:text-[#ec4899] ${active ? 'text-[#ec4899] dark:text-[#ec4899] font-semibold' : 'text-gray-700 dark:text-gray-300'}`}
                     >
                       {link.label}
                       {active && (
-                        <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-violet-600 dark:bg-violet-400 rounded-full" />
+                        <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#ec4899] dark:bg-[#ec4899] rounded-full" />
                       )}
                     </Link>
                   )
@@ -405,7 +405,7 @@ function HeaderContent() {
               {!user && (
                 <div>
                   <Link href="/login">
-                    <Button className="h-9 px-6 rounded-full bg-violet-600 hover:bg-violet-700 text-white font-medium text-[13px] transition-all shadow-sm">
+                    <Button className="h-9 px-6 rounded-full bg-[#ec4899] hover:bg-[#db2777] text-white font-medium text-[13px] transition-all shadow-sm">
                       Login / Register
                     </Button>
                   </Link>
@@ -428,7 +428,7 @@ function HeaderContent() {
                   placeholder="Search products..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-violet-300 dark:focus:ring-violet-900 focus:border-transparent text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="pl-10 pr-4 py-2 w-full border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-pink-200 dark:focus:ring-pink-900 focus:border-transparent text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
             </form>
@@ -439,21 +439,21 @@ function HeaderContent() {
               <Link
                 key={index}
                 href={link.path || '#'}
-                className={`block px-4 py-3 text-base font-medium transition-all rounded-lg mx-2 ${isActive(link.path) ? 'bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                className={`block px-4 py-3 text-base font-medium transition-all rounded-lg mx-2 ${isActive(link.path) ? 'bg-pink-50 dark:bg-pink-950/30 text-pink-500 dark:text-pink-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {link.label}
               </Link>
             ))}
             {user && (
-              <Link href="/orders" className={`block px-4 py-3 text-base font-medium transition-all rounded-lg mx-2 ${isActive('/orders') ? 'bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`} onClick={() => setIsMobileMenuOpen(false)}>
+              <Link href="/orders" className={`block px-4 py-3 text-base font-medium transition-all rounded-lg mx-2 ${isActive('/orders') ? 'bg-pink-50 dark:bg-pink-950/30 text-pink-500 dark:text-pink-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`} onClick={() => setIsMobileMenuOpen(false)}>
                 My Orders
               </Link>
             )}
             {user && (
               <Link
                 href={user?.role === 'admin' ? "/admin/messages" : "/profile/messages"}
-                className={`block px-4 py-3 text-base font-medium transition-all rounded-lg mx-2 ${isActive(user?.role === 'admin' ? '/admin/messages' : '/profile/messages') ? 'bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                className={`block px-4 py-3 text-base font-medium transition-all rounded-lg mx-2 ${isActive(user?.role === 'admin' ? '/admin/messages' : '/profile/messages') ? 'bg-pink-50 dark:bg-pink-950/30 text-pink-500 dark:text-pink-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {user?.role === 'admin' ? 'Customer Messages' : 'My Messages'}
@@ -462,7 +462,7 @@ function HeaderContent() {
             {user?.role === 'admin' && (
               <Link
                 href="/admin"
-                className={`block px-4 py-3 text-base font-medium transition-all rounded-lg mx-2 ${isActive('/admin') ? 'bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                className={`block px-4 py-3 text-base font-medium transition-all rounded-lg mx-2 ${isActive('/admin') ? 'bg-pink-50 dark:bg-pink-950/30 text-pink-500 dark:text-pink-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Admin Dashboard
@@ -470,7 +470,7 @@ function HeaderContent() {
             )}
             {!user && (
               <Link href="/login" className="block px-4 py-3 mx-2" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold">
+                <Button className="w-full bg-pink-400 hover:bg-pink-500 text-white font-semibold">
                   Sign In
                 </Button>
               </Link>

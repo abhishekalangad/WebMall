@@ -3,7 +3,7 @@
   Sri Lankan Fashion Accessories E-Commerce Platform
 ================================================================================
 
-Last Updated : May 2026
+Last Updated : July 2026
 Project Root : WebMall/
 Website URL  : https://web-mall-sand.vercel.app
 

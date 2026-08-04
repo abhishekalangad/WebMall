@@ -6,6 +6,7 @@ import { Loader2, Upload, X } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 import ImageCropper from '@/components/ui/ImageCropper'
+import { cn } from '@/lib/utils'
 
 interface ImageUploadProps {
     onUploadComplete: (url: string) => void
@@ -16,6 +17,7 @@ interface ImageUploadProps {
     cropEnabled?: boolean
     cropAspectRatio?: number
     circularCrop?: boolean
+    className?: string
 }
 
 export function ImageUpload({
@@ -26,7 +28,8 @@ export function ImageUpload({
     maxSizeMB = 5,
     cropEnabled = false,
     cropAspectRatio = 1,
-    circularCrop = false
+    circularCrop = false,
+    className
 }: ImageUploadProps) {
     const [uploading, setUploading] = useState(false)
     const [preview, setPreview] = useState<string | null>(currentImageUrl || null)
@@ -177,8 +180,11 @@ export function ImageUpload({
 
             <div
                 onClick={!uploading ? triggerSelect : undefined}
-                className={`relative aspect-square md:aspect-video rounded-lg sm:rounded-xl border-2 border-dashed transition-all flex items-center justify-center cursor-pointer overflow-hidden ${preview ? 'border-pink-300 bg-background' : 'border-border bg-muted/50 hover:border-pink-300 hover:bg-muted'
-                    }`}
+                className={cn(
+                    'relative rounded-lg sm:rounded-xl border-2 border-dashed transition-all flex items-center justify-center cursor-pointer overflow-hidden',
+                    preview ? 'border-pink-300 bg-background' : 'border-border bg-muted/50 hover:border-pink-300 hover:bg-muted',
+                    className || 'aspect-square md:aspect-video'
+                )}
             >
                 {preview ? (
                     <img

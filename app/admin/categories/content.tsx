@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, Edit, Trash2, FolderOpen, ChevronDown, ChevronRight, Layers } from 'lucide-react'
+import { Plus, Edit, Trash2, FolderOpen, ChevronDown, ChevronRight, Layers, Search } from 'lucide-react'
 import { ImageUpload } from '@/components/admin/ImageUpload'
 
 interface Subcategory {
@@ -39,10 +39,38 @@ interface Category {
     }
 }
 
+function TruncatedDescription({ text, maxLength = 35 }: { text?: string | null; maxLength?: number }) {
+    const [isExpanded, setIsExpanded] = useState(false)
+
+    if (!text || text.trim() === '') {
+        return <span className="text-muted-foreground text-sm">N/A</span>
+    }
+
+    if (text.length <= maxLength) {
+        return <span className="text-sm text-foreground/90">{text}</span>
+    }
+
+    return (
+        <div className="max-w-[200px]">
+            <span className="text-sm text-foreground/90 leading-relaxed">
+                {isExpanded ? text : `${text.slice(0, maxLength)}... `}
+            </span>
+            <button
+                type="button"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="text-xs font-semibold text-[#ec4899] hover:underline ml-1.5 inline-flex items-center gap-0.5 select-none"
+            >
+                {isExpanded ? 'Show less ▲' : 'Read more ▼'}
+            </button>
+        </div>
+    )
+}
+
 export default function AdminCategoriesContent() {
     const { user, loading, accessToken } = useAuth()
     const router = useRouter()
     const [categories, setCategories] = useState<Category[]>([])
+    const [searchQuery, setSearchQuery] = useState('')
     const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
     const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false)
     const [isEditCategoryModalOpen, setIsEditCategoryModalOpen] = useState(false)
@@ -302,17 +330,48 @@ export default function AdminCategoriesContent() {
         return <div className="max-w-7xl mx-auto p-6">Loading...</div>
     }
 
+    const filteredCategories = categories.filter((category) => {
+        if (!searchQuery.trim()) return true
+        const q = searchQuery.toLowerCase().trim()
+        const matchCatName = category.name.toLowerCase().includes(q)
+        const matchCatDesc = category.description?.toLowerCase().includes(q)
+        const matchSub = category.subcategories?.some(
+            (sub) => sub.name.toLowerCase().includes(q) || (sub.description && sub.description.toLowerCase().includes(q))
+        )
+        return matchCatName || matchCatDesc || matchSub
+    })
+
     return (
         <div className="max-w-7xl mx-auto p-6 space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <h1 className="text-3xl font-bold flex items-center gap-2">
-                    <FolderOpen className="h-8 w-8" />
+                    <FolderOpen className="h-8 w-8 text-[#ec4899]" />
                     Manage Categories & Subcategories
                 </h1>
-                <Button onClick={() => setIsCreateCategoryModalOpen(true)} className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add Category
-                </Button>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div className="relative flex-1 sm:w-72">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            type="search"
+                            placeholder="Search categories..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-9 pr-8 bg-card text-sm rounded-lg border-muted focus-visible:ring-1 focus-visible:ring-[#ec4899]"
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground p-1"
+                            >
+                                ✕
+                            </button>
+                        )}
+                    </div>
+                    <Button onClick={() => setIsCreateCategoryModalOpen(true)} className="flex items-center gap-2 shrink-0 bg-[#ec4899] hover:bg-[#db2777]">
+                        <Plus className="h-4 w-4" />
+                        Add Category
+                    </Button>
+                </div>
             </div>
 
             <Card>
@@ -320,104 +379,137 @@ export default function AdminCategoriesContent() {
                     <TableHeader>
                         <TableRow>
                             <TableHead className="w-12"></TableHead>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Description</TableHead>
+                            <TableHead className="w-48">Name</TableHead>
+                            <TableHead className="max-w-[200px]">Description</TableHead>
                             <TableHead>Subcategories</TableHead>
-                            <TableHead>Image</TableHead>
-                            <TableHead>Actions</TableHead>
+                            <TableHead className="w-20">Image</TableHead>
+                            <TableHead className="w-28">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {categories.map((category) => (
-                            <Fragment key={category.id}>
-                                {/* Category Row */}
-                                <TableRow className="bg-muted/50">
-                                    <TableCell>
-                                        <button
-                                            onClick={() => toggleCategoryExpansion(category.id)}
-                                            className="p-1 hover:bg-gray-200 rounded"
-                                        >
-                                            {expandedCategories.has(category.id) ? (
-                                                <ChevronDown className="h-4 w-4" />
-                                            ) : (
-                                                <ChevronRight className="h-4 w-4" />
-                                            )}
-                                        </button>
-                                    </TableCell>
-                                    <TableCell className="font-bold">{category.name}</TableCell>
-                                    <TableCell>{category.description || 'N/A'}</TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm text-muted-foreground">
-                                                {category.subcategories?.length || 0} subcategories
-                                            </span>
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={() => openCreateSubcategoryModal(category)}
-                                                className="h-6 px-2"
-                                            >
-                                                <Plus className="h-3 w-3" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        {category.image ? (
-                                            <img src={category.image} alt={category.name} className="w-8 h-8 object-cover rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                                        ) : '(none)'}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex gap-2">
-                                            <Button size="sm" variant="outline" onClick={() => openEditCategoryModal(category)}>
-                                                <Edit className="h-3 w-3" />
-                                            </Button>
-                                            <Button size="sm" variant="destructive" onClick={() => handleDeleteCategory(category.id)}>
-                                                <Trash2 className="h-3 w-3" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
+                        {filteredCategories.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                                    No categories found matching "{searchQuery}"
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            filteredCategories.map((category) => {
+                                const isExpanded = searchQuery.trim() ? true : expandedCategories.has(category.id)
+                                const displayedSubs = category.subcategories?.filter((sub) => {
+                                    if (!searchQuery.trim()) return true
+                                    const q = searchQuery.toLowerCase().trim()
+                                    const matchCat = category.name.toLowerCase().includes(q) || (category.description && category.description.toLowerCase().includes(q))
+                                    if (matchCat) return true
+                                    return sub.name.toLowerCase().includes(q) || (sub.description && sub.description.toLowerCase().includes(q))
+                                }) || []
 
-                                {/* Subcategory Rows (Expandable) */}
-                                {expandedCategories.has(category.id) && category.subcategories && category.subcategories.length > 0 && (
-                                    category.subcategories.map((subcategory) => (
-                                        <TableRow key={subcategory.id} className="bg-blue-50/30">
-                                            <TableCell></TableCell>
-                                            <TableCell className="pl-8">
-                                                <div className="flex items-center gap-2">
-                                                    <Layers className="h-3 w-3 text-muted-foreground/80" />
-                                                    <span className="text-sm">{subcategory.name}</span>
-                                                </div>
+                                return (
+                                    <Fragment key={category.id}>
+                                        {/* Category Row */}
+                                        <TableRow className="bg-muted/50">
+                                            <TableCell>
+                                                <button
+                                                    onClick={() => toggleCategoryExpansion(category.id)}
+                                                    className="p-1 hover:bg-gray-200 rounded"
+                                                >
+                                                    {isExpanded ? (
+                                                        <ChevronDown className="h-4 w-4" />
+                                                    ) : (
+                                                        <ChevronRight className="h-4 w-4" />
+                                                    )}
+                                                </button>
                                             </TableCell>
-                                            <TableCell className="text-sm">{subcategory.description || 'N/A'}</TableCell>
-                                            <TableCell className="text-sm text-muted-foreground">
-                                                {subcategory._count?.products || 0} products
+                                            <TableCell className="font-bold">{category.name}</TableCell>
+                                            <TableCell>
+                                                <TruncatedDescription text={category.description} />
                                             </TableCell>
                                             <TableCell>
-                                                {subcategory.image ? (
-                                                    <img src={subcategory.image} alt={subcategory.name} className="w-6 h-6 object-cover rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                                                <div className="flex flex-wrap items-center gap-1.5 max-w-sm">
+                                                    {category.subcategories && category.subcategories.length > 0 ? (
+                                                        category.subcategories.map((sub) => (
+                                                            <span
+                                                                key={sub.id}
+                                                                className="inline-flex items-center text-xs font-medium bg-pink-50 dark:bg-pink-950/40 text-[#ec4899] dark:text-pink-300 border border-pink-200 dark:border-pink-800/60 px-2 py-0.5 rounded-full"
+                                                            >
+                                                                {sub.name}
+                                                            </span>
+                                                        ))
+                                                    ) : (
+                                                        <span className="text-xs text-muted-foreground italic font-sans">0 subcategories</span>
+                                                    )}
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => openCreateSubcategoryModal(category)}
+                                                        className="h-6 w-6 p-0 rounded-full hover:bg-pink-100 dark:hover:bg-pink-950/60 text-[#ec4899] shrink-0"
+                                                        title="Add subcategory to this category"
+                                                    >
+                                                        <Plus className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                {category.image ? (
+                                                    <img src={category.image} alt={category.name} className="w-8 h-8 object-cover rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                                                 ) : '(none)'}
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex gap-2">
-                                                    <Button size="sm" variant="outline" onClick={() => openEditSubcategoryModal(subcategory)}>
+                                                    <Button size="sm" variant="outline" onClick={() => openEditCategoryModal(category)}>
                                                         <Edit className="h-3 w-3" />
                                                     </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="destructive"
-                                                        onClick={() => handleDeleteSubcategory(subcategory.id)}
-                                                        disabled={(subcategory._count?.products || 0) > 0}
-                                                    >
+                                                    <Button size="sm" variant="destructive" onClick={() => handleDeleteCategory(category.id)}>
                                                         <Trash2 className="h-3 w-3" />
                                                     </Button>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
-                                    ))
-                                )}
-                            </Fragment>
-                        ))}
+
+                                        {/* Subcategory Rows (Expandable) */}
+                                        {isExpanded && displayedSubs.length > 0 && (
+                                            displayedSubs.map((subcategory) => (
+                                                <TableRow key={subcategory.id} className="bg-blue-50/30">
+                                                    <TableCell></TableCell>
+                                                    <TableCell className="pl-8">
+                                                        <div className="flex items-center gap-2">
+                                                            <Layers className="h-3 w-3 text-muted-foreground/80" />
+                                                            <span className="text-sm">{subcategory.name}</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                         <TruncatedDescription text={subcategory.description} />
+                                                     </TableCell>
+                                                    <TableCell className="text-sm text-muted-foreground">
+                                                        {subcategory._count?.products || 0} products
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {subcategory.image ? (
+                                                            <img src={subcategory.image} alt={subcategory.name} className="w-6 h-6 object-cover rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                                                        ) : '(none)'}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex gap-2">
+                                                            <Button size="sm" variant="outline" onClick={() => openEditSubcategoryModal(subcategory)}>
+                                                                <Edit className="h-3 w-3" />
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="destructive"
+                                                                onClick={() => handleDeleteSubcategory(subcategory.id)}
+                                                                disabled={(subcategory._count?.products || 0) > 0}
+                                                            >
+                                                                <Trash2 className="h-3 w-3" />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </Fragment>
+                                )
+                            })
+                        )}
                     </TableBody>
                 </Table>
             </Card>

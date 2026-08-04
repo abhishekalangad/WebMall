@@ -60,25 +60,24 @@ interface ProductsViewProps {
 // Build mandala data at module level (not in render) — avoids SSR/client hydration mismatch.
 // Using toFixed(2) rounding ensures identical string output on server and browser.
 function buildMandala(cx: number, cy: number) {
-    const rings = [16, 30, 44, 58, 72, 88]
-    const angles = Array.from({ length: 12 }, (_, i) => i * 30)
+    const rings = [20, 40, 60, 80, 100, 120, 140, 160]
+    const angles = Array.from({ length: 16 }, (_, i) => i * 22.5)
 
     // Spokes: full length from center to outermost ring
     const spokes = angles.map(deg => {
         const a = deg * Math.PI / 180
         return {
-            x2: +(cx + 88 * Math.cos(a)).toFixed(2),
-            y2: +(cy + 88 * Math.sin(a)).toFixed(2),
+            x2: +(cx + 160 * Math.cos(a)).toFixed(2),
+            y2: +(cy + 160 * Math.sin(a)).toFixed(2),
         }
     })
 
     // Petal arcs: quadratic bezier connecting adjacent spoke intersections on each ring.
-    // Control point pulled 20% toward center → bows inward like the reference pattern.
     const petalPaths = rings.map(r =>
         angles.map((deg, i) => {
             const a1 = deg * Math.PI / 180
-            const a2 = ((deg + 30) % 360) * Math.PI / 180
-            const aMid = (deg + 15) * Math.PI / 180
+            const a2 = ((deg + 22.5) % 360) * Math.PI / 180
+            const aMid = (deg + 11.25) * Math.PI / 180
             const x1 = +(cx + r * Math.cos(a1)).toFixed(2)
             const y1 = +(cy + r * Math.sin(a1)).toFixed(2)
             const x2 = +(cx + r * Math.cos(a2)).toFixed(2)
@@ -94,8 +93,8 @@ function buildMandala(cx: number, cy: number) {
         const r2 = rings[ri + 1]
         return angles.map((deg, i) => {
             const a1 = deg * Math.PI / 180
-            const a2 = ((deg + 30) % 360) * Math.PI / 180
-            const aMid = (deg + 15) * Math.PI / 180
+            const a2 = ((deg + 22.5) % 360) * Math.PI / 180
+            const aMid = (deg + 11.25) * Math.PI / 180
             const x1 = +(cx + r1 * Math.cos(a1)).toFixed(2)
             const y1 = +(cy + r1 * Math.sin(a1)).toFixed(2)
             const x2 = +(cx + r2 * Math.cos(a2)).toFixed(2)
@@ -121,8 +120,8 @@ function buildMandala(cx: number, cy: number) {
     return { spokes, petalPaths, teardrops, dots, rings, cx, cy }
 }
 
-const LM = buildMandala(50, 100)
-const RM = buildMandala(150, 100)
+const LM = buildMandala(0, 100)
+const RM = buildMandala(200, 100)
 
 export function ProductsView({ initialProducts: products, initialCategories: categories }: ProductsViewProps) {
     const searchParams = useSearchParams()
@@ -375,7 +374,7 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                             placeholder="Search products..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 pr-4 py-2 w-full bg-muted/40 rounded-full border-gray-200 focus:bg-background focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-all font-sans text-sm"
+                            className="pl-10 pr-4 py-2 w-full bg-muted/40 rounded-full border-gray-200 focus:bg-background focus:ring-1 focus:ring-pink-400 focus:border-pink-400 transition-all font-sans text-sm"
                         />
                     </div>
                 </div>
@@ -410,7 +409,7 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                                 max={priceMax - 1}
                                 value={priceMin}
                                 onChange={e => setPriceMin(Math.max(0, Math.min(Number(e.target.value), priceMax - 1)))}
-                                className="w-full border border-gray-100 dark:border-gray-800 rounded-xl px-2 py-2 text-sm text-center font-medium bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-all text-slate-700 dark:text-slate-300"
+                                className="w-full border border-gray-100 dark:border-gray-800 rounded-xl px-2 py-2 text-sm text-center font-medium bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-pink-400 focus:border-pink-400 transition-all text-slate-700 dark:text-slate-300"
                             />
                         </div>
                         <span className="text-slate-300 dark:text-slate-700 text-sm">—</span>
@@ -421,14 +420,14 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                                 max={maxProductPrice}
                                 value={priceMax}
                                 onChange={e => setPriceMax(Math.min(maxProductPrice, Math.max(Number(e.target.value), priceMin + 1)))}
-                                className="w-full border border-gray-100 dark:border-gray-800 rounded-xl px-2 py-2 text-sm text-center font-medium bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-all text-slate-700 dark:text-slate-300"
+                                className="w-full border border-gray-100 dark:border-gray-800 rounded-xl px-2 py-2 text-sm text-center font-medium bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-pink-400 focus:border-pink-400 transition-all text-slate-700 dark:text-slate-300"
                             />
                         </div>
                     </div>
 
                     <button
                         onClick={() => { setAppliedPriceMin(priceMin); setAppliedPriceMax(priceMax) }}
-                        className="w-full bg-gradient-to-r from-indigo-400 via-violet-500 to-fuchsia-500 hover:opacity-95 active:scale-[0.98] text-white text-xs font-semibold py-3.5 rounded-xl transition-all shadow-sm shadow-violet-100 dark:shadow-none"
+                        className="w-full bg-[#ec4899] hover:bg-[#db2777] active:scale-[0.98] text-white text-xs font-semibold py-3.5 rounded-xl transition-all shadow-sm"
                     >
                         Apply price range
                     </button>
@@ -468,14 +467,14 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                             <span className="flex items-center gap-3">
                                 <span className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-all ${
                                     selectedCategory === 'All'
-                                        ? 'border-violet-600 bg-violet-50 dark:bg-violet-950/30'
-                                        : 'border-gray-300 dark:border-gray-700 group-hover/all:border-violet-400'
+                                        ? 'border-pink-400 bg-pink-50 dark:bg-pink-950/30'
+                                        : 'border-gray-300 dark:border-gray-700 group-hover/all:border-pink-400'
                                 }`}>
-                                    {selectedCategory === 'All' && <span className="w-2 h-2 rounded-full bg-violet-600 animate-in zoom-in-50 duration-150" />}
+                                    {selectedCategory === 'All' && <span className="w-2 h-2 rounded-full bg-pink-400 animate-in zoom-in-50 duration-150" />}
                                 </span>
-                                <span className={`text-sm ${selectedCategory === 'All' ? 'text-violet-600 font-semibold' : 'text-foreground/85 group-hover/all:text-violet-600'}`}>All Products</span>
+                                <span className={`text-sm ${selectedCategory === 'All' ? 'text-pink-500 font-semibold' : 'text-foreground/85 group-hover/all:text-pink-500'}`}>All Products</span>
                             </span>
-                            <span className="text-xs bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 px-2.5 py-0.5 rounded-full font-bold font-sans">
+                            <span className="text-xs bg-pink-50 dark:bg-pink-950/40 text-pink-500 dark:text-pink-400 px-2.5 py-0.5 rounded-full font-bold font-sans">
                                 {products.length}
                             </span>
                         </button>
@@ -501,14 +500,14 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                                             <span className="flex items-center gap-3 truncate">
                                                 <span className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-all ${
                                                     isSelected
-                                                        ? 'border-violet-600 bg-violet-50 dark:bg-violet-950/30'
-                                                        : 'border-gray-300 dark:border-gray-700 group-hover/cat:border-violet-400'
+                                                        ? 'border-pink-400 bg-pink-50 dark:bg-pink-950/30'
+                                                        : 'border-gray-300 dark:border-gray-700 group-hover/cat:border-pink-400'
                                                 }`}>
-                                                    {isSelected && <span className="w-2 h-2 rounded-full bg-violet-600 animate-in zoom-in-50 duration-150" />}
+                                                    {isSelected && <span className="w-2 h-2 rounded-full bg-pink-400 animate-in zoom-in-50 duration-150" />}
                                                 </span>
-                                                <span className={`truncate text-sm ${isSelected ? 'text-violet-600 font-semibold' : 'text-foreground/85 group-hover/cat:text-violet-600'}`}>{cat.name}</span>
+                                                <span className={`truncate text-sm ${isSelected ? 'text-pink-500 font-semibold' : 'text-foreground/85 group-hover/cat:text-pink-500'}`}>{cat.name}</span>
                                             </span>
-                                            <span className="text-xs bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 px-2.5 py-0.5 rounded-full font-bold shrink-0 font-sans">
+                                            <span className="text-xs bg-pink-50 dark:bg-pink-950/40 text-pink-500 dark:text-pink-400 px-2.5 py-0.5 rounded-full font-bold shrink-0 font-sans">
                                                 {count}
                                             </span>
                                         </button>
@@ -529,14 +528,14 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                                                                 <span className="text-gray-300 dark:text-gray-700 font-normal shrink-0">—</span>
                                                                 <span className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-all ${
                                                                     isSubSelected
-                                                                        ? 'border-violet-600 bg-violet-50 dark:bg-violet-950/30'
-                                                                        : 'border-gray-300 dark:border-gray-700 group-hover/sub:border-violet-400'
+                                                                        ? 'border-pink-400 bg-pink-50 dark:bg-pink-950/30'
+                                                                        : 'border-gray-300 dark:border-gray-700 group-hover/sub:border-pink-400'
                                                                 }`}>
-                                                                    {isSubSelected && <span className="w-2 h-2 rounded-full bg-violet-600 animate-in zoom-in-50 duration-150" />}
+                                                                    {isSubSelected && <span className="w-2 h-2 rounded-full bg-pink-400 animate-in zoom-in-50 duration-150" />}
                                                                 </span>
-                                                                <span className={`truncate text-xs ${isSubSelected ? 'text-violet-600 font-semibold' : 'text-muted-foreground group-hover/sub:text-violet-600'}`}>{sub.name}</span>
+                                                                <span className={`truncate text-xs ${isSubSelected ? 'text-pink-500 font-semibold' : 'text-muted-foreground group-hover/sub:text-pink-500'}`}>{sub.name}</span>
                                                             </span>
-                                                            <span className="text-[10px] bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 px-2 py-0.5 rounded-full font-bold font-sans shrink-0">
+                                                            <span className="text-[10px] bg-pink-50 dark:bg-pink-950/40 text-pink-500 dark:text-pink-400 px-2 py-0.5 rounded-full font-bold font-sans shrink-0">
                                                                 {subCount}
                                                             </span>
                                                         </button>
@@ -556,21 +555,21 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
 
     return (
         <div className="min-h-screen bg-background">
-            {/* Elegant Purple Header Banner — floating card with rounded corners matching reference */}
+            {/* Elegant Solid Pink Header Banner — floating card with rounded corners matching reference */}
             <div className="px-4 sm:px-6 lg:px-8 pt-6 pb-2">
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 via-violet-600 to-indigo-700 text-white shadow-lg">
-                    {/* Decorative mandala — left side */}
-                    <div className="absolute left-0 top-0 h-full w-72 pointer-events-none select-none opacity-20">
+                <div className="relative overflow-hidden rounded-2xl bg-[#ec4899] text-white shadow-lg">
+                    {/* Decorative mandala — left side (half circle anchored at left edge) */}
+                    <div className="absolute left-0 top-0 h-full w-80 pointer-events-none select-none opacity-25">
                         <svg viewBox="0 0 200 200" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
                             {/* Center dot */}
-                            <circle cx="50" cy="100" r="4" fill="white"/>
+                            <circle cx="0" cy="100" r="4" fill="white"/>
                             {/* Concentric rings */}
                             {LM.rings.map((r, i) => (
-                                <circle key={i} cx="50" cy="100" r={r} stroke="white" strokeWidth={i < 2 ? 1 : 0.6}/>
+                                <circle key={i} cx="0" cy="100" r={r} stroke="white" strokeWidth={i < 2 ? 1 : 0.6}/>
                             ))}
                             {/* Spokes */}
                             {LM.spokes.map((s, i) => (
-                                <line key={i} x1="50" y1="100" x2={s.x2} y2={s.y2} stroke="white" strokeWidth="0.4"/>
+                                <line key={i} x1="0" y1="100" x2={s.x2} y2={s.y2} stroke="white" strokeWidth="0.4"/>
                             ))}
                             {/* Inward petal arcs at each ring */}
                             {LM.petalPaths.map((d, i) => (
@@ -586,18 +585,18 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                             ))}
                         </svg>
                     </div>
-                    {/* Decorative mandala — right side */}
-                    <div className="absolute right-0 top-0 h-full w-72 pointer-events-none select-none opacity-20">
+                    {/* Decorative mandala — right side (half circle anchored at right edge) */}
+                    <div className="absolute right-0 top-0 h-full w-80 pointer-events-none select-none opacity-25">
                         <svg viewBox="0 0 200 200" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
                             {/* Center dot */}
-                            <circle cx="150" cy="100" r="4" fill="white"/>
+                            <circle cx="200" cy="100" r="4" fill="white"/>
                             {/* Concentric rings */}
                             {RM.rings.map((r, i) => (
-                                <circle key={i} cx="150" cy="100" r={r} stroke="white" strokeWidth={i < 2 ? 1 : 0.6}/>
+                                <circle key={i} cx="200" cy="100" r={r} stroke="white" strokeWidth={i < 2 ? 1 : 0.6}/>
                             ))}
                             {/* Spokes */}
                             {RM.spokes.map((s, i) => (
-                                <line key={i} x1="150" y1="100" x2={s.x2} y2={s.y2} stroke="white" strokeWidth="0.4"/>
+                                <line key={i} x1="200" y1="100" x2={s.x2} y2={s.y2} stroke="white" strokeWidth="0.4"/>
                             ))}
                             {/* Inward petal arcs at each ring */}
                             {RM.petalPaths.map((d, i) => (
@@ -616,7 +615,7 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
 
                     <div className="relative z-10 px-8 pt-5 pb-10">
                         {/* Breadcrumbs — left-aligned inside banner */}
-                        <nav className="text-xs text-violet-200 font-medium flex items-center gap-2 mb-6 select-none">
+                        <nav className="text-xs text-pink-100 font-medium flex items-center gap-2 mb-6 select-none">
                             <Link href="/" className="hover:text-white transition-colors opacity-80 hover:opacity-100 min-h-0 min-w-0 h-auto inline-flex items-center">Home</Link>
                             <span className="opacity-50 flex items-center">›</span>
                             <button
@@ -649,7 +648,7 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">
                                 {selectedSubcategory || (selectedCategory !== 'All' ? selectedCategory : 'Shop')}
                             </h1>
-                            <p className="text-violet-100/75 font-sans text-sm md:text-base max-w-xl mx-auto leading-relaxed">
+                            <p className="text-pink-100/90 font-sans text-sm md:text-base max-w-xl mx-auto leading-relaxed">
                                 {selectedCategory !== 'All'
                                     ? `Discover our complete collection of beautiful ${(selectedSubcategory || selectedCategory).toLowerCase()}`
                                     : 'Sri Lankan fashion accessories — handpicked for you'}
@@ -801,7 +800,7 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                                     <button
                                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                         disabled={currentPage === 1}
-                                        className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium border border-border hover:bg-violet-50 hover:border-violet-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                        className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium border border-border hover:bg-pink-50 hover:border-pink-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                                     >‹</button>
                                     {getPages().map((page, idx) =>
                                         page === '...' ? (
@@ -812,8 +811,8 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                                                 onClick={() => setCurrentPage(page as number)}
                                                 className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
                                                     currentPage === page
-                                                        ? 'bg-violet-600 text-white shadow-sm'
-                                                        : 'border border-border hover:bg-violet-50 hover:border-violet-300 text-foreground'
+                                                        ? 'bg-pink-400 text-white shadow-sm'
+                                                        : 'border border-border hover:bg-pink-50 hover:border-pink-300 text-foreground'
                                                 }`}
                                             >{page}</button>
                                         )
@@ -821,7 +820,7 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                                     <button
                                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                         disabled={currentPage === totalPages}
-                                        className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium border border-border hover:bg-violet-50 hover:border-violet-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                        className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium border border-border hover:bg-pink-50 hover:border-pink-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                                     >›</button>
                                 </div>
                             )

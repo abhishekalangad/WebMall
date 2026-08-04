@@ -759,7 +759,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                                 return (
                                                     <div key={attrType} className="bg-card rounded-2xl p-5 border-2 border-border shadow-sm hover:shadow-md transition-shadow">
                                                         <Label className="text-base font-bold text-foreground capitalize mb-3 flex items-center gap-2">
-                                                            {isColorAttr && <div className="w-3 h-3 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full" />}
+                                                            {isColorAttr && <div className="w-3 h-3 bg-gradient-to-r from-pink-400 to-rose-400 rounded-full" />}
                                                             {isSizeAttr && <span className="text-pink-500">📏</span>}
                                                             {attrType}
                                                             {selectedAttributes[attrType] && (
@@ -984,10 +984,10 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                                         )}
                                     </div>
                                     <div className="flex flex-col sm:flex-row gap-3">
-                                        <Button onClick={handleAddToCart} className="flex-1 bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-pink-400 hover:to-yellow-400 text-gray-900 font-semibold h-12 sm:h-14 text-base shadow-lg hover:shadow-xl transition-all">
+                                        <Button onClick={handleAddToCart} className="flex-1 bg-gray-900 hover:bg-gray-800 text-white font-semibold h-12 sm:h-14 text-base shadow-md transition-all">
                                             <ShoppingBag className="mr-2 h-5 w-5" /> Add to Cart
                                         </Button>
-                                        <Button onClick={handleBuyNow} className="flex-1 bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500 text-white font-semibold h-12 sm:h-14 text-base shadow-lg hover:shadow-xl transition-all">
+                                        <Button onClick={handleBuyNow} className="flex-1 bg-[#ec4899] hover:bg-[#db2777] text-white font-semibold h-12 sm:h-14 text-base shadow-md transition-all">
                                             <Truck className="mr-2 h-5 w-5" /> Buy Now
                                         </Button>
                                         <Button variant="outline" onClick={handleWishlist} className={`h-12 sm:h-14 w-full sm:w-14 border-2 ${isInWishlist(product.id, selectedVariant?.id || undefined) ? 'text-red-500 border-red-300 bg-red-50 dark:bg-red-950/20' : 'border-input hover:border-red-300 dark:hover:border-red-500/50 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-500'}`}>

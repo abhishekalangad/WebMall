@@ -126,6 +126,57 @@ const SortableNavItem = ({
     )
 }
 
+function CapsuleToggle({
+    checked,
+    onChange,
+    label
+}: {
+    checked: boolean
+    onChange: () => void
+    label: string
+}) {
+    return (
+        <div className="flex flex-col gap-1 select-none">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
+            <button
+                type="button"
+                onClick={onChange}
+                style={{
+                    width: '44px',
+                    height: '24px',
+                    minWidth: '44px',
+                    minHeight: '24px',
+                    borderRadius: '9999px',
+                    padding: '2px',
+                    backgroundColor: checked ? '#000000' : '#e5e7eb',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s ease',
+                    border: 'none',
+                    outline: 'none'
+                }}
+            >
+                <span className="sr-only">Toggle {label}</span>
+                <span
+                    style={{
+                        width: '20px',
+                        height: '20px',
+                        minWidth: '20px',
+                        minHeight: '20px',
+                        borderRadius: '9999px',
+                        backgroundColor: '#ffffff',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                        transform: checked ? 'translateX(20px)' : 'translateX(0px)',
+                        transition: 'transform 0.2s ease',
+                        display: 'block'
+                    }}
+                />
+            </button>
+        </div>
+    )
+}
+
 export default function AdminSettingsPage() {
     const { toast } = useToast()
     const { accessToken } = useAuth()
@@ -371,11 +422,14 @@ export default function AdminSettingsPage() {
                             </div>
                             <div className="md:col-span-2 space-y-2">
                                 <label className="text-sm font-semibold text-foreground/80">Store Logo</label>
-                                <ImageUpload
-                                    currentImageUrl={settings.logoUrl || ''}
-                                    onUploadComplete={(url) => setSettings(prev => ({ ...prev, logoUrl: url }))}
-                                    bucket="site-assets"
-                                />
+                                <div className="max-w-sm">
+                                    <ImageUpload
+                                        currentImageUrl={settings.logoUrl || ''}
+                                        onUploadComplete={(url) => setSettings(prev => ({ ...prev, logoUrl: url }))}
+                                        bucket="site-assets"
+                                        className="h-36 w-full"
+                                    />
+                                </div>
                                 <Input
                                     type="hidden"
                                     name="logoUrl"
@@ -748,69 +802,34 @@ export default function AdminSettingsPage() {
                                                     </div>
 
                                                     {/* Actions & Toggles */}
-                                                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex lg:flex-col gap-4 lg:min-w-[140px] border-t lg:border-t-0 pt-4 lg:pt-0">
-                                                        {/* Status Toggle (isActive) */}
-                                                        <div className="space-y-1.5">
-                                                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">Banner Status</label>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    const newBanners = [...banners]
-                                                                    newBanners[index].isActive = !newBanners[index].isActive
-                                                                    setBanners(newBanners)
-                                                                }}
-                                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${banner.isActive ? 'bg-green-500' : 'bg-gray-200'}`}
-                                                            >
-                                                                <span className="sr-only">Toggle Status</span>
-                                                                <span
-                                                                    className={`inline-block h-4 w-4 transform rounded-full bg-card transition-transform ${banner.isActive ? 'translate-x-6' : 'translate-x-1'}`}
-                                                                />
-                                                                <span className="absolute right-1 text-[8px] font-bold text-white uppercase pr-1.5 select-none">{banner.isActive ? 'ON' : ''}</span>
-                                                                <span className="absolute left-1 text-[8px] font-bold text-muted-foreground/80 uppercase pl-1.5 select-none">{!banner.isActive ? 'OFF' : ''}</span>
-                                                            </button>
-                                                        </div>
-
-                                                        {/* Badge Toggle */}
-                                                        <div className="space-y-1.5">
-                                                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">Craft Badge</label>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    const newBanners = [...banners]
-                                                                    newBanners[index].showBadge = !newBanners[index].showBadge
-                                                                    setBanners(newBanners)
-                                                                }}
-                                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${banner.showBadge ? 'bg-pink-500' : 'bg-gray-200'}`}
-                                                            >
-                                                                <span className="sr-only">Toggle Badge</span>
-                                                                <span
-                                                                    className={`inline-block h-4 w-4 transform rounded-full bg-card transition-transform ${banner.showBadge ? 'translate-x-6' : 'translate-x-1'}`}
-                                                                />
-                                                                <span className="absolute right-1 text-[8px] font-bold text-white uppercase pr-1.5 select-none">{banner.showBadge ? 'ON' : ''}</span>
-                                                                <span className="absolute left-1 text-[8px] font-bold text-muted-foreground/80 uppercase pl-1.5 select-none">{!banner.showBadge ? 'OFF' : ''}</span>
-                                                            </button>
-                                                        </div>
-
-                                                        {/* Top Rated Toggle */}
-                                                        <div className="space-y-1.5">
-                                                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">Top Rated Card</label>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    const newBanners = [...banners]
-                                                                    newBanners[index].showTopRated = !newBanners[index].showTopRated
-                                                                    setBanners(newBanners)
-                                                                }}
-                                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${banner.showTopRated ? 'bg-indigo-500' : 'bg-gray-200'}`}
-                                                            >
-                                                                <span className="sr-only">Toggle Top Rated</span>
-                                                                <span
-                                                                    className={`inline-block h-4 w-4 transform rounded-full bg-card transition-transform ${banner.showTopRated ? 'translate-x-6' : 'translate-x-1'}`}
-                                                                />
-                                                                <span className="absolute right-1 text-[8px] font-bold text-white uppercase pr-1.5 select-none">{banner.showTopRated ? 'ON' : ''}</span>
-                                                                <span className="absolute left-1 text-[8px] font-bold text-muted-foreground/80 uppercase pl-1.5 select-none">{!banner.showTopRated ? 'OFF' : ''}</span>
-                                                            </button>
-                                                        </div>
+                                                    <div className="flex flex-col sm:flex-row lg:flex-col gap-4 lg:min-w-[140px] border-t lg:border-t-0 pt-4 lg:pt-0 shrink-0">
+                                                        <CapsuleToggle
+                                                            label="Banner Status"
+                                                            checked={banner.isActive}
+                                                            onChange={() => {
+                                                                const newBanners = [...banners]
+                                                                newBanners[index].isActive = !newBanners[index].isActive
+                                                                setBanners(newBanners)
+                                                            }}
+                                                        />
+                                                        <CapsuleToggle
+                                                            label="Craft Badge"
+                                                            checked={banner.showBadge}
+                                                            onChange={() => {
+                                                                const newBanners = [...banners]
+                                                                newBanners[index].showBadge = !newBanners[index].showBadge
+                                                                setBanners(newBanners)
+                                                            }}
+                                                        />
+                                                        <CapsuleToggle
+                                                            label="Top Rated Card"
+                                                            checked={banner.showTopRated}
+                                                            onChange={() => {
+                                                                const newBanners = [...banners]
+                                                                newBanners[index].showTopRated = !newBanners[index].showTopRated
+                                                                setBanners(newBanners)
+                                                            }}
+                                                        />
 
                                                         <div className="pt-2 border-t mt-1">
                                                             <Button

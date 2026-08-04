@@ -204,7 +204,7 @@ export function ProductCard({
                   <>
                     {/* Buy Now Button - Using div to avoid nested <a> tags */}
                     <div
-                      className="bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500 text-white font-semibold px-4 sm:px-6 py-2 text-sm rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center cursor-pointer"
+                      className="bg-[#ec4899] hover:bg-[#db2777] text-white font-semibold px-4 sm:px-6 py-2 text-sm rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center cursor-pointer"
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
@@ -409,7 +409,7 @@ export function ProductCard({
                 <span className="font-bold text-foreground text-sm tabular-nums">{quantity}</span>
                 <button
                   onClick={handleIncreaseQuantity}
-                  className={`w-6 h-6 flex items-center justify-center hover:bg-pink-100 rounded-lg text-pink-600 transition-all ${quantity >= maxStock ? 'opacity-40 cursor-not-allowed' : ''}`}
+                  className={`w-6 h-6 flex items-center justify-center hover:bg-purple-100 rounded-lg text-purple-600 transition-all ${quantity >= maxStock ? 'opacity-40 cursor-not-allowed' : ''}`}
                 >
                   <Plus className="h-3 w-3" />
                 </button>
@@ -418,7 +418,7 @@ export function ProductCard({
               /* Not in cart — Buy Now + cart icon */
               <div className="flex items-center gap-2 h-9">
                 <div
-                  className="flex-1 h-9 bg-gradient-to-r from-pink-400 to-purple-500 hover:from-pink-500 hover:to-purple-600 text-white font-semibold text-sm rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center cursor-pointer whitespace-nowrap"
+                  className="flex-1 h-9 bg-[#ec4899] hover:bg-[#db2777] text-white font-semibold text-sm rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center cursor-pointer whitespace-nowrap"
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()

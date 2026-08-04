@@ -188,7 +188,7 @@ export default function MyMessagesPage() {
                 {/* Messages List */}
                 {messages.length === 0 ? (
                     <Card className="p-16 text-center bg-white border-0 shadow-lg rounded-3xl">
-                        <div className="w-20 h-20 bg-gradient-to-br from-pink-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <div className="w-20 h-20 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full flex items-center justify-center mx-auto mb-6">
                             <Mail className="h-10 w-10 text-pink-600" />
                         </div>
                         <h3 className="text-2xl font-bold text-gray-900 mb-3">No Messages Yet</h3>
@@ -198,7 +198,7 @@ export default function MyMessagesPage() {
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <Button
                                 onClick={() => router.push('/contact')}
-                                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl px-8 h-12 font-semibold shadow-lg hover:shadow-xl transition-all"
+                                className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white rounded-xl px-8 h-12 font-semibold shadow-lg hover:shadow-xl transition-all"
                             >
                                 <Mail className="h-4 w-4 mr-2" />
                                 Contact Support
@@ -277,7 +277,7 @@ export default function MyMessagesPage() {
                                         {/* Customer Message */}
                                         <div className="flex gap-4">
                                             <div className="flex-shrink-0">
-                                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
                                                     {user?.name?.[0]?.toUpperCase() || 'U'}
                                                 </div>
                                             </div>

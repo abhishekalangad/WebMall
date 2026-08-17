@@ -296,7 +296,7 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                         </p>
                     </div>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-12">
-                        {featuredProducts.map((product) => (
+                        {featuredProducts.map((product, index) => (
                             <ProductCard
                                 key={product.id}
                                 product={product}
@@ -304,6 +304,7 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                 onAddToWishlist={handleAddToWishlist}
                                 showAddToCart={!!user}
                                 showWishlist={!!user}
+                                priority={index < 4}
                             />
                         ))}
                     </div>

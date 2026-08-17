@@ -281,12 +281,26 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
         let filtered = products
 
         // Filter by search query
-        if (searchQuery) {
-            filtered = filtered.filter(product =>
-                product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (product.category?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (product.subcategory?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
-            )
+        if (searchQuery.trim()) {
+            const queryRaw = searchQuery.trim().toLowerCase()
+            const words = queryRaw.split(/\s+/).filter(w => w.length > 0)
+
+            filtered = filtered.filter(product => {
+                const name = product.name || ''
+                const desc = product.description || ''
+                const catName = product.category?.name || ''
+                const subcatName = product.subcategory?.name || ''
+
+                // Combined text target for product
+                const fullText = `${name} ${catName} ${subcatName} ${desc}`
+
+                // Every search word in the query must match at a word boundary (\b)
+                return words.every(word => {
+                    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                    const regex = new RegExp(`\\b${escaped}`, 'i')
+                    return regex.test(fullText)
+                })
+            })
         }
 
         // Filter by category / subcategory
@@ -558,57 +572,57 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
             {/* Elegant Solid Pink Header Banner — floating card with rounded corners matching reference */}
             <div className="px-4 sm:px-6 lg:px-8 pt-6 pb-2">
                 <div className="relative overflow-hidden rounded-2xl bg-[#ec4899] text-white shadow-lg">
-                    {/* Decorative mandala — left side (half circle anchored at left edge) */}
-                    <div className="absolute left-0 top-0 h-full w-80 pointer-events-none select-none opacity-25">
+                    {/* Decorative mandala — left end (slightly offset outwards) */}
+                    <div className="absolute -left-4 sm:-left-6 md:-left-8 top-1/2 -translate-y-1/2 h-[110%] w-56 sm:w-72 md:w-84 pointer-events-none select-none opacity-35 sm:opacity-40">
                         <svg viewBox="0 0 200 200" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
                             {/* Center dot */}
                             <circle cx="0" cy="100" r="4" fill="white"/>
                             {/* Concentric rings */}
                             {LM.rings.map((r, i) => (
-                                <circle key={i} cx="0" cy="100" r={r} stroke="white" strokeWidth={i < 2 ? 1 : 0.6}/>
+                                <circle key={i} cx="0" cy="100" r={r} stroke="white" strokeWidth={i < 2 ? 1.2 : 0.7}/>
                             ))}
                             {/* Spokes */}
                             {LM.spokes.map((s, i) => (
-                                <line key={i} x1="0" y1="100" x2={s.x2} y2={s.y2} stroke="white" strokeWidth="0.4"/>
+                                <line key={i} x1="0" y1="100" x2={s.x2} y2={s.y2} stroke="white" strokeWidth="0.5"/>
                             ))}
                             {/* Inward petal arcs at each ring */}
                             {LM.petalPaths.map((d, i) => (
-                                <path key={i} d={d} stroke="white" strokeWidth="0.5" fill="none"/>
+                                <path key={i} d={d} stroke="white" strokeWidth="0.6" fill="none"/>
                             ))}
                             {/* Cross-ring teardrop arcs */}
                             {LM.teardrops.map((d, i) => (
-                                <path key={i} d={d} stroke="white" strokeWidth="0.4" fill="none" opacity="0.7"/>
+                                <path key={i} d={d} stroke="white" strokeWidth="0.5" fill="none" opacity="0.8"/>
                             ))}
                             {/* Dot accents at each spoke×ring intersection */}
                             {LM.dots.map((d, i) => (
-                                <circle key={i} cx={d.cx} cy={d.cy} r="1.5" fill="white"/>
+                                <circle key={i} cx={d.cx} cy={d.cy} r="1.6" fill="white"/>
                             ))}
                         </svg>
                     </div>
-                    {/* Decorative mandala — right side (half circle anchored at right edge) */}
-                    <div className="absolute right-0 top-0 h-full w-80 pointer-events-none select-none opacity-25">
+                    {/* Decorative mandala — right end (slightly offset outwards) */}
+                    <div className="absolute -right-4 sm:-right-6 md:-right-8 top-1/2 -translate-y-1/2 h-[110%] w-56 sm:w-72 md:w-84 pointer-events-none select-none opacity-35 sm:opacity-40">
                         <svg viewBox="0 0 200 200" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
                             {/* Center dot */}
                             <circle cx="200" cy="100" r="4" fill="white"/>
                             {/* Concentric rings */}
                             {RM.rings.map((r, i) => (
-                                <circle key={i} cx="200" cy="100" r={r} stroke="white" strokeWidth={i < 2 ? 1 : 0.6}/>
+                                <circle key={i} cx="200" cy="100" r={r} stroke="white" strokeWidth={i < 2 ? 1.2 : 0.7}/>
                             ))}
                             {/* Spokes */}
                             {RM.spokes.map((s, i) => (
-                                <line key={i} x1="200" y1="100" x2={s.x2} y2={s.y2} stroke="white" strokeWidth="0.4"/>
+                                <line key={i} x1="200" y1="100" x2={s.x2} y2={s.y2} stroke="white" strokeWidth="0.5"/>
                             ))}
                             {/* Inward petal arcs at each ring */}
                             {RM.petalPaths.map((d, i) => (
-                                <path key={i} d={d} stroke="white" strokeWidth="0.5" fill="none"/>
+                                <path key={i} d={d} stroke="white" strokeWidth="0.6" fill="none"/>
                             ))}
                             {/* Cross-ring teardrop arcs */}
                             {RM.teardrops.map((d, i) => (
-                                <path key={i} d={d} stroke="white" strokeWidth="0.4" fill="none" opacity="0.7"/>
+                                <path key={i} d={d} stroke="white" strokeWidth="0.5" fill="none" opacity="0.8"/>
                             ))}
                             {/* Dot accents at each spoke×ring intersection */}
                             {RM.dots.map((d, i) => (
-                                <circle key={i} cx={d.cx} cy={d.cy} r="1.5" fill="white"/>
+                                <circle key={i} cx={d.cx} cy={d.cy} r="1.6" fill="white"/>
                             ))}
                         </svg>
                     </div>
@@ -737,7 +751,7 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                         }`}>
                             {filteredProducts
                                 .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
-                                .map((product) => (
+                                .map((product, index) => (
                                 <ProductCard
                                     key={product.id}
                                     product={product}
@@ -746,6 +760,7 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                                     showAddToCart={!!user}
                                     showWishlist={!!user}
                                     layout={viewMode}
+                                    priority={index < 4}
                                 />
                             ))}
                         </div>

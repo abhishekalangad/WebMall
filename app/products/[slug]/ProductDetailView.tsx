@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -78,7 +79,7 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                 setSelectedAttributes(firstVariant.attributes)
             }
         }
-    }, [initialProduct.id]) // Only run when product changes
+    }, [initialProduct.id, initialProduct.variants]) // Run when product or variants change
 
     // Update selectedVariant when attributes change
     useEffect(() => {
@@ -587,12 +588,14 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                             </div>
                         )}
 
-                        <div className="aspect-square bg-card rounded-2xl overflow-hidden shadow-sm">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
+                        <div className="relative aspect-square bg-card rounded-2xl overflow-hidden shadow-sm">
+                            <Image
                                 src={getValidImageUrl(manualImageOverride || product.images[selectedImage]?.url, '/placeholder.png')}
                                 alt={product.name}
-                                className="w-full h-full object-cover dark:brightness-90"
+                                fill
+                                priority
+                                sizes="(max-width: 768px) 100vw, 50vw"
+                                className="object-cover dark:brightness-90"
                                 onError={(e) => handleImageError(e as any)}
                             />
                         </div>

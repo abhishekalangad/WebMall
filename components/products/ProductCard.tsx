@@ -2,6 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { ShoppingBag, Heart, Minus, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -32,6 +33,7 @@ interface ProductCardProps {
   showAddToCart?: boolean
   showWishlist?: boolean
   layout?: 'grid' | 'list'
+  priority?: boolean
 }
 
 export function ProductCard({
@@ -40,7 +42,8 @@ export function ProductCard({
   onAddToWishlist,
   showAddToCart = true,
   showWishlist = true,
-  layout = 'grid'
+  layout = 'grid',
+  priority = false
 }: ProductCardProps) {
   const primaryImage = getValidImageUrl(product.images[0]?.url, '/placeholder.png')
   const { isInWishlist, addItem: addToWishlist, removeItem: removeFromWishlist } = useWishlist()
@@ -111,11 +114,13 @@ export function ProductCard({
       >
         {/* Product Image - Fixed Width */}
         <div className="relative w-1/3 sm:w-48 md:w-56 overflow-hidden bg-muted flex-shrink-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={primaryImage}
             alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            fill
+            sizes="(max-width: 640px) 33vw, 224px"
+            priority={priority}
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
             onError={(e) => handleImageError(e as any)}
           />
 
@@ -288,11 +293,13 @@ export function ProductCard({
     >
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden bg-muted">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={primaryImage}
           alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          fill
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          priority={priority}
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
           onError={(e) => handleImageError(e as any)}
         />
 

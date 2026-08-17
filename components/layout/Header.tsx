@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, Suspense } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { ShoppingBag, User, Menu, X, ChevronDown, LogOut, Settings, Package, Heart, Search, Mail, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -168,9 +169,12 @@ function HeaderContent() {
           {/* Left Side: Logo & Store Name */}
           <div className="flex items-center flex-shrink-0 min-w-0">
             <Link href="/" className="flex items-center space-x-2 sm:space-x-3">
-              <img
+              <Image
                 src={settings?.logoUrl || '/logo-no-bg.png'}
                 alt={settings?.storeName || 'WebMall'}
+                width={120}
+                height={48}
+                priority
                 className="h-9 sm:h-12 md:h-14 w-auto object-contain dark:brightness-200"
               />
               <span className="text-xl sm:text-2xl font-playfair font-bold text-gray-900 dark:text-white truncate">
@@ -284,9 +288,11 @@ function HeaderContent() {
                   <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden border border-border bg-background shadow-sm relative">
                     {user?.role === 'admin' ? (
                       <div className="w-full h-full bg-background flex items-center justify-center">
-                        <img
+                        <Image
                           src="/logo-no-bg.png"
                           alt="WebMall"
+                          width={32}
+                          height={32}
                           className="w-full h-full object-contain scale-90 dark:brightness-200"
                         />
                       </div>

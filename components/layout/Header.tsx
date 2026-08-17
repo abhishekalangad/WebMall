@@ -195,6 +195,7 @@ function HeaderContent() {
                 <div className="relative flex items-center bg-transparent shrink-0">
                   <select
                     value={selectedSearchCategory}
+                    aria-label="Select Category"
                     onChange={(e) => {
                       const val = e.target.value
                       setSelectedSearchCategory(val)
@@ -224,6 +225,7 @@ function HeaderContent() {
                 <input
                   type="text"
                   placeholder="Search for products, practitioners, videos..."
+                  aria-label="Search products"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex-1 min-w-0 bg-transparent px-3 py-1.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none border-none focus:ring-0 font-sans"
@@ -232,6 +234,7 @@ function HeaderContent() {
                 {/* Search Submit Button */}
                 <button
                   type="submit"
+                  aria-label="Submit search"
                   className="flex items-center justify-center h-[38px] w-[38px] rounded-full bg-[#ec4899] hover:bg-[#db2777] text-white transition-colors shrink-0 shadow-sm translate-x-[1px]"
                 >
                   <Search className="h-4 w-4" />
@@ -255,7 +258,7 @@ function HeaderContent() {
             </Link>
 
             {user && (
-              <Link href="/wishlist" className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+              <Link href="/wishlist" aria-label="Wishlist" className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
                 <Heart className="h-6 w-6" />
                 {wishlistItems > 0 && (
                   <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center border-2 border-white font-bold">
@@ -266,7 +269,7 @@ function HeaderContent() {
             )}
 
             {user && (
-              <Link href="/cart" className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+              <Link href="/cart" aria-label="Shopping Cart" className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
                 <ShoppingBag className="h-6 w-6" />
                 {itemCount > 0 && (
                   <span className="absolute top-0 right-0 bg-[#ec4899] text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center border-2 border-white font-bold">
@@ -282,6 +285,7 @@ function HeaderContent() {
               <div className="relative" ref={userMenuRef}>
                 <Button
                   variant="ghost"
+                  aria-label="Account Menu"
                   className="flex items-center space-x-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full p-1.5 transition-all"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 >
@@ -297,7 +301,13 @@ function HeaderContent() {
                         />
                       </div>
                     ) : user?.profileImage ? (
-                      <img src={user.profileImage} alt={user?.name || 'User'} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                      <Image
+                        src={user.profileImage}
+                        alt={user?.name || 'User'}
+                        width={32}
+                        height={32}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-pink-200 to-rose-300 flex items-center justify-center">
                         <span className="text-sm font-semibold text-gray-900">
@@ -367,7 +377,7 @@ function HeaderContent() {
                 )}
               </div>
             ) : (
-              <Link href="/login" className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+              <Link href="/login" aria-label="Sign In" className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
                 <User className="h-6 w-6" />
               </Link>
             )}
@@ -432,6 +442,7 @@ function HeaderContent() {
                 <Input
                   type="search"
                   placeholder="Search products..."
+                  aria-label="Search products"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 pr-4 py-2 w-full border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-pink-200 dark:focus:ring-pink-900 focus:border-transparent text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-white"

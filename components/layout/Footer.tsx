@@ -205,12 +205,12 @@ export function Footer() {
               {loading ? (
                 <div className="h-10 md:h-12 w-10 md:w-12 bg-gray-800 rounded animate-pulse" />
               ) : (
-                <motion.img
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  transition={{ duration: 0.3 }}
+                <Image
                   src={settings?.logoUrl || '/logo-white.jpg'}
                   alt={settings?.storeName || 'WebMall'}
-                  className="h-9 md:h-10 lg:h-12 w-auto object-contain"
+                  width={120}
+                  height={48}
+                  className="h-9 md:h-10 lg:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
                 />
               )}
               <span className="text-xl md:text-2xl lg:text-3xl font-playfair font-bold text-white group-hover:text-gray-200 transition-colors">

@@ -72,9 +72,9 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
         <div className="min-h-screen">
             <section className="relative min-h-[500px] lg:h-[650px] bg-[#fffcf9] dark:bg-background overflow-hidden flex items-center py-12 lg:py-0">
                 {/* Decorative Background Elements */}
-                <div className="absolute top-0 right-0 w-1/2 h-full bg-[#fdf2f8]/50 dark:bg-pink-950/20 skew-x-[-12deg] translate-x-32 z-0" />
-                <div className="absolute top-[10%] left-[5%] w-64 h-64 bg-pink-100/40 dark:bg-pink-900/20 rounded-full blur-3xl z-0 animate-pulse" />
-                <div className="absolute bottom-[10%] right-[15%] w-96 h-96 bg-yellow-50/60 dark:bg-yellow-900/10 rounded-full blur-3xl z-0" />
+                <div className="absolute top-0 right-0 w-1/2 h-full bg-[#fdf2f8]/50 dark:bg-pink-950/20 skew-x-[-12deg] translate-x-32 z-0 pointer-events-none select-none" />
+                <div className="absolute top-[10%] left-[5%] w-64 h-64 bg-pink-100/40 dark:bg-pink-900/20 rounded-full blur-3xl z-0 pointer-events-none select-none" />
+                <div className="absolute bottom-10 right-10 w-96 h-96 bg-yellow-50/60 dark:bg-yellow-900/10 rounded-full blur-3xl z-0 pointer-events-none select-none" />
 
                 {banners.length > 0 ? (
                     <div className="relative w-full max-w-7xl mx-auto px-6 lg:px-12 z-10">
@@ -98,41 +98,30 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
 
                                         <h1 className="text-4xl md:text-5xl lg:text-6xl font-playfair font-medium text-gray-900 dark:text-white mb-6 leading-[1.2]">
                                             {banners[currentSlide].title.split(' ').map((word, i) => (
-                                                <motion.span
-                                                    key={i}
-                                                    initial={{ opacity: 0, y: 20 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ delay: 0.2 + (i * 0.1) }}
-                                                    className="inline-block mr-3"
-                                                >
+                                                <span key={i} className="inline-block mr-3">
                                                     {word}
-                                                </motion.span>
+                                                </span>
                                             ))}
                                         </h1>
 
-                                        <motion.p
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 0.7 }}
-                                            transition={{ delay: 0.5 }}
-                                            className="text-base md:text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-lg mx-auto lg:mx-0 leading-relaxed font-sans"
-                                        >
+                                        <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-lg mx-auto lg:mx-0 leading-relaxed">
                                             {banners[currentSlide].subtitle}
-                                        </motion.p>
+                                        </p>
 
                                         <motion.div
-                                            initial={{ scale: 0.9, opacity: 0 }}
-                                            animate={{ scale: 1, opacity: 1 }}
-                                            transition={{ delay: 0.7 }}
-                                            className="flex flex-col sm:flex-row items-center gap-6 justify-center lg:justify-start"
+                                            className="flex flex-wrap items-center justify-center lg:justify-start gap-4"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: 0.3 }}
                                         >
                                             <Link href={banners[currentSlide].ctaLink || '/products'}>
-                                                <Button size="lg" className="h-14 px-10 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-black dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 font-bold shadow-xl">
+                                                <Button size="lg" className="bg-gray-900 hover:bg-gray-800 text-white dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 rounded-full px-8 h-14 shadow-lg hover:shadow-xl transition-all">
                                                     {banners[currentSlide].ctaText || 'Shop Now'}
                                                     <ArrowRight className="ml-2 h-5 w-5" />
                                                 </Button>
                                             </Link>
 
-                                            <Link href="/products" className="text-gray-900 dark:text-white font-semibold border-b-2 border-pink-200 dark:border-pink-800 hover:border-pink-400 dark:hover:border-pink-600 transition-all py-1">
+                                            <Link href="/products" aria-label="View full collection of fashion accessories" className="text-gray-900 dark:text-white font-semibold border-b-2 border-pink-200 dark:border-pink-800 hover:border-pink-400 dark:hover:border-pink-600 transition-all py-1">
                                                 View Collection
                                             </Link>
                                         </motion.div>
@@ -145,13 +134,14 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                                         <button
                                                             key={idx}
                                                             onClick={() => setCurrentSlide(idx)}
+                                                            aria-label={`Go to slide ${idx + 1}`}
                                                             className={`h-1.5 rounded-full transition-all duration-500 ${idx === currentSlide ? 'w-10 bg-gray-900 dark:bg-white' : 'w-3 bg-gray-200 dark:bg-gray-700'}`}
                                                         />
                                                     ))}
                                                 </div>
                                                 <div className="hidden lg:flex gap-2 ml-4">
-                                                    <button onClick={prevSlide} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-foreground"><ChevronLeft className="w-5 h-5" /></button>
-                                                    <button onClick={nextSlide} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-foreground"><ChevronRight className="w-5 h-5" /></button>
+                                                    <button onClick={prevSlide} aria-label="Previous banner slide" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-foreground"><ChevronLeft className="w-5 h-5" /></button>
+                                                    <button onClick={nextSlide} aria-label="Next banner slide" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-foreground"><ChevronRight className="w-5 h-5" /></button>
                                                 </div>
                                             </div>
                                         )}
@@ -171,6 +161,7 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                             src={banners[currentSlide].imageUrl}
                                             alt={banners[currentSlide].title}
                                             fill
+                                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 500px"
                                             className="object-cover transition-transform duration-700 group-hover:scale-110"
                                             priority
                                         />
@@ -179,36 +170,23 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                         {/* Floating Badge on Image */}
                                         {banners[currentSlide].showBadge && (
                                             <motion.div
-                                                animate={{ y: [0, -10, 0] }}
-                                                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                                                className="absolute top-8 right-8 w-24 h-24 bg-white/90 dark:bg-black/80 backdrop-blur-md rounded-full flex items-center justify-center text-center p-2 shadow-lg border border-white/20 dark:border-white/10"
+                                                initial={{ y: 20, opacity: 0 }}
+                                                animate={{ y: 0, opacity: 1 }}
+                                                transition={{ delay: 0.5 }}
+                                                className="absolute bottom-6 left-6 right-6 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md p-4 rounded-xl border border-white/20 shadow-lg"
                                             >
-                                                <span className="text-[10px] font-bold text-gray-900 dark:text-gray-100 leading-tight uppercase tracking-tighter">
-                                                    Authentic<br />Sri Lankan<br />Craft
-                                                </span>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-pink-100 dark:bg-pink-900/40 rounded-full flex items-center justify-center text-pink-500">
+                                                        <Star className="w-5 h-5 fill-current" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold text-gray-900 dark:text-white">Top Rated</p>
+                                                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Selected by customers</p>
+                                                    </div>
+                                                </div>
                                             </motion.div>
                                         )}
                                     </motion.div>
-
-                                    {/* Decorative Floating Card */}
-                                    {banners[currentSlide].showTopRated && (
-                                        <motion.div
-                                            initial={{ x: 50, opacity: 0 }}
-                                            animate={{ x: 0, opacity: 1 }}
-                                            transition={{ delay: 1 }}
-                                            className="absolute -bottom-6 -left-6 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-xl hidden md:block border border-transparent dark:border-gray-700"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-pink-100 dark:bg-pink-900/40 rounded-full flex items-center justify-center text-pink-500">
-                                                    <Star className="w-5 h-5 fill-current" />
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs font-bold text-gray-900 dark:text-white">Top Rated</p>
-                                                    <p className="text-[10px] text-gray-500 dark:text-gray-400">Selected by customers</p>
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    )}
                                 </div>
                             </motion.div>
                         </AnimatePresence>
@@ -222,6 +200,7 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
             {/* Features Section */}
             <section className="py-12 md:py-20 bg-background">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <h2 className="sr-only">Our Core Features</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="text-center p-6">
                             <div className="w-16 h-16 bg-gradient-to-br from-pink-300 to-yellow-300 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -259,13 +238,14 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                     </div>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                         {initialCategories.map((category) => (
-                            <Link key={category.id} href={`/products?category=${category.slug}`} className="group">
+                            <Link key={category.id} href={`/products?category=${category.slug}`} aria-label={`Shop ${category.name} collection`} className="group">
                                 <div className="relative aspect-square rounded-2xl overflow-hidden bg-card shadow-sm border border-border group-hover:shadow-lg transition-all duration-300">
                                     {category.image ? (
                                         <Image
                                             src={category.image}
                                             alt={category.name}
                                             fill
+                                            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                                             className="object-cover group-hover:scale-105 transition-transform duration-300"
                                         />
                                     ) : (

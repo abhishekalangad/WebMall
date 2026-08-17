@@ -344,7 +344,7 @@ export function ProductCard({
         {/* Out of Stock Badge */}
         {isOutOfStock && (
           <div className="mb-1.5">
-            <span className="inline-block px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-semibold rounded-full">
+            <span className="inline-block px-2 py-0.5 bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 text-[10px] font-bold rounded-full border border-red-200 dark:border-red-800">
               Out of Stock
             </span>
           </div>

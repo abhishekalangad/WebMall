@@ -71,10 +71,8 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
     return (
         <div className="min-h-screen">
             <section className="relative min-h-[500px] lg:h-[650px] bg-[#fffcf9] dark:bg-background overflow-hidden flex items-center py-12 lg:py-0">
-                {/* Decorative Background Elements */}
-                <div className="absolute top-0 right-0 w-1/2 h-full bg-[#fdf2f8]/50 dark:bg-pink-950/20 skew-x-[-12deg] translate-x-32 z-0 pointer-events-none select-none" />
-                <div className="absolute top-[10%] left-[5%] w-64 h-64 bg-pink-100/40 dark:bg-pink-900/20 rounded-full blur-3xl z-0 pointer-events-none select-none" />
-                <div className="absolute bottom-10 right-10 w-96 h-96 bg-yellow-50/60 dark:bg-yellow-900/10 rounded-full blur-3xl z-0 pointer-events-none select-none" />
+                {/* Decorative Background Elements (Restricted to right side so text column has pure contrast) */}
+                <div className="absolute top-0 right-0 w-1/2 h-full bg-[#fdf2f8]/60 dark:bg-pink-950/20 skew-x-[-12deg] translate-x-32 z-0 pointer-events-none select-none" />
 
                 {banners.length > 0 ? (
                     <div className="relative w-full max-w-7xl mx-auto px-6 lg:px-12 z-10">
@@ -91,12 +89,12 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                         exit={{ y: -20, opacity: 0 }}
                                         transition={{ duration: 0.6 }}
                                     >
-                                        <span className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 text-xs font-bold tracking-[0.2em] uppercase text-pink-500 bg-pink-50 dark:bg-pink-950/50 rounded-full">
+                                        <span className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 text-xs font-extrabold tracking-[0.2em] uppercase text-pink-950 dark:text-pink-100 bg-pink-200 dark:bg-pink-900 border border-pink-300 dark:border-pink-800 rounded-full">
                                             <Sparkles className="w-3.5 h-3.5" />
                                             New Arrival
                                         </span>
 
-                                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-playfair font-medium text-gray-900 dark:text-white mb-6 leading-[1.2]">
+                                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-playfair font-bold text-gray-950 dark:text-gray-50 mb-6 leading-[1.2]">
                                             {banners[currentSlide].title.split(' ').map((word, i) => (
                                                 <span key={i} className="inline-block mr-3">
                                                     {word}
@@ -104,7 +102,7 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                             ))}
                                         </h1>
 
-                                        <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-lg mx-auto lg:mx-0 leading-relaxed">
+                                        <p className="text-base md:text-lg text-gray-800 dark:text-gray-200 mb-8 max-w-lg mx-auto lg:mx-0 leading-relaxed font-medium">
                                             {banners[currentSlide].subtitle}
                                         </p>
 
@@ -121,7 +119,7 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                                 </Button>
                                             </Link>
 
-                                            <Link href="/products" aria-label="View full collection of fashion accessories" className="text-gray-900 dark:text-white font-semibold border-b-2 border-pink-200 dark:border-pink-800 hover:border-pink-400 dark:hover:border-pink-600 transition-all py-1">
+                                            <Link href="/products" aria-label="View full collection of fashion accessories" className="text-gray-950 dark:text-white font-bold border-b-2 border-gray-950 dark:border-white hover:border-pink-600 dark:hover:border-pink-400 transition-all py-1">
                                                 View Collection
                                             </Link>
                                         </motion.div>
@@ -135,7 +133,7 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                                             key={idx}
                                                             onClick={() => setCurrentSlide(idx)}
                                                             aria-label={`Go to slide ${idx + 1}`}
-                                                            className={`h-1.5 rounded-full transition-all duration-500 ${idx === currentSlide ? 'w-10 bg-gray-900 dark:bg-white' : 'w-3 bg-gray-200 dark:bg-gray-700'}`}
+                                                            className={`h-2 rounded-full transition-all duration-500 ${idx === currentSlide ? 'w-10 bg-gray-950 dark:bg-white' : 'w-3 bg-gray-400 dark:bg-gray-600'}`}
                                                         />
                                                     ))}
                                                 </div>
@@ -325,9 +323,9 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                 <ArrowRight className="ml-2 h-5 w-5" />
                             </Button>
                         </Link>
-                        <Link href="/about">
-                            <Button size="lg" variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800 px-8">
-                                Learn More
+                        <Link href="/about" aria-label="Learn more about WebMall brand story and craftsmanship">
+                            <Button size="lg" variant="outline" className="border-gray-400 dark:border-gray-600 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 px-8 font-semibold">
+                                Discover Our Story
                             </Button>
                         </Link>
                     </div>

@@ -23,9 +23,9 @@ export function InstagramShowcase({ instagramUrl1, instagramUrl2 }: InstagramSho
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-rose-200/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 animate-pulse" style={{ animationDelay: '1s' }}></div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                {/* Header with animated icon */}
+                {/* Header with icon */}
                 <div className="text-center mb-12">
-                    <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-tr from-amber-400 via-pink-500 to-rose-600 rounded-2xl text-white mb-6 shadow-2xl animate-[wiggle_1s_ease-in-out_infinite] hover:scale-110 transition-transform cursor-pointer">
+                    <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-tr from-amber-400 via-pink-500 to-rose-600 rounded-2xl text-white mb-6 shadow-2xl hover:scale-105 transition-transform cursor-pointer">
                         <Instagram className="h-10 w-10" />
                     </div>
                     <h2 className="text-4xl md:text-5xl font-playfair font-bold text-gray-900 mb-4 hover:text-pink-600 transition-colors">
@@ -43,7 +43,7 @@ export function InstagramShowcase({ instagramUrl1, instagramUrl2 }: InstagramSho
                         <div className="group relative transform hover:scale-105 transition-all duration-300">
                             <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 via-pink-500 to-rose-600 rounded-2xl blur-lg opacity-30 group-hover:opacity-100 transition-opacity duration-500"></div>
                             <div className="relative bg-white rounded-2xl p-8 shadow-2xl flex flex-col items-center text-center h-full border border-gray-100 group-hover:border-pink-300 transition-all">
-                                <div className="w-24 h-24 bg-gradient-to-tr from-amber-100 to-pink-100 rounded-full flex items-center justify-center mb-6 group-hover:scale-125 group-hover:rotate-12 transition-all duration-500 shadow-lg group-hover:shadow-2xl">
+                                <div className="w-24 h-24 bg-gradient-to-tr from-amber-100 to-pink-100 rounded-full flex items-center justify-center mb-6 transition-all duration-500 shadow-lg group-hover:shadow-xl">
                                     <Instagram className="h-12 w-12 text-pink-600 group-hover:text-pink-700 transition-colors" />
                                 </div>
                                 <h3 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-pink-600 transition-colors">Main Store</h3>
@@ -62,7 +62,7 @@ export function InstagramShowcase({ instagramUrl1, instagramUrl2 }: InstagramSho
                         <div className="group relative transform hover:scale-105 transition-all duration-300">
                             <div className="absolute -inset-1 bg-gradient-to-r from-pink-400 via-rose-500 to-pink-600 rounded-2xl blur-lg opacity-30 group-hover:opacity-100 transition-opacity duration-500"></div>
                             <div className="relative bg-white rounded-2xl p-8 shadow-2xl flex flex-col items-center text-center h-full border border-gray-100 group-hover:border-pink-300 transition-all">
-                                <div className="w-24 h-24 bg-gradient-to-tr from-rose-100 to-pink-100 rounded-full flex items-center justify-center mb-6 group-hover:scale-125 group-hover:rotate-12 transition-all duration-500 shadow-lg group-hover:shadow-2xl">
+                                <div className="w-24 h-24 bg-gradient-to-tr from-rose-100 to-pink-100 rounded-full flex items-center justify-center mb-6 transition-all duration-500 shadow-lg group-hover:shadow-xl">
                                     <Instagram className="h-12 w-12 text-rose-600 group-hover:text-rose-700 transition-colors" />
                                 </div>
                                 <h3 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-rose-600 transition-colors">Exclusive Drops</h3>

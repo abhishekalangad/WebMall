@@ -247,10 +247,10 @@ function HeaderContent() {
           <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 flex-shrink-0">
 
             {/* Track Order outline button */}
-            <Link href="/orders">
+            <Link href="/orders" aria-label="Track Order" className="hidden lg:flex">
               <Button
                 variant="outline"
-                className="hidden lg:flex items-center space-x-2 h-10 px-4 rounded-full border border-gray-200 dark:border-gray-700 bg-transparent text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800"
+                className="flex items-center space-x-2 h-10 px-4 rounded-full border border-gray-200 dark:border-gray-700 bg-transparent text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 <Truck className="h-4 w-4 text-gray-500" />
                 <span className="text-gray-700 dark:text-gray-300">Track Order</span>
@@ -406,11 +406,11 @@ function HeaderContent() {
                     <Link
                       key={index}
                       href={link.path || '#'}
-                      className={`relative py-3.5 text-[15px] font-medium transition-colors hover:text-[#ec4899] dark:hover:text-[#ec4899] ${active ? 'text-[#ec4899] dark:text-[#ec4899] font-semibold' : 'text-gray-700 dark:text-gray-300'}`}
+                      className={`relative py-3.5 text-[15px] font-medium transition-colors hover:text-[#be185d] dark:hover:text-pink-400 ${active ? 'text-[#be185d] dark:text-pink-400 font-bold' : 'text-gray-800 dark:text-gray-200'}`}
                     >
                       {link.label}
                       {active && (
-                        <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#ec4899] dark:bg-[#ec4899] rounded-full" />
+                        <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#be185d] dark:bg-pink-400 rounded-full" />
                       )}
                     </Link>
                   )
@@ -420,8 +420,8 @@ function HeaderContent() {
               {/* Login / Register Button */}
               {!user && (
                 <div>
-                  <Link href="/login">
-                    <Button className="h-9 px-6 rounded-full bg-[#ec4899] hover:bg-[#db2777] text-white font-medium text-[13px] transition-all shadow-sm">
+                  <Link href="/login" aria-label="Login or Register account">
+                    <Button className="h-9 px-6 rounded-full bg-[#be185d] hover:bg-[#9d174d] text-white font-semibold text-[13px] transition-all shadow-sm">
                       Login / Register
                     </Button>
                   </Link>

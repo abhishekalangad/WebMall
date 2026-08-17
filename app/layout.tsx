@@ -136,8 +136,18 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iihrakelzsgyoqwtwwhy.supabase.co'
+
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable} ${dancingScript.variable} ${greatVibes.variable}`} suppressHydrationWarning>
+      <head>
+        {supabaseUrl && (
+          <>
+            <link rel="preconnect" href={supabaseUrl} crossOrigin="anonymous" />
+            <link rel="dns-prefetch" href={supabaseUrl} />
+          </>
+        )}
+      </head>
       <body className={inter.className} suppressHydrationWarning>
         <Suspense fallback={null}><ScrollbarHandler /></Suspense>
         <ErrorBoundary>

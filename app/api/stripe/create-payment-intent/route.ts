@@ -18,6 +18,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { amount, currency = 'lkr', metadata = {} } = body
 
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return NextResponse.json(
+        { error: 'Stripe Secret Key is not configured on the server. Please set STRIPE_SECRET_KEY in Vercel environment settings.' },
+        { status: 500 }
+      )
+    }
+
     if (!amount || typeof amount !== 'number' || amount <= 0) {
       return NextResponse.json({ error: 'Invalid amount provided' }, { status: 400 })
     }

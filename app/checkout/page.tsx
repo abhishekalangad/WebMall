@@ -342,7 +342,7 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="py-12 md:py-20 bg-background flex items-center justify-center p-4 min-h-[50vh]">
         <Card className="w-full max-w-md p-8 text-center bg-card border-border shadow-lg">
           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
             <Package className="h-8 w-8 text-muted-foreground" />
@@ -367,24 +367,24 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-background py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
           <Link href="/cart">
             <Button variant="ghost" size="sm" className="flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" />
               Back to Cart
             </Button>
           </Link>
-          <h1 className="text-4xl font-playfair font-bold text-foreground">
+          <h1 className="text-2xl sm:text-4xl font-playfair font-bold text-foreground">
             Checkout
           </h1>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Checkout Form */}
           <div className="lg:col-span-2">
-            <div className="space-y-8">
+            <div className="space-y-6 sm:space-y-8">
               {/* Personal Information */}
-              <Card className="p-6 bg-card border-border shadow-sm">
+              <Card className="p-4 sm:p-6 bg-card border-border shadow-sm">
                 <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2 text-foreground">
                   <MapPin className="h-6 w-6" />
                   Shipping Information
@@ -483,7 +483,7 @@ export default function CheckoutPage() {
               </Card>
 
               {/* Payment Method */}
-              <Card className="p-6 bg-card border-border shadow-sm">
+              <Card className="p-4 sm:p-6 bg-card border-border shadow-sm">
                 <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-foreground">
                   <CreditCard className="h-6 w-6" />
                   Payment Method
@@ -581,7 +581,7 @@ export default function CheckoutPage() {
               </Card>
 
               {/* Order Notes */}
-              <Card className="p-6 bg-card border-border shadow-sm">
+              <Card className="p-4 sm:p-6 bg-card border-border shadow-sm">
                 <div>
                   <Label htmlFor="notes" className="text-muted-foreground">Order Notes (Optional)</Label>
                   <textarea
@@ -611,7 +611,7 @@ export default function CheckoutPage() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <Card className="p-6 sticky top-8 bg-card border-border shadow-sm">
+            <Card className="p-4 sm:p-6 sticky top-8 bg-card border-border shadow-sm">
               <h2 className="text-2xl font-semibold mb-6 text-foreground">Order Summary</h2>
               <div className="space-y-4 mb-6">
                 {items.map((item) => (

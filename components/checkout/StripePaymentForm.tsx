@@ -79,10 +79,12 @@ export function StripeCheckoutForm({
         </div>
       )}
 
-      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
-        <Lock className="w-3.5 h-3.5 text-emerald-500" />
-        <span>Encrypted and secured by Stripe Test Gateway</span>
-        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 ml-auto" />
+      <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs text-muted-foreground mt-2">
+        <span className="flex items-center gap-1">
+          <Lock className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+          <span>Encrypted and secured by Stripe Test Gateway</span>
+        </span>
+        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0 hidden sm:inline" />
       </div>
 
       <Button

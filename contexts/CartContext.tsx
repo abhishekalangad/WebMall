@@ -43,13 +43,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const prevItemsRef = useRef<CartItem[]>([])
   const prevUserIdRef = useRef<string | null>(null)
 
+  // Define showToast early since other callbacks depend on it
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3000)
+  }, [])
+
   // Get user-specific cart key
-  const getCartKey = () => {
+  const getCartKey = useCallback(() => {
     return user ? `webmall-cart-${user.id}` : 'webmall-cart-guest'
-  }
+  }, [user])
 
   // Get auth token helper
-  const getAuthToken = async () => {
+  const getAuthToken = useCallback(async () => {
     if (!user) return null
     try {
       const { supabase } = await import('@/lib/supabase')
@@ -59,10 +65,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       console.error('Error getting auth token:', error)
       return null
     }
-  }
+  }, [user])
 
   // Load cart from server for logged-in users
-  const loadCartFromServer = async () => {
+  const loadCartFromServer = useCallback(async () => {
     if (!user) return null
 
     try {
@@ -83,10 +89,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       console.error('Error loading cart from server:', error)
     }
     return null
-  }
+  }, [user, getAuthToken])
 
   // Sync local cart with server
-  const syncCartWithServer = async (localItems: CartItem[]) => {
+  const syncCartWithServer = useCallback(async (localItems: CartItem[]) => {
     if (!user || localItems.length === 0) return
 
     try {
@@ -110,7 +116,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       console.error('Failed to sync cart with server:', error)
     }
     return null
-  }
+  }, [user, getAuthToken])
 
   // Update server cart on item changes
   const updateServerCart = useCallback(async (action: string, productId: string, quantity: number, variantId?: string, variantName?: string, variantAttributes?: Record<string, string>, maxStock?: number) => {
@@ -216,68 +222,80 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
 
     loadCart()
-  }, [user])
+  }, [user, getCartKey, loadCartFromServer, syncCartWithServer])
 
-  // Save cart to localStorage whenever items change (with optimization to prevent unnecessary saves)
+  // Sync cart when user switches back to browser tab (e.g. after adding item on mobile)
   useEffect(() => {
-    // Skip during initial load
+    if (!user) return
+
+    const handleTabFocus = async () => {
+      const serverItems = await loadCartFromServer()
+      if (serverItems) {
+        setItems(serverItems)
+      }
+    }
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleTabFocus()
+      }
+    }
+
+    window.addEventListener('focus', handleTabFocus)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    return () => {
+      window.removeEventListener('focus', handleTabFocus)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [user, loadCartFromServer])
+
+  // Save cart to localStorage whenever items change
+  useEffect(() => {
     if (isLoadingCart) return
 
     const currentUserId = user?.id || null
     const itemsChanged = JSON.stringify(prevItemsRef.current) !== JSON.stringify(items)
     const userChanged = prevUserIdRef.current !== currentUserId
 
-    // Only save if items actually changed or user changed
     if (itemsChanged || userChanged) {
       const cartKey = getCartKey()
       localStorage.setItem(cartKey, JSON.stringify(items))
 
-      // Update refs to current values
       prevItemsRef.current = items
       prevUserIdRef.current = currentUserId
     }
-  }, [items, user, isLoadingCart])
-
-  // Define showToast first since other functions depend on it
-  const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
-    setToast({ message, type })
-    setTimeout(() => setToast(null), 3000)
-  }, [])
+  }, [items, user, isLoadingCart, getCartKey])
 
   const addItem = useCallback((newItem: Omit<CartItem, 'id'>) => {
-    // Sanity check for quantity
     const quantityToAdd = Number(newItem.quantity) || 1
 
     setItems(prevItems => {
-      // Match by both productId AND variantId to allow different variants as separate items
       const existingItem = prevItems.find(item =>
         item.productId === newItem.productId &&
         item.variantId === newItem.variantId
       )
       if (existingItem) {
-        // If maxStock is available, ensure we don't exceed it
         const proposedQuantity = (Number(existingItem.quantity) || 0) + quantityToAdd
         const newQuantity = existingItem.maxStock !== undefined ? Math.min(proposedQuantity, existingItem.maxStock) : proposedQuantity
-        
+
         const updatedItems = prevItems.map(item =>
           item.productId === newItem.productId && item.variantId === newItem.variantId
             ? { ...item, quantity: newQuantity, maxStock: newItem.maxStock ?? item.maxStock }
             : item
         )
-        
+
         if (existingItem.maxStock !== undefined && proposedQuantity > existingItem.maxStock) {
            showToast(`Added max available quantity to cart`, 'info')
         } else {
            showToast(`${newItem.name} quantity updated in cart!`, 'success')
         }
-        
-        // Update server for logged-in users
+
         updateServerCart('update', newItem.productId, newQuantity, newItem.variantId, newItem.variantName, newItem.variantAttributes, newItem.maxStock ?? existingItem.maxStock)
         return updatedItems
       } else {
         const newItems = [...prevItems, { ...newItem, quantity: quantityToAdd, id: Date.now().toString() }]
         showToast(`${newItem.name} added to cart!`, 'success')
-        // Update server for logged-in users
         updateServerCart('add', newItem.productId, quantityToAdd, newItem.variantId, newItem.variantName, newItem.variantAttributes, newItem.maxStock)
         return newItems
       }
@@ -298,31 +316,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     if (itemToRemove) {
       showToast(`${itemToRemove.name} removed from cart`, 'info')
-      // Update server for logged-in users
       updateServerCart('remove', productId, 0, variantId)
     }
-  }, [items, updateServerCart])
+  }, [items, updateServerCart, showToast])
 
   const updateQuantity = useCallback((productId: string, quantity: number, variantId?: string) => {
     const newQuantity = Number(quantity)
     if (isNaN(newQuantity) || newQuantity <= 0) {
-      // Remove the specific variant item
       setItems(prevItems => prevItems.filter(item =>
         !(item.productId === productId && item.variantId === variantId)
       ))
       return
     }
 
-    // Find the item to get variant details for server update
     const itemToUpdate = items.find(item =>
       item.productId === productId && item.variantId === variantId
     )
-    
+
     let finalQuantity = newQuantity
     if (itemToUpdate && itemToUpdate.maxStock !== undefined && newQuantity > itemToUpdate.maxStock) {
        finalQuantity = itemToUpdate.maxStock
        showToast(`Only ${itemToUpdate.maxStock} units available`, 'error')
-       if (itemToUpdate.quantity === itemToUpdate.maxStock) return // Already at max
+       if (itemToUpdate.quantity === itemToUpdate.maxStock) return
     }
 
     setItems(prevItems =>
@@ -332,7 +347,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           : item
       )
     )
-    // Update server for logged-in users with full variant details
+
     if (itemToUpdate) {
       updateServerCart('update', productId, finalQuantity, variantId, itemToUpdate.variantName, itemToUpdate.variantAttributes, itemToUpdate.maxStock)
     }
@@ -342,7 +357,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems([])
     showToast('Cart cleared', 'info')
 
-    // Clear server cart for logged-in users
     if (user) {
       try {
         const token = await getAuthToken()
@@ -358,14 +372,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         console.error('Failed to clear server cart:', error)
       }
     }
-  }, [user, getAuthToken])
+  }, [user, getAuthToken, showToast])
 
   const refreshCartData = useCallback(async () => {
     if (items.length === 0) return
 
     try {
       if (user) {
-        // Logged-in users can just reload from server (which is already validated)
         const token = await getAuthToken()
         if (token) {
           const response = await fetch('/api/cart', {
@@ -379,23 +392,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } else {
-        // For guests, we must fetch product data and update the cached cart items
         const productIds = Array.from(new Set(items.map(item => item.productId)))
         const response = await fetch(`/api/products?ids=${productIds.join(',')}&limit=all`)
         if (response.ok) {
           const data = await response.json()
           const products = data.products || []
-          
+
           if (products.length > 0) {
             const updatedItems = items.map(item => {
               const product = products.find((p: any) => p.id === item.productId)
-              if (!product) return item // Product might have been deleted
-              
+              if (!product) return item
+
               const variant = product.variants?.find((v: any) => v.id === item.variantId)
               const productPrice = Number(product.price || 0)
               const variantPrice = variant?.priceOverride ? Number(variant.priceOverride) : null
               const finalPrice = variantPrice !== null ? variantPrice : productPrice
-              
+
               return {
                  ...item,
                  name: product.name,
@@ -415,12 +427,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Failed to refresh cart data:', error)
     }
-  }, [items, user])
+  }, [items, user, getAuthToken])
 
-  // Calculate total items (safe with integers)
   const totalItems = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
 
-  // Calculate total price using Decimal.js to prevent floating-point errors
   const totalPrice = items.reduce((sum, item) => {
     const price = new Decimal(item.price || 0)
     const quantity = new Decimal(item.quantity || 0)

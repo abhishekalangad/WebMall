@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { ArrowLeft, CreditCard, MapPin, Package, Tag, X } from 'lucide-react'
+import { ArrowLeft, CreditCard, MapPin, Package, Tag, X, Lock, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,6 +13,11 @@ import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSiteConfig } from '@/contexts/SiteConfigContext'
 import { supabase } from '@/lib/supabase'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements } from '@stripe/react-stripe-js'
+import { StripeCheckoutForm } from '@/components/checkout/StripePaymentForm'
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
 export default function CheckoutPage() {
   const { settings } = useSiteConfig()
@@ -64,6 +69,19 @@ export default function CheckoutPage() {
   const [couponLoading, setCouponLoading] = useState(false)
   const [couponError, setCouponError] = useState('')
 
+  // Scroll to top when order is completed
+  useEffect(() => {
+    if (orderComplete) {
+      window.scrollTo(0, 0)
+    }
+  }, [orderComplete])
+
+
+  // Stripe state
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [stripeLoading, setStripeLoading] = useState(false)
+  const [stripeError, setStripeError] = useState<string | null>(null)
+
   // Form state
   const [formData, setFormData] = useState({
     firstName: '',
@@ -74,9 +92,17 @@ export default function CheckoutPage() {
     city: '',
     postalCode: '',
     district: '',
-    paymentMethod: '',
+    paymentMethod: 'cash', // default to COD
     notes: ''
   })
+
+  // Update email if user loads later
+  useEffect(() => {
+    if (user?.email) {
+      setFormData(prev => (prev.email ? prev : { ...prev, email: user.email! }))
+    }
+  }, [user])
+
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -89,8 +115,6 @@ export default function CheckoutPage() {
     setCouponError('')
 
     try {
-      // Get auth token
-      const { supabase } = await import('@/lib/supabase')
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session?.access_token) {
@@ -139,12 +163,72 @@ export default function CheckoutPage() {
   const finalTotal = Math.floor(rawFinalTotal)
   const roundOffAmount = finalTotal - rawFinalTotal
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Fetch Stripe Payment Intent when Card payment is selected
+  useEffect(() => {
+    if (formData.paymentMethod === 'card' && finalTotal > 0) {
+      let isMounted = true
+      const createIntent = async () => {
+        setStripeLoading(true)
+        setStripeError(null)
+
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          const token = session?.access_token
+
+          if (!token) {
+            if (isMounted) {
+              setStripeError('Please log in to proceed with card payment.')
+              setStripeLoading(false)
+            }
+            return
+          }
+
+          const response = await fetch('/api/stripe/create-payment-intent', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              amount: finalTotal,
+              currency: 'lkr'
+            })
+          })
+
+          const data = await response.json()
+
+          if (response.ok && data.clientSecret) {
+            if (isMounted) {
+              setClientSecret(data.clientSecret)
+            }
+          } else {
+            if (isMounted) {
+              setStripeError(data.error || 'Failed to initialize payment gateway.')
+            }
+          }
+        } catch (err: any) {
+          if (isMounted) {
+            setStripeError(err.message || 'Error connecting to payment server.')
+          }
+        } finally {
+          if (isMounted) {
+            setStripeLoading(false)
+          }
+        }
+      }
+
+      createIntent()
+      return () => {
+        isMounted = false
+      }
+    }
+  }, [formData.paymentMethod, finalTotal])
+
+  // Process order creation in Database
+  const createOrderInDatabase = async (paymentIntentId?: string) => {
     setLoading(true)
 
     try {
-      // Get authentication token
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
 
@@ -152,7 +236,6 @@ export default function CheckoutPage() {
         throw new Error('Please log in to place an order')
       }
 
-      // Call the orders API
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
@@ -176,7 +259,7 @@ export default function CheckoutPage() {
             phone: formData.phone
           },
           paymentMethod: formData.paymentMethod,
-          notes: formData.notes || null,
+          notes: formData.notes ? `${formData.notes}${paymentIntentId ? ` (Stripe Payment ID: ${paymentIntentId})` : ''}` : (paymentIntentId ? `Stripe Payment ID: ${paymentIntentId}` : null),
           couponCode: appliedCoupon?.coupon?.code || null,
           discountAmount: discount
         })
@@ -189,14 +272,13 @@ export default function CheckoutPage() {
 
       const order = await response.json()
 
-      // Handle post-order cleanup
       if (isBuyNow) {
         localStorage.removeItem('buyNowItem')
       } else {
         clearCart()
       }
 
-      setOrderComplete(order) // Pass full order object
+      setOrderComplete(order)
     } catch (error: any) {
       console.error('Checkout error:', error)
       alert(error.message || 'Failed to place order. Please try again.')
@@ -205,12 +287,32 @@ export default function CheckoutPage() {
     }
   }
 
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+
+    // For cash on delivery, process immediately
+    if (formData.paymentMethod === 'cash') {
+      await createOrderInDatabase()
+    }
+  }
+
+  const isShippingFormValid = Boolean(
+    formData.firstName &&
+    formData.lastName &&
+    formData.email &&
+    formData.phone &&
+    formData.address &&
+    formData.city &&
+    formData.postalCode &&
+    formData.district
+  )
+
   if (orderComplete) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="py-12 md:py-20 bg-background flex items-center justify-center p-4 min-h-[60vh]">
         <Card className="w-full max-w-md p-8 text-center bg-card border-border shadow-lg">
           <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Package className="h-8 w-8 text-emerald-500" />
+            <CheckCircle2 className="h-8 w-8 text-emerald-500" />
           </div>
           <h1 className="text-3xl font-playfair font-bold text-foreground mb-4">
             Order Confirmed!
@@ -219,7 +321,7 @@ export default function CheckoutPage() {
             Order #: {orderComplete.orderNumber}
           </p>
           <p className="text-muted-foreground mb-8">
-            Thank you for your purchase. Your order has been received and will be processed within 1-2 business days.
+            Thank you for your purchase! Your payment and order have been processed successfully.
           </p>
           <div className="space-y-3">
             <Link href="/products">
@@ -227,9 +329,9 @@ export default function CheckoutPage() {
                 Continue Shopping
               </Button>
             </Link>
-            <Link href="/">
+            <Link href="/orders">
               <Button variant="outline" className="w-full border-border hover:bg-muted">
-                Back to Home
+                View My Orders
               </Button>
             </Link>
           </div>
@@ -280,7 +382,7 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Checkout Form */}
           <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="space-y-8">
               {/* Personal Information */}
               <Card className="p-6 bg-card border-border shadow-sm">
                 <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2 text-foreground">
@@ -382,11 +484,12 @@ export default function CheckoutPage() {
 
               {/* Payment Method */}
               <Card className="p-6 bg-card border-border shadow-sm">
-                <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2 text-foreground">
+                <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-foreground">
                   <CreditCard className="h-6 w-6" />
                   Payment Method
                 </h2>
-                <div className="space-y-4">
+
+                <div className="space-y-4 mb-6">
                   <div className="flex items-center space-x-3 p-4 border border-border rounded-lg bg-background hover:border-foreground transition-colors cursor-pointer">
                     <input
                       type="radio"
@@ -401,6 +504,7 @@ export default function CheckoutPage() {
                       Cash on Delivery (COD)
                     </Label>
                   </div>
+
                   <div className="flex items-center space-x-3 p-4 border border-border rounded-lg bg-background hover:border-foreground transition-colors cursor-pointer">
                     <input
                       type="radio"
@@ -411,11 +515,69 @@ export default function CheckoutPage() {
                       onChange={(e) => handleInputChange('paymentMethod', e.target.value)}
                       className="w-4 h-4 text-primary bg-background border-border focus:ring-primary focus:ring-offset-background"
                     />
-                    <Label htmlFor="card" className="flex-1 cursor-pointer font-medium text-foreground">
-                      Credit/Debit Card
+                    <Label htmlFor="card" className="flex-1 cursor-pointer font-medium text-foreground flex items-center justify-between">
+                      <span>Credit / Debit Card (Stripe Test)</span>
+                      <span className="text-xs bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded font-semibold">Test Mode</span>
                     </Label>
                   </div>
                 </div>
+
+                {/* Embedded Stripe Elements Form */}
+                {formData.paymentMethod === 'card' && (
+                  <div className="mt-4 pt-4 border-t border-border space-y-4">
+                    <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-700 dark:text-blue-400 space-y-1">
+                      <p className="font-semibold flex items-center gap-1">
+                        <Lock className="w-3.5 h-3.5" /> Stripe Test Mode Credentials:
+                      </p>
+                      <p>Card Number: <code className="bg-background px-1.5 py-0.5 rounded border border-border font-mono">4242 4242 4242 4242</code></p>
+                      <p>Expiry: <code className="bg-background px-1.5 py-0.5 rounded border border-border font-mono">12/30</code> | CVC: <code className="bg-background px-1.5 py-0.5 rounded border border-border font-mono">123</code></p>
+                    </div>
+
+                    {!isShippingFormValid && (
+                      <p className="text-sm text-amber-500 font-medium">
+                        ⚠️ Please complete all shipping information fields above to unlock card payment.
+                      </p>
+                    )}
+
+                    {isShippingFormValid && stripeLoading && (
+                      <div className="py-8 text-center text-muted-foreground animate-pulse">
+                        Connecting to Stripe Payment Gateway...
+                      </div>
+                    )}
+
+                    {isShippingFormValid && stripeError && (
+                      <div className="p-3 bg-red-500/10 border border-red-500/20 rounded text-sm text-red-500">
+                        {stripeError}
+                      </div>
+                    )}
+
+                    {isShippingFormValid && clientSecret && !stripeLoading && (
+                      <Elements
+                        stripe={stripePromise}
+                        options={{
+                          clientSecret,
+                          appearance: {
+                            theme: 'stripe',
+                            variables: {
+                              colorPrimary: '#10b981',
+                            },
+                          },
+                        }}
+                      >
+                        <StripeCheckoutForm
+                          onSuccess={async (paymentIntentId) => {
+                            await createOrderInDatabase(paymentIntentId)
+                          }}
+                          onError={(errorText) => {
+                            console.error('Stripe Error:', errorText)
+                          }}
+                          submitting={loading}
+                          setSubmitting={setLoading}
+                        />
+                      </Elements>
+                    )}
+                  </div>
+                )}
               </Card>
 
               {/* Order Notes */}
@@ -432,7 +594,19 @@ export default function CheckoutPage() {
                   />
                 </div>
               </Card>
-            </form>
+
+              {/* Standard submit button for Cash on Delivery */}
+              {formData.paymentMethod === 'cash' && (
+                <Button
+                  type="button"
+                  onClick={() => handleSubmit()}
+                  disabled={loading || !isShippingFormValid}
+                  className="w-full bg-foreground text-background hover:bg-muted-foreground transition-colors font-semibold py-6 text-lg"
+                >
+                  {loading ? 'Processing...' : 'Place Order (Cash on Delivery)'}
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Order Summary */}
@@ -443,6 +617,7 @@ export default function CheckoutPage() {
                 {items.map((item) => (
                   <div key={`${item.productId}-${item.variantId || 'default'}`} className="flex items-center gap-4">
                     <div className="h-16 w-16 bg-muted rounded-md overflow-hidden shrink-0 border border-border">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={item.image}
                           alt={item.name}
@@ -542,13 +717,6 @@ export default function CheckoutPage() {
                     {finalTotal.toLocaleString('en-LK')} LKR
                   </span>
                 </div>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={loading || !formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.address || !formData.city || !formData.paymentMethod}
-                  className="w-full mt-6 bg-foreground text-background hover:bg-muted-foreground transition-colors font-semibold py-6 text-lg"
-                >
-                  {loading ? 'Processing...' : 'Place Order'}
-                </Button>
               </div>
             </Card>
           </div>

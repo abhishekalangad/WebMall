@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Minus, Plus, Trash2, ShoppingBag, Gift, Tag, Truck, X, ChevronRight, Sparkles, ArrowLeft } from 'lucide-react'
@@ -18,11 +18,10 @@ export function CartView() {
     const { settings } = useSiteConfig()
     const { items, updateQuantity, removeItem, clearCart, totalItems, totalPrice, refreshCartData } = useCart()
     const { toast } = useToast()
-    const [removingItem, setRemovingItem] = useState<string | null>(null)
-
     React.useEffect(() => {
         refreshCartData()
-    }, [refreshCartData])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []) // Run only once on mount
 
     // Calculate free shipping progress and costs using site settings
     const freeShippingThreshold = settings?.freeShippingThreshold || 5000
@@ -40,15 +39,12 @@ export function CartView() {
 
 
     const handleRemoveItem = (productId: string, variantId?: string) => {
-        setRemovingItem(productId)
-        setTimeout(() => {
-            removeItem(productId, variantId)
-            setRemovingItem(null)
-            toast({
-                title: 'Item Removed',
-                description: 'Item has been removed from your cart'
-            })
-        }, 300)
+        // Remove immediately — AnimatePresence handles the exit animation
+        removeItem(productId, variantId)
+        toast({
+            title: 'Item Removed',
+            description: 'Item has been removed from your cart'
+        })
     }
 
     const finalTotal = totalPrice + shippingCost
@@ -167,13 +163,10 @@ export function CartView() {
                                 <motion.div
                                     key={item.id}
                                     layout
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{
-                                        opacity: removingItem === item.productId ? 0 : 1,
-                                        scale: removingItem === item.productId ? 0.9 : 1
-                                    }}
-                                    exit={{ opacity: 0, scale: 0.9, x: -100 }}
-                                    transition={{ duration: 0.3 }}
+                                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95, x: -60, transition: { duration: 0.2 } }}
+                                    transition={{ duration: 0.25 }}
                                     className="bg-card rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-border"
                                 >
                                     <div className="p-4 sm:p-6">

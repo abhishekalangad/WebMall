@@ -42,6 +42,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Use ref to prevent unnecessary localStorage saves
   const prevItemsRef = useRef<CartItem[]>([])
   const prevUserIdRef = useRef<string | null>(null)
+  // Track whether a server update is in flight to avoid overwriting optimistic state
+  const isSyncingRef = useRef(false)
 
   // Define showToast early since other callbacks depend on it
   const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -122,6 +124,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const updateServerCart = useCallback(async (action: string, productId: string, quantity: number, variantId?: string, variantName?: string, variantAttributes?: Record<string, string>, maxStock?: number) => {
     if (!user) return
 
+    isSyncingRef.current = true
     try {
       const token = await getAuthToken()
       if (!token) return
@@ -136,6 +139,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       })
     } catch (error) {
       console.error('Failed to update server cart:', error)
+    } finally {
+      isSyncingRef.current = false
     }
   }, [user, getAuthToken])
 
@@ -229,6 +234,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (!user) return
 
     const handleTabFocus = async () => {
+      // Skip refetch if a user-triggered update is still in flight
+      if (isSyncingRef.current) return
       const serverItems = await loadCartFromServer()
       if (serverItems) {
         setItems(serverItems)
@@ -375,59 +382,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [user, getAuthToken, showToast])
 
   const refreshCartData = useCallback(async () => {
-    if (items.length === 0) return
-
-    try {
-      if (user) {
-        const token = await getAuthToken()
-        if (token) {
-          const response = await fetch('/api/cart', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          })
-          if (response.ok) {
-            const data = await response.json()
-            if (data.items) {
-              setItems(data.items)
-            }
-          }
-        }
-      } else {
-        const productIds = Array.from(new Set(items.map(item => item.productId)))
-        const response = await fetch(`/api/products?ids=${productIds.join(',')}&limit=all`)
+    if (user) {
+      const token = await getAuthToken()
+      if (token) {
+        const response = await fetch('/api/cart', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
         if (response.ok) {
           const data = await response.json()
-          const products = data.products || []
-
-          if (products.length > 0) {
-            const updatedItems = items.map(item => {
-              const product = products.find((p: any) => p.id === item.productId)
-              if (!product) return item
-
-              const variant = product.variants?.find((v: any) => v.id === item.variantId)
-              const productPrice = Number(product.price || 0)
-              const variantPrice = variant?.priceOverride ? Number(variant.priceOverride) : null
-              const finalPrice = variantPrice !== null ? variantPrice : productPrice
-
-              return {
-                 ...item,
-                 name: product.name,
-                 price: finalPrice,
-                 originalPrice: productPrice > finalPrice ? productPrice : undefined,
-                 image: (variant?.images && variant.images.length > 0)
-                    ? variant.images[0].url
-                    : (variant?.image || product.images?.[0]?.url || item.image),
-                 slug: product.slug,
-                 maxStock: variant ? variant.stock : product.stock
-              }
-            })
-            setItems(updatedItems)
+          if (data.items) {
+            setItems(data.items)
           }
         }
       }
-    } catch (error) {
-      console.error('Failed to refresh cart data:', error)
+    } else {
+      // For guests: re-read from localStorage (already loaded on mount)
     }
-  }, [items, user, getAuthToken])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, getAuthToken])
 
   const totalItems = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
 

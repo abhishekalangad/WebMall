@@ -39,7 +39,7 @@ interface ProductDetailViewProps {
 export function ProductDetailView({ product: initialProduct }: ProductDetailViewProps) {
     const router = useRouter()
     const { items, addItem, updateQuantity } = useCart()
-    const { user } = useAuth()
+    const { user, accessToken } = useAuth()
     const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlist()
     const { toast } = useToast()
     const [selectedImage, setSelectedImage] = useState(0)
@@ -525,9 +525,13 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
 
         setIsSubmittingReview(true)
         try {
+            const token = await accessToken()
             const res = await fetch('/api/products/review', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
                 body: JSON.stringify({
                     productId: product.id,
                     userId: user.id,
@@ -541,8 +545,8 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                 // If it's a purchase verification error (403), show clear message
                 if (res.status === 403) {
                     toast({
-                        title: "Purchase Required",
-                        description: "You must have purchased this product to leave a review.",
+                        title: "Review Restricted",
+                        description: data.error || "You can only leave a review after your order status is delivered.",
                         variant: "destructive"
                     })
                 } else {
@@ -552,14 +556,25 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                 toast({ title: "Success", description: "Review submitted successfully!" })
                 setRating(0)
                 setComment('')
-                // Refresh reviews (future implementation)
+                if (data && data.id) {
+                    setReviews(prev => {
+                        const exists = prev.some(r => r.id === data.id)
+                        if (exists) {
+                            return prev.map(r => r.id === data.id ? data : r)
+                        } else {
+                            return [data, ...prev]
+                        }
+                    })
+                }
+                router.refresh()
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error(error)
-            // Toast already handled for API errors often, but catch generic network ones
-            if (!(error instanceof Error && error.message === 'Failed to submit')) {
-                // handled above
-            }
+            toast({
+                title: "Error",
+                description: error.message || "Failed to submit review",
+                variant: "destructive"
+            })
         } finally {
             setIsSubmittingReview(false)
         }

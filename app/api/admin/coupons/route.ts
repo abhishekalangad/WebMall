@@ -52,12 +52,16 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Coupon code already exists' }, { status: 400 })
         }
 
+        const parsedExpiry = (expiryDate && expiryDate !== 'no_expiry' && String(expiryDate).trim() !== '')
+            ? new Date(expiryDate)
+            : new Date('2099-12-31T23:59:59.999Z')
+
         const coupon = await prisma.coupon.create({
             data: {
                 code,
                 discountType,
                 discountValue,
-                expiryDate: new Date(expiryDate),
+                expiryDate: parsedExpiry,
                 usageLimit: usageLimit || 100,
                 minimumOrder: minimumOrder || 0,
                 status: status || 'active',

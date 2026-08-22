@@ -94,6 +94,7 @@ export default function AdminProductsPage() {
     if (user?.role === 'admin') {
       fetchInitial()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   // IntersectionObserver for infinite scroll
@@ -109,6 +110,7 @@ export default function AdminProductsPage() {
     )
     observer.observe(sentinelRef.current)
     return () => observer.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasMore, loadingMore, loading])
 
   const fetchInitial = async () => {
@@ -334,6 +336,10 @@ export default function AdminProductsPage() {
   }
 
   const handleEditProduct = (product: any) => {
+    const variantStockSum = product.variants && product.variants.length > 0
+      ? product.variants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0)
+      : product.stock
+
     setEditingProduct(product)
     setFormData({
       name: product.name,
@@ -342,7 +348,7 @@ export default function AdminProductsPage() {
       originalPrice: '',
       categoryId: product.categoryId,
       subcategoryId: product.subcategoryId || '',
-      stockCount: product.stock.toString(),
+      stockCount: variantStockSum.toString(),
       images: product.images && product.images.length > 0
         ? product.images.map((img: any, index: number) => ({
           url: img.url,
@@ -552,105 +558,104 @@ export default function AdminProductsPage() {
         {viewMode === 'list' ? (
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full table-fixed">
-                <colgroup>
-                  <col className="w-[280px]" />
-                  <col className="w-[130px]" />
-                  <col className="w-[120px]" />
-                  <col className="w-[130px]" />
-                  <col className="w-[90px]" />
-                  <col className="w-[200px]" />
-                </colgroup>
-                <thead className="bg-muted">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-muted/80 border-b border-border">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider w-[240px] sm:w-[280px]">
                       Product
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider w-[140px]">
                       Category
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider w-[130px]">
                       Price
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider w-[140px]">
                       Stock
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider w-[100px]">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider w-[180px]">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-card divide-y divide-border">
-                  {filteredProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-muted/50">
-                      {/* Product thumbnail + name */}
-                      <td className="px-4 py-3 overflow-hidden">
-                        <div className="flex items-center gap-3">
-                          <div className="flex-shrink-0 h-11 w-11 rounded-lg overflow-hidden bg-muted">
-                            {product.images?.[0]?.url ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={product.images[0].url}
-                                alt={product.name}
-                                className="h-11 w-11 object-cover"
-                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                              />
-                            ) : (
-                              <div className="h-11 w-11 flex items-center justify-center text-muted-foreground">
-                                <Package className="h-5 w-5" />
+                  {filteredProducts.map((product) => {
+                    const displayStock = (product.variants && product.variants.length > 0)
+                      ? product.variants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0)
+                      : product.stock
+
+                    return (
+                      <tr key={product.id} className="hover:bg-muted/50 transition-colors">
+                        {/* Product thumbnail + name */}
+                        <td className="px-4 py-3 max-w-[280px]">
+                          <div className="flex items-center gap-3">
+                            <div className="flex-shrink-0 h-11 w-11 rounded-lg overflow-hidden bg-muted border border-border shadow-sm">
+                              {product.images?.[0]?.url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={product.images[0].url}
+                                  alt={product.name}
+                                  className="h-11 w-11 object-cover"
+                                  onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }}
+                                />
+                              ) : (
+                                <div className="h-11 w-11 flex items-center justify-center text-muted-foreground">
+                                  <Package className="h-5 w-5" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-semibold text-foreground line-clamp-2 leading-tight" title={product.name}>
+                                {product.name}
                               </div>
+                              {product.description && (
+                                <div className="text-xs text-muted-foreground line-clamp-1 mt-0.5" title={product.description}>
+                                  {product.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Category */}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <Badge variant="secondary" className="text-xs max-w-[130px] truncate block">{product.category?.name || 'Uncategorized'}</Badge>
+                        </td>
+
+                        {/* Price */}
+                        <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap">
+                          <div className="font-semibold">{product.currency} {product.price.toLocaleString()}</div>
+                        </td>
+
+                        {/* Stock */}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-foreground">{displayStock}</span>
+                            {displayStock === 0 ? (
+                              <Badge className="bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300 text-xs">Out of Stock</Badge>
+                            ) : displayStock < 10 ? (
+                              <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 text-xs">Low Stock</Badge>
+                            ) : (
+                              <Badge className="bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300 text-xs">In Stock</Badge>
                             )}
                           </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium text-foreground truncate" title={product.name}>
-                              {product.name}
-                            </div>
-                            <div className="text-xs text-muted-foreground truncate" title={product.description}>
-                              {product.description}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Category */}
-                      <td className="px-4 py-3 overflow-hidden whitespace-nowrap">
-                        <Badge variant="secondary" className="text-xs max-w-full truncate block">{product.category?.name || 'Uncategorized'}</Badge>
-                      </td>
-
-                      {/* Price */}
-                      <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap overflow-hidden">
-                        <div className="font-medium">{product.currency} {product.price.toLocaleString()}</div>
-                      </td>
-
-                      {/* Stock */}
-                      <td className="px-4 py-3 whitespace-nowrap overflow-hidden">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-foreground">{product.stock}</span>
-                          {product.stock === 0 ? (
-                            <Badge className="bg-red-100 text-red-800 text-xs">Out of Stock</Badge>
-                          ) : product.stock < 10 ? (
-                            <Badge className="bg-amber-100 text-amber-800 text-xs">Low Stock</Badge>
-                          ) : (
-                            <Badge className="bg-green-100 text-green-800 text-xs">In Stock</Badge>
-                          )}
-                        </div>
-                      </td>
+                        </td>
 
                       {/* Status */}
-                      <td className="px-4 py-3 whitespace-nowrap overflow-hidden">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <Badge
-                          className={product.status === 'active' ? 'bg-green-100 text-green-800 text-xs' : 'bg-red-100 text-red-800 text-xs'}
+                          className={product.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300 text-xs' : 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300 text-xs'}
                         >
                           {product.status === 'active' ? 'Active' : 'Inactive'}
                         </Badge>
                       </td>
 
                       {/* Actions */}
-                      <td className="px-4 py-3 whitespace-nowrap overflow-hidden">
-                        <div className="flex items-center gap-1.5">
+                      <td className="px-4 py-3 whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end gap-1.5">
                           <Button
                             variant="outline"
                             size="sm"
@@ -682,7 +687,7 @@ export default function AdminProductsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDeleteProduct(product.id)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50 flex-shrink-0"
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 flex-shrink-0"
                             title="Delete"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -690,66 +695,72 @@ export default function AdminProductsPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )
+                })}
                 </tbody>
               </table>
             </div>
           </Card>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {filteredProducts.map((product) => (
-              <Card key={product.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
-                {/* Image */}
-                <div className="relative aspect-square bg-muted">
-                  {product.images?.[0]?.url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={product.images[0].url}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                      <Package className="h-12 w-12" />
-                    </div>
-                  )}
-                  {/* Status Badge Over Image */}
-                  <div className="absolute top-2 right-2">
-                    <Badge className={product.status === 'active' ? 'bg-card/90 text-green-700 hover:bg-card' : 'bg-card/90 text-red-700 hover:bg-card'}>
-                      {product.status === 'active' ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </div>
-                  {/* Stock Badge */}
-                  {product.stock < 10 && (
-                    <div className="absolute bottom-2 left-2">
-                      <Badge className={product.stock === 0 ? 'bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-400' : 'bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-400'}>
-                        {product.stock === 0 ? 'Out of Stock' : `${product.stock} Left`}
+            {filteredProducts.map((product) => {
+              const displayStock = (product.variants && product.variants.length > 0)
+                ? product.variants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0)
+                : product.stock
+
+              return (
+                <Card key={product.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
+                  {/* Image */}
+                  <div className="relative aspect-square bg-muted">
+                    {product.images?.[0]?.url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={product.images[0].url}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                        <Package className="h-12 w-12" />
+                      </div>
+                    )}
+                    {/* Status Badge Over Image */}
+                    <div className="absolute top-2 right-2">
+                      <Badge className={product.status === 'active' ? 'bg-card/90 text-green-700 hover:bg-card' : 'bg-card/90 text-red-700 hover:bg-card'}>
+                        {product.status === 'active' ? 'Active' : 'Inactive'}
                       </Badge>
                     </div>
-                  )}
-                </div>
-
-                {/* Content */}
-                <div className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="font-semibold text-foreground line-clamp-1" title={product.name}>
-                        {product.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">{product.category?.name || 'Uncategorized'}</p>
-                    </div>
-                    <p className="font-bold text-foreground whitespace-nowrap ml-2">
-                      {product.currency} {product.price.toLocaleString()}
-                    </p>
+                    {/* Stock Badge */}
+                    {displayStock < 10 && (
+                      <div className="absolute bottom-2 left-2">
+                        <Badge className={displayStock === 0 ? 'bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-400' : 'bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-400'}>
+                          {displayStock === 0 ? 'Out of Stock' : `${displayStock} Left`}
+                        </Badge>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Quick Stats */}
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground mb-4 pb-4 border-b">
-                    <div className="flex items-center gap-1">
-                      <Package className="h-3 w-3" />
-                      {product.stock} Stock
+                  {/* Content */}
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-semibold text-foreground line-clamp-1" title={product.name}>
+                          {product.name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">{product.category?.name || 'Uncategorized'}</p>
+                      </div>
+                      <p className="font-bold text-foreground whitespace-nowrap ml-2">
+                        {product.currency} {product.price.toLocaleString()}
+                      </p>
                     </div>
+
+                    {/* Quick Stats */}
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground mb-4 pb-4 border-b">
+                      <div className="flex items-center gap-1">
+                        <Package className="h-3 w-3" />
+                        {displayStock} Stock
+                      </div>
                     {product.variants?.length > 0 && (
                       <div className="flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-pink-500" />
@@ -803,7 +814,8 @@ export default function AdminProductsPage() {
                   </div>
                 </div>
               </Card>
-            ))}
+            )
+          })}
           </div>
         )}
 
@@ -1027,6 +1039,14 @@ export default function AdminProductsPage() {
                           placeholder="0"
                           required
                         />
+                        {formData.variants && formData.variants.length > 0 && (
+                          <div className="mt-1.5 flex items-center gap-1.5 text-xs text-pink-700 dark:text-pink-300 font-medium bg-pink-50 dark:bg-pink-950/40 border border-pink-200 dark:border-pink-900/50 px-2.5 py-1.5 rounded-lg">
+                            <svg className="w-3.5 h-3.5 text-pink-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            <span>Auto-calculated sum of {formData.variants.length} variant{formData.variants.length > 1 ? 's' : ''} ({formData.stockCount} total units)</span>
+                          </div>
+                        )}
                         {formData.stockCount && parseInt(formData.stockCount) === 0 && (
                           <div className="mt-2 flex items-center gap-2 text-xs text-red-600 font-medium bg-red-50 px-2 py-1.5 rounded">
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -1082,7 +1102,17 @@ export default function AdminProductsPage() {
 
                     <ProductVariants
                       variants={formData.variants}
-                      onChange={(variants) => setFormData({ ...formData, variants })}
+                      onChange={(variants) => {
+                        const totalVariantStock = variants.length > 0
+                          ? variants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0)
+                          : formData.stockCount
+
+                        setFormData(prev => ({
+                          ...prev,
+                          variants,
+                          stockCount: variants.length > 0 ? totalVariantStock.toString() : prev.stockCount
+                        }))
+                      }}
                       basePrice={parseFloat(formData.price) || 0}
                       currency="LKR"
                       existingImages={formData.images}
@@ -1193,7 +1223,7 @@ export default function AdminProductsPage() {
                   </div>
 
                   {newCategoryForm.pendingSubcategories.length === 0 && (
-                    <p className="text-xs text-muted-foreground py-2">No subcategories yet. Click "Add Subcategory" to create one.</p>
+                    <p className="text-xs text-muted-foreground py-2">No subcategories yet. Click &quot;Add Subcategory&quot; to create one.</p>
                   )}
 
                   {newCategoryForm.pendingSubcategories.map((sub, idx) => (

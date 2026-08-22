@@ -26,7 +26,7 @@ export function ImageUpload({
     bucket = 'products',
     autoReset = false,
     maxSizeMB = 5,
-    cropEnabled = false,
+    cropEnabled = true,
     cropAspectRatio = 1,
     circularCrop = false,
     className
@@ -76,6 +76,18 @@ export function ImageUpload({
     const handleCropComplete = async (croppedImageUrl: string) => {
         setImageToCrop(null)
         
+        if (!croppedImageUrl.startsWith('data:')) {
+            // "Use Original (No Crop)" clicked! Process raw blob directly
+            try {
+                const resBlob = await fetch(croppedImageUrl)
+                const blob = await resBlob.blob()
+                await processUpload(blob)
+            } catch (err) {
+                console.error('Failed to process original image:', err)
+            }
+            return
+        }
+
         // Convert base64 to File object
         const arr = croppedImageUrl.split(',')
         const mimeMatch = arr[0].match(/:(.*?);/)
@@ -187,6 +199,7 @@ export function ImageUpload({
                 )}
             >
                 {preview ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                         src={preview}
                         alt="Upload preview"

@@ -82,11 +82,16 @@ export async function GET(request: NextRequest) {
       GROUP BY product_id
     `
 
-    // Merge ratings with products
+    // Merge ratings and compute effective stock from variants if present
     const productsWithRatings = products.map(product => {
       const rating = ratings.find(r => r.product_id === product.id)
+      const variantStockSum = product.variants && product.variants.length > 0
+        ? product.variants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0)
+        : product.stock
+
       return {
         ...product,
+        stock: (product.variants && product.variants.length > 0) ? variantStockSum : product.stock,
         avgRating: rating ? parseFloat(rating.avg_rating) : 0,
         reviewCount: rating ? rating.review_count : 0
       }
@@ -157,6 +162,11 @@ export async function POST(request: NextRequest) {
       slug = `${baseSlug}-${counter}`
     }
 
+    // Calculate total stock from variants if variants exist
+    const effectiveStock = variants && variants.length > 0
+      ? variants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0)
+      : Number(stock || 0)
+
     const created = await prisma.product.create({
       data: {
         name,
@@ -167,7 +177,7 @@ export async function POST(request: NextRequest) {
         categoryId,
         subcategoryId: subcategoryId || null,
         status,
-        stock,
+        stock: effectiveStock,
         images: images.length ? { create: images.map((img: any) => ({ url: img.url, alt: img.alt ?? null, position: img.position ?? 0 })) } : undefined,
         variants: variants.length ? { create: variants.map((v: any) => ({ sku: v.sku, name: v.name, attributes: v.attributes ?? {}, priceOverride: v.priceOverride ?? null, stock: v.stock ?? 0, image: v.image, images: v.images || [] })) } : undefined,
       },

@@ -17,12 +17,14 @@ export interface CartItem {
   variantAttributes?: Record<string, string>
   originalPrice?: number
   maxStock?: number
+  isDeleted?: boolean
 }
 
 interface CartContextType {
   items: CartItem[]
   addItem: (item: Omit<CartItem, 'id'>) => void
-  removeItem: (productId: string, variantId?: string) => void
+  removeItem: (productId: string, variantId?: string, itemId?: string) => void
+  removeUnavailableItems: () => void
   updateQuantity: (productId: string, quantity: number, variantId?: string) => void
   clearCart: () => void
   refreshCartData: () => Promise<void>
@@ -121,7 +123,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [user, getAuthToken])
 
   // Update server cart on item changes
-  const updateServerCart = useCallback(async (action: string, productId: string, quantity: number, variantId?: string, variantName?: string, variantAttributes?: Record<string, string>, maxStock?: number) => {
+  const updateServerCart = useCallback(async (action: string, productId: string, quantity: number, variantId?: string, variantName?: string, variantAttributes?: Record<string, string>, maxStock?: number, itemId?: string) => {
     if (!user) return
 
     isSyncingRef.current = true
@@ -135,7 +137,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ action, productId, quantity, variantId, variantName, variantAttributes, maxStock })
+        body: JSON.stringify({ action, productId, quantity, variantId, variantName, variantAttributes, maxStock, itemId })
       })
     } catch (error) {
       console.error('Failed to update server cart:', error)
@@ -143,6 +145,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       isSyncingRef.current = false
     }
   }, [user, getAuthToken])
+
+  // Helper to deduplicate cart items by productId + variantId
+  const deduplicateCartItems = useCallback((raw: CartItem[]): CartItem[] => {
+    const map = new Map<string, CartItem>()
+    for (const item of raw) {
+      const key = `${item.productId}_${item.variantId || 'base'}`
+      const existing = map.get(key)
+      if (existing) {
+        const combinedQty = (Number(existing.quantity) || 0) + (Number(item.quantity) || 0)
+        const maxStock = item.maxStock ?? existing.maxStock
+        existing.quantity = maxStock !== undefined ? Math.min(combinedQty, maxStock) : combinedQty
+      } else {
+        map.set(key, { ...item })
+      }
+    }
+    return Array.from(map.values())
+  }, [])
 
   // Load cart when component mounts or user changes
   useEffect(() => {
@@ -174,15 +193,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               const guestItems = JSON.parse(guestCart)
               // Merge guest cart with server cart
               const mergedItems = await syncCartWithServer(guestItems)
-              setItems(mergedItems || serverItems)
+              setItems(deduplicateCartItems(mergedItems || serverItems))
               // Clear guest cart after merging
               localStorage.removeItem(guestCartKey)
             } catch (error) {
               console.error('Error merging carts:', error)
-              setItems(serverItems)
+              setItems(deduplicateCartItems(serverItems))
             }
           } else {
-            setItems(serverItems)
+            setItems(deduplicateCartItems(serverItems))
           }
 
           // Update localStorage for consistency
@@ -195,7 +214,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           if (savedCart) {
             try {
               const parsedCart = JSON.parse(savedCart)
-              setItems(parsedCart)
+              setItems(deduplicateCartItems(parsedCart))
               // Try to sync with server in background
               syncCartWithServer(parsedCart)
             } catch (error) {
@@ -213,7 +232,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
         if (savedCart) {
           try {
-            setItems(JSON.parse(savedCart))
+            setItems(deduplicateCartItems(JSON.parse(savedCart)))
           } catch (error) {
             console.error('Error parsing cart:', error)
             setItems([])
@@ -227,7 +246,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
 
     loadCart()
-  }, [user, getCartKey, loadCartFromServer, syncCartWithServer])
+  }, [user, getCartKey, loadCartFromServer, syncCartWithServer, deduplicateCartItems])
 
   // Sync cart when user switches back to browser tab (e.g. after adding item on mobile)
   useEffect(() => {
@@ -238,7 +257,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (isSyncingRef.current) return
       const serverItems = await loadCartFromServer()
       if (serverItems) {
-        setItems(serverItems)
+        setItems(deduplicateCartItems(serverItems))
       }
     }
 
@@ -255,7 +274,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener('focus', handleTabFocus)
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
-  }, [user, loadCartFromServer])
+  }, [user, loadCartFromServer, deduplicateCartItems])
 
   // Save cart to localStorage whenever items change
   useEffect(() => {
@@ -280,14 +299,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems(prevItems => {
       const existingItem = prevItems.find(item =>
         item.productId === newItem.productId &&
-        item.variantId === newItem.variantId
+        ((item.variantId || null) === (newItem.variantId || null))
       )
       if (existingItem) {
         const proposedQuantity = (Number(existingItem.quantity) || 0) + quantityToAdd
         const newQuantity = existingItem.maxStock !== undefined ? Math.min(proposedQuantity, existingItem.maxStock) : proposedQuantity
 
         const updatedItems = prevItems.map(item =>
-          item.productId === newItem.productId && item.variantId === newItem.variantId
+          item.productId === newItem.productId && ((item.variantId || null) === (newItem.variantId || null))
             ? { ...item, quantity: newQuantity, maxStock: newItem.maxStock ?? item.maxStock }
             : item
         )
@@ -309,13 +328,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     })
   }, [updateServerCart, showToast])
 
-  const removeItem = useCallback((productId: string, variantId?: string) => {
+  const removeItem = useCallback((productId: string, variantId?: string, itemId?: string) => {
     const itemToRemove = items.find(item =>
-      item.productId === productId &&
-      (variantId ? item.variantId === variantId : true)
+      (itemId && item.id === itemId) ||
+      (item.productId === productId && (variantId ? item.variantId === variantId : true))
     )
 
     setItems(prevItems => prevItems.filter(item => {
+      if (itemId && item.id === itemId) return false
       if (item.productId !== productId) return true
       if (variantId && item.variantId !== variantId) return true
       return false
@@ -323,8 +343,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     if (itemToRemove) {
       showToast(`${itemToRemove.name} removed from cart`, 'info')
-      updateServerCart('remove', productId, 0, variantId)
+      updateServerCart('remove', productId, 0, variantId, undefined, undefined, undefined, itemId || itemToRemove.id)
     }
+  }, [items, updateServerCart, showToast])
+
+  const removeUnavailableItems = useCallback(() => {
+    const unavailableItems = items.filter(item =>
+      item.maxStock === 0 || item.isDeleted || item.name.includes('Discontinued') || item.name.includes('No Longer Available')
+    )
+
+    if (unavailableItems.length === 0) return
+
+    setItems(prevItems => prevItems.filter(item =>
+      !(item.maxStock === 0 || item.isDeleted || item.name.includes('Discontinued') || item.name.includes('No Longer Available'))
+    ))
+
+    showToast(`Removed ${unavailableItems.length} unavailable item(s) from cart`, 'info')
+
+    unavailableItems.forEach(item => {
+      updateServerCart('remove', item.productId, 0, item.variantId, undefined, undefined, undefined, item.id)
+    })
   }, [items, updateServerCart, showToast])
 
   const updateQuantity = useCallback((productId: string, quantity: number, variantId?: string) => {
@@ -401,9 +439,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, getAuthToken])
 
-  const totalItems = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
+  const totalItems = items.reduce((sum, item) => {
+    if (item.maxStock === 0 || item.isDeleted || item.name === 'Unknown Product' || item.name === 'Product No Longer Available') {
+      return sum
+    }
+    return sum + (Number(item.quantity) || 0)
+  }, 0)
 
   const totalPrice = items.reduce((sum, item) => {
+    if (item.maxStock === 0 || item.isDeleted || item.name === 'Unknown Product' || item.name === 'Product No Longer Available') {
+      return sum
+    }
     const price = new Decimal(item.price || 0)
     const quantity = new Decimal(item.quantity || 0)
     return sum.plus(price.times(quantity))
@@ -413,13 +459,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     items,
     addItem,
     removeItem,
+    removeUnavailableItems,
     updateQuantity,
     clearCart,
     refreshCartData,
     totalItems,
     totalPrice,
     showToast,
-  }), [items, addItem, removeItem, updateQuantity, clearCart, refreshCartData, totalItems, totalPrice, showToast])
+  }), [items, addItem, removeItem, removeUnavailableItems, updateQuantity, clearCart, refreshCartData, totalItems, totalPrice, showToast])
 
   return (
     <CartContext.Provider value={contextValue}>

@@ -69,6 +69,7 @@ export async function GET(request: NextRequest) {
                         slug: true,
                         price: true,
                         stock: true,
+                        status: true,
                         images: {
                             take: 1,
                             orderBy: { position: 'asc' }
@@ -89,17 +90,46 @@ export async function GET(request: NextRequest) {
             }
         })
 
+        // Group and deduplicate items by productId + variantId
+        const deduplicatedMap = new Map<string, typeof rawItems[0]>()
+        const duplicateIdsToDelete: string[] = []
+
+        for (const item of rawItems) {
+            const key = `${item.productId}_${item.variantId || 'base'}`
+            if (deduplicatedMap.has(key)) {
+                const existing = deduplicatedMap.get(key)!
+                existing.quantity += item.quantity
+                duplicateIdsToDelete.push(item.id)
+            } else {
+                deduplicatedMap.set(key, { ...item })
+            }
+        }
+
+        // Clean up duplicate rows in DB if any were found
+        if (duplicateIdsToDelete.length > 0) {
+            await prisma.cartItem.deleteMany({
+                where: { id: { in: duplicateIdsToDelete } }
+            })
+            for (const item of deduplicatedMap.values()) {
+                await prisma.cartItem.update({
+                    where: { id: item.id },
+                    data: { quantity: item.quantity }
+                })
+            }
+        }
+
         // Transform to CartItem format expected by frontend
-        const cartItems = rawItems.map(item => {
+        const cartItems = Array.from(deduplicatedMap.values()).map(item => {
+            const isProductDeleted = !item.product || item.product.status === 'deleted'
             const productPrice = Number(item.product?.price || 0)
             const variantPrice = item.variant?.priceOverride ? Number(item.variant.priceOverride) : null
-            const finalPrice = variantPrice !== null ? variantPrice : productPrice
+            const finalPrice = isProductDeleted ? 0 : (variantPrice !== null ? variantPrice : productPrice)
 
             return {
                 id: item.id,
                 productId: item.productId!,
                 variantId: item.variantId || undefined,
-                name: item.product?.name || 'Unknown Product',
+                name: isProductDeleted ? (item.product?.name ? `${item.product.name} (Discontinued)` : 'Product No Longer Available') : (item.product?.name || 'Unknown Product'),
                 price: finalPrice,
                 originalPrice: productPrice > finalPrice ? productPrice : undefined,
                 quantity: item.quantity,
@@ -109,7 +139,8 @@ export async function GET(request: NextRequest) {
                 slug: item.product?.slug || '',
                 variantName: item.variantName || undefined,
                 variantAttributes: item.variantAttributes as Record<string, string> || undefined,
-                maxStock: item.variant ? item.variant.stock : item.product?.stock
+                maxStock: isProductDeleted ? 0 : (item.variant ? item.variant.stock : item.product?.stock),
+                isDeleted: isProductDeleted
             }
         })
 
@@ -251,18 +282,26 @@ export async function PUT(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { productId, quantity, action, variantId, variantName, variantAttributes } = body
+        const { productId, quantity, action, variantId, variantName, variantAttributes, itemId } = body
 
         const { mainCart, cartIds } = await getOrCreateUserCarts(user.id, user.email, user.name, user.role)
 
         if (action === 'remove') {
-            await prisma.cartItem.deleteMany({
-                where: {
-                    cartId: { in: cartIds },
-                    productId: productId,
-                    variantId: variantId || null
-                }
-            })
+            if (itemId) {
+                await prisma.cartItem.deleteMany({
+                    where: { id: itemId }
+                })
+            }
+            // Always also purge matching productId in user carts for cleanliness
+            if (productId) {
+                await prisma.cartItem.deleteMany({
+                    where: {
+                        cartId: { in: cartIds },
+                        productId: productId,
+                        variantId: variantId || null
+                    }
+                })
+            }
         } else if (action === 'add') {
             const existingItem = await prisma.cartItem.findFirst({
                 where: {

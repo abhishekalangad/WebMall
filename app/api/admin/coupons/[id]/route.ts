@@ -23,13 +23,17 @@ export async function PUT(
         const { code, discountType, discountValue, expiryDate, usageLimit, minimumOrder, status, usageType, maxUsesPerUser } = body
         const { id } = await params
 
+        const parsedExpiry = (expiryDate && expiryDate !== 'no_expiry' && String(expiryDate).trim() !== '')
+            ? new Date(expiryDate)
+            : new Date('2099-12-31T23:59:59.999Z')
+
         const coupon = await prisma.coupon.update({
             where: { id },
             data: {
                 code,
                 discountType,
                 discountValue,
-                expiryDate: new Date(expiryDate),
+                expiryDate: parsedExpiry,
                 usageLimit,
                 minimumOrder,
                 status,
@@ -39,9 +43,9 @@ export async function PUT(
         })
 
         return NextResponse.json(coupon)
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error updating coupon:', error)
-        return NextResponse.json({ error: 'Failed to update coupon' }, { status: 500 })
+        return NextResponse.json({ error: error.message || 'Failed to update coupon' }, { status: 500 })
     }
 }
 

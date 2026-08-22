@@ -443,11 +443,11 @@ export function OrdersView() {
                                             ))}
                                         </div>
                                     </div>
-
                                     {/* Order Summary */}
                                     <div className="bg-muted/30 rounded-xl p-6 space-y-3 text-sm border border-border shadow-sm">
                                         <h3 className="font-bold mb-4 text-foreground uppercase tracking-wider text-xs">Payment Summary</h3>
 
+                                        {/* Subtotal */}
                                         <div className="flex justify-between text-muted-foreground font-medium">
                                             <span>Subtotal</span>
                                             <span className="text-foreground">
@@ -455,8 +455,24 @@ export function OrdersView() {
                                             </span>
                                         </div>
 
+                                        {/* Product-level savings */}
+                                        {(() => {
+                                            const productSavings = selectedOrder.items.reduce((acc, item) => {
+                                                const orig = Number(item.product?.price || 0)
+                                                const paid = Number(item.price)
+                                                return orig > paid ? acc + (orig - paid) * item.quantity : acc
+                                            }, 0)
+                                            return productSavings > 0 ? (
+                                                <div className="flex justify-between text-emerald-600 font-semibold">
+                                                    <span className="flex items-center gap-1">🏷️ Product Savings</span>
+                                                    <span>− {selectedOrder.currency} {productSavings.toLocaleString('en-LK')}</span>
+                                                </div>
+                                            ) : null
+                                        })()}
+
+                                        {/* Delivery */}
                                         <div className="flex justify-between text-muted-foreground font-medium">
-                                            <span>Processing & Delivery Charges</span>
+                                            <span>Processing &amp; Delivery Charges</span>
                                             <span className="flex gap-2">
                                                 {(() => {
                                                     const subtotal = selectedOrder.items.reduce((acc, item) => acc + Number(item.total), 0)
@@ -479,12 +495,30 @@ export function OrdersView() {
                                             </span>
                                         </div>
 
+                                        {/* Coupon discount */}
                                         {selectedOrder.couponUsage && (
                                             <div className="flex justify-between text-emerald-500 font-medium">
                                                 <span>Discount Applied <span className="px-1.5 py-0.5 bg-emerald-500/10 rounded-md text-[10px] ml-1 border border-emerald-500/20">{selectedOrder.couponUsage.coupon.code}</span></span>
                                                 <span className="font-bold">- {selectedOrder.currency} {Number(selectedOrder.couponUsage.discountAmount).toLocaleString('en-LK')}</span>
                                             </div>
                                         )}
+
+                                        {/* Total savings highlight */}
+                                        {(() => {
+                                            const productSavings = selectedOrder.items.reduce((acc, item) => {
+                                                const orig = Number(item.product?.price || 0)
+                                                const paid = Number(item.price)
+                                                return orig > paid ? acc + (orig - paid) * item.quantity : acc
+                                            }, 0)
+                                            const couponSavings = Number(selectedOrder.couponUsage?.discountAmount || 0)
+                                            const totalSaved = productSavings + couponSavings
+                                            return totalSaved > 0 ? (
+                                                <div className="flex justify-between items-center bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2 text-emerald-600 font-bold">
+                                                    <span>🎉 You Saved!</span>
+                                                    <span>{selectedOrder.currency} {totalSaved.toLocaleString('en-LK')}</span>
+                                                </div>
+                                            ) : null
+                                        })()}
 
                                         <div className="border-t border-border pt-4 mt-4 flex justify-between items-center bg-card -mx-6 -mb-6 p-6 rounded-b-xl border-x-0 border-b-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
                                             <span className="font-black text-lg text-foreground uppercase tracking-wide">Final Price</span>

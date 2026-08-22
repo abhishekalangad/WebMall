@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import NextImage from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSiteConfig } from '@/contexts/SiteConfigContext'
 import { useRouter } from 'next/navigation'
@@ -17,6 +18,7 @@ interface OrderItem {
   product: {
     id: string
     name: string
+    price?: number
     slug: string
     images: { url: string }[]
   }
@@ -642,6 +644,9 @@ function downloadBuffer(buffer: ArrayBuffer, filename: string) {
   URL.revokeObjectURL(url)
 }
 
+// ─── Module-level constants (stable, no re-creation on render) ───────────────
+const monthList = ['January','February','March','April','May','June','July','August','September','October','November','December']
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AdminOrdersPage() {
@@ -666,7 +671,6 @@ export default function AdminOrdersPage() {
   const [customFrom, setCustomFrom]   = useState('')
   const [customTo, setCustomTo]       = useState('')
 
-  const monthList = ['January','February','March','April','May','June','July','August','September','October','November','December']
   const yearList  = Array.from({ length: 5 }, (_, i) => String(new Date().getFullYear() - i))
 
   // Reactive range — recomputed whenever any filter state changes
@@ -716,6 +720,54 @@ export default function AdminOrdersPage() {
   const lastOrderIdRef = useRef<string | null>(null)
   const [draggedOrderId, setDraggedOrderId] = useState<string | null>(null)
 
+  const fetchOrders = useCallback(async () => {
+    try {
+      loadingMoreRef.current = true
+      setPage(1)
+      setHasMore(true)
+      const token = await accessToken()
+      const headers = (token ? { 'Authorization': `Bearer ${token}` } : {}) as HeadersInit
+      const response = await fetch(`/api/orders?page=1&limit=${LIMIT}`, { headers })
+      const data = await response.json()
+      if (response.ok) {
+        setOrders(data.orders || [])
+        setHasMore(data.pagination ? data.pagination.hasNextPage : false)
+        setPage(2)
+      }
+    } catch (error) {
+      console.error('Failed to fetch orders:', error)
+    } finally {
+      loadingMoreRef.current = false
+    }
+  }, [accessToken])
+
+  const loadMoreOrders = useCallback(async () => {
+    if (loadingMoreRef.current || !hasMore) return
+    try {
+      loadingMoreRef.current = true
+      setLoadingMore(true)
+      const token = await accessToken()
+      const headers = (token ? { 'Authorization': `Bearer ${token}` } : {}) as HeadersInit
+      const res = await fetch(`/api/orders?page=${page}&limit=${LIMIT}`, { headers })
+      const data = await res.json()
+      if (res.ok) {
+        const incoming: Order[] = data.orders || []
+        setOrders(prev => {
+          const existingIds = new Set(prev.map(o => o.id))
+          const fresh = incoming.filter(o => !existingIds.has(o.id))
+          return fresh.length > 0 ? [...prev, ...fresh] : prev
+        })
+        setHasMore(data.pagination ? data.pagination.hasNextPage : false)
+        setPage(prev => prev + 1)
+      }
+    } catch (error) {
+      console.error('Failed to load more orders:', error)
+    } finally {
+      loadingMoreRef.current = false
+      setLoadingMore(false)
+    }
+  }, [page, hasMore, accessToken])
+
   // Real-time Order Engine
   useEffect(() => {
     if (!user || user.role !== 'admin') return;
@@ -746,7 +798,7 @@ export default function AdminOrdersPage() {
     }, 10000)
 
     return () => clearInterval(interval)
-  }, [user, accessToken])
+  }, [user, accessToken, fetchOrders])
 
   // Convert a DB ISO date string to local YYYY-MM-DD — respects user's local timezone
   const toLocalDate = (iso: string) => {
@@ -819,7 +871,7 @@ export default function AdminOrdersPage() {
         fetchOrders()
       }
     }
-  }, [user, loading, router])
+  }, [user, loading, router, fetchOrders])
 
   // Close modal on Escape
   useEffect(() => {
@@ -843,55 +895,8 @@ export default function AdminOrdersPage() {
     )
     observer.observe(sentinelRef.current)
     return () => observer.disconnect()
-  }, [hasMore, loadingMore, loading])
+  }, [hasMore, loadingMore, loading, loadMoreOrders])
 
-  const fetchOrders = async () => {
-    try {
-      loadingMoreRef.current = true
-      setPage(1)
-      setHasMore(true)
-      const token = await accessToken()
-      const headers = (token ? { 'Authorization': `Bearer ${token}` } : {}) as HeadersInit
-      const response = await fetch(`/api/orders?page=1&limit=${LIMIT}`, { headers })
-      const data = await response.json()
-      if (response.ok) {
-        setOrders(data.orders || [])
-        setHasMore(data.pagination ? data.pagination.hasNextPage : false)
-        setPage(2)
-      }
-    } catch (error) {
-      console.error('Failed to fetch orders:', error)
-    } finally {
-      loadingMoreRef.current = false
-    }
-  }
-
-  const loadMoreOrders = useCallback(async () => {
-    if (loadingMoreRef.current || !hasMore) return
-    try {
-      loadingMoreRef.current = true
-      setLoadingMore(true)
-      const token = await accessToken()
-      const headers = (token ? { 'Authorization': `Bearer ${token}` } : {}) as HeadersInit
-      const res = await fetch(`/api/orders?page=${page}&limit=${LIMIT}`, { headers })
-      const data = await res.json()
-      if (res.ok) {
-        const incoming: Order[] = data.orders || []
-        setOrders(prev => {
-          const existingIds = new Set(prev.map(o => o.id))
-          const fresh = incoming.filter(o => !existingIds.has(o.id))
-          return fresh.length > 0 ? [...prev, ...fresh] : prev
-        })
-        setHasMore(data.pagination ? data.pagination.hasNextPage : false)
-        setPage(prev => prev + 1)
-      }
-    } catch (error) {
-      console.error('Failed to load more orders:', error)
-    } finally {
-      loadingMoreRef.current = false
-      setLoadingMore(false)
-    }
-  }, [page, hasMore, accessToken])
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
@@ -1499,6 +1504,12 @@ export default function AdminOrdersPage() {
                     <div><span className="text-muted-foreground">Payment:</span> <span className="font-medium">{selectedOrder.paymentMethod}</span></div>
                     <div><span className="text-muted-foreground">Date:</span> <span className="font-medium">{new Date(selectedOrder.createdAt).toLocaleString()}</span></div>
                     <div><span className="text-muted-foreground">Total:</span> <span className="font-bold">{selectedOrder.currency} {Number(selectedOrder.totalAmount).toLocaleString()}</span></div>
+                    {(() => {
+                      const stripeMatch = selectedOrder.notes?.match(/Stripe Payment ID: (pi_[\w]+)/)
+                      return stripeMatch ? (
+                        <div><span className="text-muted-foreground">Stripe ID:</span> <span className="font-mono text-xs font-medium">{stripeMatch[1]}</span></div>
+                      ) : null
+                    })()}
                   </div>
                 </div>
               </div>
@@ -1525,12 +1536,17 @@ export default function AdminOrdersPage() {
               )}
 
               {/* Notes */}
-              {selectedOrder.notes && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                  <h3 className="font-semibold text-amber-700 text-sm uppercase tracking-wide mb-2">Customer Notes</h3>
-                  <p className="text-sm text-foreground/80">{selectedOrder.notes}</p>
-                </div>
-              )}
+              {(() => {
+                const customerNote = selectedOrder.notes
+                  ?.replace(/\s*\(?Stripe Payment ID: pi_[\w]+\)?/, '')
+                  .trim()
+                return customerNote ? (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <h3 className="font-semibold text-amber-700 text-sm uppercase tracking-wide mb-2">Customer Notes</h3>
+                    <p className="text-sm text-foreground/80">{customerNote}</p>
+                  </div>
+                ) : null
+              })()}
 
               {/* Items — Desktop */}
               <div>
@@ -1552,7 +1568,7 @@ export default function AdminOrdersPage() {
                             <div className="flex items-center gap-3">
                               <div className="h-10 w-10 rounded-md bg-muted overflow-hidden shrink-0">
                                 {item.product.images?.[0]?.url && (
-                                  <img src={item.product.images[0].url} alt={item.product.name} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }} />
+                                  <NextImage src={item.product.images[0].url} alt={item.product.name} width={40} height={40} className="h-full w-full object-cover" unoptimized />
                                 )}
                               </div>
                               <div>
@@ -1580,6 +1596,11 @@ export default function AdminOrdersPage() {
                       {/* Totals */}
                       {(() => {
                         const subtotal = selectedOrder.items.reduce((acc, i) => acc + Number(i.total), 0)
+                        const productSavings = selectedOrder.items.reduce((acc, i) => {
+                          const orig = Number(i.product?.price || 0)
+                          const paid = Number(i.price)
+                          return orig > paid ? acc + (orig - paid) * i.quantity : acc
+                        }, 0)
                         const discount = Number(selectedOrder.couponUsage?.discountAmount || 0)
                         const shipping = Math.max(0, Number(selectedOrder.totalAmount) - (subtotal - discount))
                         const shippingBaseRate = settings?.shippingBaseRate || 350
@@ -1589,6 +1610,14 @@ export default function AdminOrdersPage() {
                               <TableCell colSpan={3} className="font-medium text-right text-muted-foreground">Subtotal:</TableCell>
                               <TableCell className="font-medium">{selectedOrder.currency} {subtotal.toLocaleString('en-LK')}</TableCell>
                             </TableRow>
+                            {productSavings > 0 && (
+                              <TableRow className="text-emerald-600 bg-emerald-50/50">
+                                <TableCell colSpan={3} className="font-medium text-right">
+                                  <span className="inline-flex items-center gap-1">🏷️ Product Savings:</span>
+                                </TableCell>
+                                <TableCell className="font-semibold">− {selectedOrder.currency} {productSavings.toLocaleString('en-LK')}</TableCell>
+                              </TableRow>
+                            )}
                             {discount > 0 && (
                               <TableRow className="text-green-600 bg-green-50/40">
                                 <TableCell colSpan={3} className="font-medium text-right">
@@ -1605,6 +1634,12 @@ export default function AdminOrdersPage() {
                                   : `${selectedOrder.currency} ${shipping.toLocaleString('en-LK')}`}
                               </TableCell>
                             </TableRow>
+                            {(productSavings > 0 || discount > 0) && (
+                              <TableRow className="bg-emerald-50 border-t border-emerald-200">
+                                <TableCell colSpan={3} className="font-bold text-right text-emerald-700 text-sm">🎉 Total You Saved:</TableCell>
+                                <TableCell className="font-bold text-emerald-700">{selectedOrder.currency} {(productSavings + discount).toLocaleString('en-LK')}</TableCell>
+                              </TableRow>
+                            )}
                             <TableRow className="bg-indigo-50">
                               <TableCell colSpan={3} className="font-bold text-right text-base">Final Total:</TableCell>
                               <TableCell className="font-bold text-base text-indigo-700">{selectedOrder.currency} {Number(selectedOrder.totalAmount).toLocaleString('en-LK')}</TableCell>
@@ -1623,7 +1658,7 @@ export default function AdminOrdersPage() {
                       <div className="flex gap-3">
                         <div className="h-14 w-14 rounded-md bg-gray-200 overflow-hidden shrink-0">
                           {item.product.images?.[0]?.url && (
-                            <img src={item.product.images[0].url} alt={item.product.name} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }} />
+                            <NextImage src={item.product.images[0].url} alt={item.product.name} width={56} height={56} className="h-full w-full object-cover" unoptimized />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1647,6 +1682,11 @@ export default function AdminOrdersPage() {
                   {/* Mobile totals */}
                   {(() => {
                     const subtotal = selectedOrder.items.reduce((acc, i) => acc + Number(i.total), 0)
+                    const productSavings = selectedOrder.items.reduce((acc, i) => {
+                      const orig = Number(i.product?.price || 0)
+                      const paid = Number(i.price)
+                      return orig > paid ? acc + (orig - paid) * i.quantity : acc
+                    }, 0)
                     const discount = Number(selectedOrder.couponUsage?.discountAmount || 0)
                     const shipping = Math.max(0, Number(selectedOrder.totalAmount) - (subtotal - discount))
                     const shippingBaseRate = settings?.shippingBaseRate || 350
@@ -1656,6 +1696,12 @@ export default function AdminOrdersPage() {
                           <span>Subtotal</span>
                           <span>{selectedOrder.currency} {subtotal.toLocaleString('en-LK')}</span>
                         </div>
+                        {productSavings > 0 && (
+                          <div className="flex justify-between text-emerald-600 font-medium">
+                            <span className="flex items-center gap-1">🏷️ Product Savings</span>
+                            <span>− {selectedOrder.currency} {productSavings.toLocaleString('en-LK')}</span>
+                          </div>
+                        )}
                         {discount > 0 && (
                           <div className="flex justify-between text-green-600">
                             <span>Discount ({selectedOrder.couponUsage?.coupon.code})</span>
@@ -1670,6 +1716,12 @@ export default function AdminOrdersPage() {
                               : `${selectedOrder.currency} ${shipping.toLocaleString('en-LK')}`}
                           </span>
                         </div>
+                        {(productSavings > 0 || discount > 0) && (
+                          <div className="flex justify-between text-emerald-600 font-bold bg-emerald-50 rounded-lg px-3 py-2">
+                            <span>🎉 Total You Saved</span>
+                            <span>{selectedOrder.currency} {(productSavings + discount).toLocaleString('en-LK')}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between font-bold text-base border-t pt-2 text-indigo-700">
                           <span>Total</span>
                           <span>{selectedOrder.currency} {Number(selectedOrder.totalAmount).toLocaleString('en-LK')}</span>

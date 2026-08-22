@@ -205,12 +205,12 @@ export function Footer() {
               {loading ? (
                 <div className="h-10 md:h-12 w-10 md:w-12 bg-gray-800 rounded animate-pulse" />
               ) : (
-                <Image
-                  src={settings?.logoUrl || '/logo-white.jpg'}
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={settings?.logoUrl || '/logo-no-bg.png'}
                   alt={settings?.storeName || 'WebMall'}
-                  width={120}
-                  height={48}
                   className="h-9 md:h-10 lg:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+                  onError={(e) => { (e.target as HTMLImageElement).src = '/logo-no-bg.png' }}
                 />
               )}
               <span className="text-xl md:text-2xl lg:text-3xl font-playfair font-bold text-white group-hover:text-gray-200 transition-colors">

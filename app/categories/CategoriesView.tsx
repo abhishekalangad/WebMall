@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Loader2, FolderOpen } from 'lucide-react'
+import { getValidImageUrl } from '@/lib/image-utils'
 
 interface CategoriesViewProps {
     categories: any[]
@@ -45,11 +46,12 @@ export function CategoriesView({ categories }: CategoriesViewProps) {
                             <Link key={category.id} href={`/products?category=${category.slug}`} className="group">
                                 <div className="relative aspect-square rounded-2xl overflow-hidden bg-card border border-border shadow-sm group-hover:shadow-lg transition-all duration-300">
                                     {category.image ? (
-                                        <Image
-                                            src={category.image}
+                                        /* eslint-disable-next-line @next/next/no-img-element */
+                                        <img
+                                            src={getValidImageUrl(category.image, '/placeholder.png')}
                                             alt={category.name}
-                                            fill
-                                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                            onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }}
                                         />
                                     ) : (
                                         <div className="absolute inset-0 bg-muted flex items-center justify-center">
@@ -74,7 +76,7 @@ export function CategoriesView({ categories }: CategoriesViewProps) {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center">
                         <h2 className="text-4xl font-playfair font-bold text-foreground mb-6">
-                            Can't Find What You're Looking For?
+                            Can&apos;t Find What You&apos;re Looking For?
                         </h2>
                         <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
                             Browse all our products or use our search feature to find exactly what you need.

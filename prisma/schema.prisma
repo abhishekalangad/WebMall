@@ -313,7 +313,7 @@ model Coupon {
   code          String   @unique @map("code")
   discountType  String   @map("discount_type")
   discountValue Float    @map("discount_value")
-  expiryDate    DateTime @map("expiry_date")
+  expiryDate    DateTime? @map("expiry_date")
   usageLimit    Int      @default(100) @map("usage_limit")
   timesUsed     Int      @default(0) @map("times_used")
   minimumOrder  Float    @default(0) @map("minimum_order")

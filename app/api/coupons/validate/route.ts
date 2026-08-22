@@ -38,18 +38,22 @@ export async function POST(request: NextRequest) {
 
         // Validate coupon status
         const now = new Date()
-        const expiryDate = new Date(coupon.expiryDate)
 
         if (coupon.status !== 'active') {
             return NextResponse.json({ error: 'Invalid coupon code' }, { status: 400 })
         }
 
-        if (expiryDate < now) {
-            return NextResponse.json({ error: 'Invalid coupon code' }, { status: 400 })
+        if (coupon.expiryDate && new Date(coupon.expiryDate) < now) {
+            return NextResponse.json({ error: 'This coupon has expired' }, { status: 400 })
         }
 
-        if (coupon.timesUsed >= coupon.usageLimit) {
-            return NextResponse.json({ error: 'Invalid coupon code' }, { status: 400 })
+        // Check global usage limit (skip if 0/unlimited or if misconfigured as 1 for one_per_user)
+        const isGlobalLimitReached = coupon.usageLimit > 0 &&
+            !(coupon.usageType === 'one_per_user' && coupon.usageLimit === 1) &&
+            coupon.timesUsed >= coupon.usageLimit
+
+        if (isGlobalLimitReached) {
+            return NextResponse.json({ error: 'This coupon has reached its maximum global usage limit' }, { status: 400 })
         }
 
         // Get user's usage count for this coupon

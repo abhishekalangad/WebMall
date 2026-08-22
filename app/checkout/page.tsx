@@ -163,6 +163,20 @@ export default function CheckoutPage() {
   const finalTotal = Math.floor(rawFinalTotal)
   const roundOffAmount = finalTotal - rawFinalTotal
 
+  const availableCheckoutItems = items.filter(item => !(item.maxStock === 0 || item.isDeleted || item.name.includes('Discontinued') || item.name.includes('No Longer Available')))
+
+  // Real-time product-level savings (from variant price discounts - ONLY available items)
+  const productSavings = availableCheckoutItems.reduce((acc, item) => {
+    if (item.originalPrice && item.originalPrice > item.price) {
+      return acc + (item.originalPrice - item.price) * item.quantity
+    }
+    return acc
+  }, 0)
+  const totalSavings = productSavings + discount
+
+  // Block checkout if any item is out of stock or deleted/discontinued
+  const hasOutOfStock = items.some(item => item.maxStock === 0 || item.isDeleted || item.name.includes('Discontinued') || item.name.includes('No Longer Available'))
+
   // Fetch Stripe Payment Intent when Card payment is selected
   useEffect(() => {
     if (formData.paymentMethod === 'card' && finalTotal > 0) {
@@ -597,14 +611,22 @@ export default function CheckoutPage() {
 
               {/* Standard submit button for Cash on Delivery */}
               {formData.paymentMethod === 'cash' && (
-                <Button
-                  type="button"
-                  onClick={() => handleSubmit()}
-                  disabled={loading || !isShippingFormValid}
-                  className="w-full bg-foreground text-background hover:bg-muted-foreground transition-colors font-semibold py-6 text-lg"
-                >
-                  {loading ? 'Processing...' : 'Place Order (Cash on Delivery)'}
-                </Button>
+                <>
+                  {hasOutOfStock && (
+                    <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-lg text-sm text-red-600 dark:text-red-400">
+                      <span className="text-base">⚠️</span>
+                      <span>Your cart contains out-of-stock items. Please return to cart and remove them before placing your order.</span>
+                    </div>
+                  )}
+                  <Button
+                    type="button"
+                    onClick={() => handleSubmit()}
+                    disabled={loading || !isShippingFormValid || hasOutOfStock}
+                    className="w-full bg-foreground text-background hover:bg-muted-foreground transition-colors font-semibold py-6 text-lg"
+                  >
+                    {loading ? 'Processing...' : 'Place Order (Cash on Delivery)'}
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -695,13 +717,19 @@ export default function CheckoutPage() {
                   <span>Subtotal:</span>
                   <span className="text-foreground font-medium">{subtotal.toLocaleString('en-LK')} LKR</span>
                 </div>
+                {productSavings > 0 && (
+                  <div className="flex justify-between items-center text-emerald-600">
+                    <span className="flex items-center gap-1">🏷️ Product Savings:</span>
+                    <span className="font-semibold">−{productSavings.toLocaleString('en-LK')} LKR</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center text-muted-foreground">
                   <span>Shipping:</span>
                   <span className="text-foreground font-medium">{isFreeShipping ? <span className="text-emerald-500 font-bold tracking-widest uppercase">FREE</span> : `${shippingCost.toLocaleString('en-LK')} LKR`}</span>
                 </div>
                 {discount > 0 && (
                   <div className="flex justify-between items-center text-emerald-500">
-                    <span>Discount:</span>
+                    <span>Coupon Discount:</span>
                     <span className="font-medium">-{discount.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} LKR</span>
                   </div>
                 )}

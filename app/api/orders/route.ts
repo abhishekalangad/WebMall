@@ -178,11 +178,11 @@ export async function POST(request: NextRequest) {
     const productIds = items.map((i: any) => i.productId)
     const products = await prisma.product.findMany({ where: { id: { in: productIds } } })
 
-    // Validate stock availability for all items before processing
+    // Validate stock availability and product status for all items before processing
     for (const item of items) {
       const product = products.find(p => p.id === item.productId)
-      if (!product) {
-        throw new Error(`Product with ID ${item.productId} not found`)
+      if (!product || product.status === 'deleted') {
+        throw new Error(`Product "${product?.name || 'Item'}" is no longer available. Please remove it from your cart.`)
       }
       if (product.stock < item.quantity) {
         throw new Error(`Insufficient stock for "${product.name}". Available: ${product.stock}, Requested: ${item.quantity}`)

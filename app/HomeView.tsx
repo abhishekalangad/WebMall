@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useSiteConfig } from '@/contexts/SiteConfigContext'
+import { getValidImageUrl } from '@/lib/image-utils'
 
 interface HomeViewProps {
     featuredProducts: any[]
@@ -155,13 +156,12 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                                         transition={{ duration: 0.8, ease: "circOut" }}
                                         className="relative aspect-[4/5] md:aspect-square lg:aspect-[4/5] rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.1)] group max-h-[440px] lg:max-h-[500px] w-full max-w-lg mx-auto"
                                     >
-                                        <Image
-                                            src={banners[currentSlide].imageUrl}
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={getValidImageUrl(banners[currentSlide].imageUrl, '/placeholder.png')}
                                             alt={banners[currentSlide].title}
-                                            fill
-                                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 500px"
-                                            className="object-cover transition-transform duration-700 group-hover:scale-110"
-                                            priority
+                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                            onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }}
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-pink-500/10 to-transparent" />
 
@@ -239,12 +239,12 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                             <Link key={category.id} href={`/products?category=${category.slug}`} aria-label={`Shop ${category.name} collection`} className="group">
                                 <div className="relative aspect-square rounded-2xl overflow-hidden bg-card shadow-sm border border-border group-hover:shadow-lg transition-all duration-300">
                                     {category.image ? (
-                                        <Image
-                                            src={category.image}
+                                        /* eslint-disable-next-line @next/next/no-img-element */
+                                        <img
+                                            src={getValidImageUrl(category.image, '/placeholder.png')}
                                             alt={category.name}
-                                            fill
-                                            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                            onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }}
                                         />
                                     ) : (
                                         <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">

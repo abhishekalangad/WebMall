@@ -169,13 +169,12 @@ function HeaderContent() {
           {/* Left Side: Logo & Store Name */}
           <div className="flex items-center flex-shrink-0 min-w-0">
             <Link href="/" className="flex items-center space-x-2 sm:space-x-3">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={settings?.logoUrl || '/logo-no-bg.png'}
                 alt={settings?.storeName || 'WebMall'}
-                width={120}
-                height={48}
-                priority
                 className="h-9 sm:h-12 md:h-14 w-auto object-contain dark:brightness-200"
+                onError={(e) => { (e.target as HTMLImageElement).src = '/logo-no-bg.png' }}
               />
               <span className="text-xl sm:text-2xl font-playfair font-bold text-gray-900 dark:text-white truncate">
                 {configLoading ? (
@@ -301,12 +300,12 @@ function HeaderContent() {
                         />
                       </div>
                     ) : user?.profileImage ? (
-                      <Image
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
                         src={user.profileImage}
                         alt={user?.name || 'User'}
-                        width={32}
-                        height={32}
                         className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }}
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-pink-200 to-rose-300 flex items-center justify-center">
@@ -406,11 +405,11 @@ function HeaderContent() {
                     <Link
                       key={index}
                       href={link.path || '#'}
-                      className={`relative py-3.5 text-[15px] font-medium transition-colors hover:text-[#be185d] dark:hover:text-pink-400 ${active ? 'text-[#be185d] dark:text-pink-400 font-bold' : 'text-gray-800 dark:text-gray-200'}`}
+                      className={`relative py-3.5 text-[15px] font-medium transition-colors hover:text-[#ec4899] dark:hover:text-pink-400 ${active ? 'text-[#ec4899] dark:text-pink-400 font-bold' : 'text-gray-800 dark:text-gray-200'}`}
                     >
                       {link.label}
                       {active && (
-                        <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#be185d] dark:bg-pink-400 rounded-full" />
+                        <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#ec4899] dark:bg-pink-400 rounded-full" />
                       )}
                     </Link>
                   )
@@ -421,7 +420,7 @@ function HeaderContent() {
               {!user && (
                 <div>
                   <Link href="/login" aria-label="Login or Register account">
-                    <Button className="h-9 px-6 rounded-full bg-[#be185d] hover:bg-[#9d174d] text-white font-semibold text-[13px] transition-all shadow-sm">
+                    <Button className="h-9 px-6 rounded-full bg-[#ec4899] hover:bg-[#db2777] text-white font-semibold text-[13px] transition-all shadow-sm">
                       Login / Register
                     </Button>
                   </Link>
@@ -487,7 +486,7 @@ function HeaderContent() {
             )}
             {!user && (
               <Link href="/login" className="block px-4 py-3 mx-2" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button className="w-full bg-pink-400 hover:bg-pink-500 text-white font-semibold">
+                <Button className="w-full bg-[#ec4899] hover:bg-[#db2777] text-white font-semibold">
                   Sign In
                 </Button>
               </Link>

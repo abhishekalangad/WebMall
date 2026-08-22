@@ -74,7 +74,7 @@ export default async function ProductsPage() {
           },
           variants: true
         },
-        orderBy: { name: 'asc' }
+        orderBy: { createdAt: 'desc' }
       }),
       prisma.category.findMany({
         orderBy: { name: 'asc' },

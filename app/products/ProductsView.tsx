@@ -155,7 +155,7 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
     }
 
     const initialSearch = searchParams.get('search') || ''
-    const initialSort = searchParams.get('sort') || 'name'
+    const initialSort = searchParams.get('sort') || 'newest'
     const initialViewMode = (searchParams.get('view') as 'grid'|'list') || 'grid'
 
     const [searchQuery, setSearchQuery] = useState(initialSearch)
@@ -212,7 +212,7 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
             }
         }
         
-        if (sortBy !== 'name') params.set('sort', sortBy)
+        if (sortBy !== 'newest') params.set('sort', sortBy)
         if (viewMode !== 'grid') params.set('view', viewMode)
         
         const newParamsStr = params.toString()
@@ -231,7 +231,7 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
 
         const categoryParam = searchParams.get('category')?.toLowerCase().trim()
         const search = searchParams.get('search') || ''
-        const sort = searchParams.get('sort') || 'name'
+        const sort = searchParams.get('sort') || 'newest'
         const view = (searchParams.get('view') as 'grid'|'list') || 'grid'
 
         setSearchQuery(search)
@@ -319,13 +319,37 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
             filtered = filtered.filter(p => p.price >= appliedPriceMin && p.price <= appliedPriceMax)
         }
 
-        // Sort products
+        // Helper to calculate total effective stock of a product
+        const getStockSum = (p: Product) => {
+            if (p.variants && p.variants.length > 0) {
+                return p.variants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0)
+            }
+            return p.stock ?? 0
+        }
+
+        // Sort products: ALWAYS prioritize In-Stock items ahead of Out-of-Stock items
         filtered = [...filtered].sort((a, b) => {
+            const hasStockA = getStockSum(a) > 0 ? 1 : 0
+            const hasStockB = getStockSum(b) > 0 ? 1 : 0
+
+            // Rule 1: In-Stock products ALWAYS come first before Out-Of-Stock products
+            if (hasStockA !== hasStockB) {
+                return hasStockB - hasStockA
+            }
+
+            // Rule 2: Secondary sort by selected criteria (defaulting to newest)
             switch (sortBy) {
-                case 'price-low': return a.price - b.price
-                case 'price-high': return b.price - a.price
-                case 'name': return a.name.localeCompare(b.name)
-                default: return 0
+                case 'price-low':
+                    return a.price - b.price
+                case 'price-high':
+                    return b.price - a.price
+                case 'name':
+                    return a.name.localeCompare(b.name)
+                case 'newest':
+                default:
+                    const timeA = (a as any).createdAt ? new Date((a as any).createdAt).getTime() : 0
+                    const timeB = (b as any).createdAt ? new Date((b as any).createdAt).getTime() : 0
+                    return timeB - timeA
             }
         })
 
@@ -712,13 +736,14 @@ export function ProductsView({ initialProducts: products, initialCategories: cat
                                 </Sheet>
 
                                 <Select value={sortBy} onValueChange={setSortBy}>
-                                    <SelectTrigger className="w-full sm:w-[160px] border-none bg-muted/50 rounded-full px-4 text-foreground font-sans text-xs sm:text-sm">
+                                    <SelectTrigger className="w-full sm:w-[170px] border-none bg-muted/50 rounded-full px-4 text-foreground font-sans text-xs sm:text-sm">
                                         <SelectValue placeholder="Sort" />
                                     </SelectTrigger>
                                     <SelectContent className="font-sans text-sm">
-                                        <SelectItem value="name">Sort by: Relevance</SelectItem>
+                                        <SelectItem value="newest">Newest First</SelectItem>
                                         <SelectItem value="price-low">Price: Low to High</SelectItem>
                                         <SelectItem value="price-high">Price: High to Low</SelectItem>
+                                        <SelectItem value="name">Name (A-Z)</SelectItem>
                                     </SelectContent>
                                 </Select>
 

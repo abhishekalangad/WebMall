@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -45,7 +45,8 @@ export function ProductCard({
   layout = 'grid',
   priority = false
 }: ProductCardProps) {
-  const primaryImage = getValidImageUrl(product.images[0]?.url, '/placeholder.png')
+  const [imgError, setImgError] = useState(false)
+  const primaryImage = imgError ? '/placeholder.png' : getValidImageUrl(product.images[0]?.url, '/placeholder.png')
   const { isInWishlist, addItem: addToWishlist, removeItem: removeFromWishlist } = useWishlist()
   const { items, updateQuantity } = useCart()
   const router = useRouter()
@@ -53,7 +54,11 @@ export function ProductCard({
   const isWishlisted = isInWishlist(product.id)
   const cartItem = items.find(item => item.productId === product.id)
   const quantity = cartItem ? cartItem.quantity : 0
-  const maxStock = cartItem?.maxStock ?? product.stock ?? Infinity
+  const effectiveStock = (product.variants && product.variants.length > 0)
+    ? product.variants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0)
+    : (product.stock ?? 0)
+
+  const maxStock = cartItem?.maxStock ?? effectiveStock
 
   const prices = [product.price, ...(product.variants?.map((v: any) => v.priceOverride).filter(Boolean) || [])].map(p => Number(p))
   const minPrice = Math.min(...prices)
@@ -66,7 +71,7 @@ export function ProductCard({
   const minPriceVariant = product.variants?.find((v: any) => Number(v.priceOverride) === minPrice)
   const minPriceSpec = minPriceVariant ? Object.values(minPriceVariant.attributes || {}).join(', ') : null
 
-  const isOutOfStock = product.stock !== undefined && product.stock <= 0
+  const isOutOfStock = effectiveStock <= 0
 
 
   const handleWishlistToggle = (e: React.MouseEvent) => {
@@ -114,14 +119,12 @@ export function ProductCard({
       >
         {/* Product Image - Fixed Width */}
         <div className="relative w-1/3 sm:w-48 md:w-56 overflow-hidden bg-muted flex-shrink-0">
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={primaryImage}
             alt={product.name}
-            fill
-            sizes="(max-width: 640px) 33vw, 224px"
-            priority={priority}
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => handleImageError(e as any)}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={() => setImgError(true)}
           />
 
           {/* Category Badge */}
@@ -293,14 +296,12 @@ export function ProductCard({
     >
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden bg-muted">
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={primaryImage}
           alt={product.name}
-          fill
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          priority={priority}
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
-          onError={(e) => handleImageError(e as any)}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          onError={() => setImgError(true)}
         />
 
         {/* Wishlist Button — fixed 32×32 circle so icon is perfectly centered */}

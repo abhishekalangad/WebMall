@@ -18,19 +18,20 @@ interface UserMessage {
 }
 
 export default function MyMessagesPage() {
-    const { user, accessToken } = useAuth()
+    const { user, loading: authLoading, accessToken } = useAuth()
     const router = useRouter()
     const [messages, setMessages] = useState<UserMessage[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [selectedMessage, setSelectedMessage] = useState<UserMessage | null>(null)
 
     useEffect(() => {
+        if (authLoading) return
         if (!user) {
             router.push('/login?redirect=/my-messages')
             return
         }
         fetchMessages()
-    }, [user])
+    }, [user, authLoading])
 
     const fetchMessages = async () => {
         setIsLoading(true)
@@ -71,7 +72,7 @@ export default function MyMessagesPage() {
         })
     }
 
-    if (isLoading) {
+    if (authLoading || isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <Loader2 className="h-8 w-8 animate-spin text-gray-400" />

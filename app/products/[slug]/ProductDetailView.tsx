@@ -589,14 +589,12 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
                         )}
 
                         <div className="relative aspect-square bg-card rounded-2xl overflow-hidden shadow-sm">
-                            <Image
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
                                 src={getValidImageUrl(manualImageOverride || product.images[selectedImage]?.url, '/placeholder.png')}
                                 alt={product.name}
-                                fill
-                                priority
-                                sizes="(max-width: 768px) 100vw, 50vw"
-                                className="object-cover dark:brightness-90"
-                                onError={(e) => handleImageError(e as any)}
+                                className="w-full h-full object-cover dark:brightness-90"
+                                onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }}
                             />
                         </div>
 

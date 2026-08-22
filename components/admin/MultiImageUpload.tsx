@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { X, Upload, Loader2, GripVertical, Image as ImageIcon } from 'lucide-react'
+import { X, Upload, Loader2, GripVertical, Image as ImageIcon, Crop as CropIcon, Sliders } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
+import ImageCropper from '@/components/ui/ImageCropper'
 
 interface ProductImage {
     url: string
@@ -23,6 +24,8 @@ interface MultiImageUploadProps {
 
 export function MultiImageUpload({ images, onChange, maxImages = 8 }: MultiImageUploadProps) {
     const [uploading, setUploading] = useState(false)
+    const [croppingIndex, setCroppingIndex] = useState<number | null>(null)
+    const [isSavingCrop, setIsSavingCrop] = useState(false)
     const { accessToken } = useAuth()
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,7 +89,7 @@ export function MultiImageUpload({ images, onChange, maxImages = 8 }: MultiImage
 
             toast({
                 title: 'Success',
-                description: `${files.length} image${files.length > 1 ? 's' : ''} uploaded successfully`
+                description: `${files.length} image${files.length > 1 ? 's' : ''} uploaded. Click "Crop / Adjust" on any image to zoom or scale!`
             })
         } catch (error: any) {
             console.error('Upload error:', error)
@@ -124,6 +127,77 @@ export function MultiImageUpload({ images, onChange, maxImages = 8 }: MultiImage
         const newImages = [...images]
         newImages[index].alt = alt
         onChange(newImages)
+    }
+
+    const handleCropComplete = async (croppedDataUrl: string) => {
+        if (croppingIndex === null) return
+
+        // If user selected "Use Original (No Crop)" or returned an existing URL, no re-upload needed!
+        if (croppedDataUrl === images[croppingIndex]?.url || !croppedDataUrl.startsWith('data:')) {
+            const updatedImages = [...images]
+            updatedImages[croppingIndex] = {
+                ...updatedImages[croppingIndex],
+                url: croppedDataUrl
+            }
+            onChange(updatedImages)
+            setCroppingIndex(null)
+            toast({
+                title: 'Original Image Kept',
+                description: 'Original image maintained without crop changes.'
+            })
+            return
+        }
+
+        try {
+            setIsSavingCrop(true)
+
+            // Convert base64 data URL to Blob/File
+            const resBlob = await fetch(croppedDataUrl)
+            const blob = await resBlob.blob()
+            const file = new File([blob], `cropped-${Date.now()}.jpg`, { type: 'image/jpeg' })
+
+            // Upload cropped image to server
+            const formData = new FormData()
+            formData.append('file', file)
+            formData.append('bucket', 'products')
+
+            const token = await accessToken()
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+                body: formData
+            })
+
+            if (!res.ok) {
+                const error = await res.json()
+                throw new Error(error.error || 'Failed to upload adjusted image')
+            }
+
+            const data = await res.json()
+
+            // Update image URL in array
+            const updatedImages = [...images]
+            updatedImages[croppingIndex] = {
+                ...updatedImages[croppingIndex],
+                url: data.url
+            }
+            onChange(updatedImages)
+
+            toast({
+                title: 'Image Adjusted',
+                description: 'Image cropping and scale updated successfully'
+            })
+        } catch (error: any) {
+            console.error('Crop save error:', error)
+            toast({
+                title: 'Failed to save adjustment',
+                description: error.message || 'An error occurred while uploading adjusted image',
+                variant: 'destructive'
+            })
+        } finally {
+            setIsSavingCrop(false)
+            setCroppingIndex(null)
+        }
     }
 
     return (
@@ -182,17 +256,17 @@ export function MultiImageUpload({ images, onChange, maxImages = 8 }: MultiImage
                     </label>
                 </Card>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-3">
                     {images.map((image, index) => (
-                        <Card key={index} className="p-4 relative group">
-                            <div className="flex gap-3">
+                        <Card key={index} className="p-3.5 relative group hover:border-pink-300 transition-all duration-200 bg-card border-border shadow-sm">
+                            <div className="flex items-center gap-3">
                                 {/* Drag Handle */}
-                                <div className="flex flex-col gap-1 pt-2">
+                                <div className="flex flex-col items-center justify-center gap-1 shrink-0 px-1">
                                     <button
                                         type="button"
                                         onClick={() => handleMoveImage(index, index - 1)}
                                         disabled={index === 0}
-                                        className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-20 p-0.5"
                                         title="Move up"
                                     >
                                         ▲
@@ -202,15 +276,15 @@ export function MultiImageUpload({ images, onChange, maxImages = 8 }: MultiImage
                                         type="button"
                                         onClick={() => handleMoveImage(index, index + 1)}
                                         disabled={index === images.length - 1}
-                                        className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-20 p-0.5"
                                         title="Move down"
                                     >
                                         ▼
                                     </button>
                                 </div>
 
-                                {/* Image Preview */}
-                                <div className="flex-shrink-0 w-20 h-20 relative bg-gray-100 rounded-lg overflow-hidden">
+                                {/* Image Preview with Hover Overlay */}
+                                <div className="shrink-0 w-20 h-20 relative bg-muted rounded-xl overflow-hidden border border-border group/img shadow-sm">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                         src={image.url}
@@ -219,31 +293,51 @@ export function MultiImageUpload({ images, onChange, maxImages = 8 }: MultiImage
                                         onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }}
                                     />
                                     {index === 0 && (
-                                        <div className="absolute top-1 left-1 bg-pink-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                                        <div className="absolute top-1 left-1 bg-pink-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider z-10 shadow-sm">
                                             Main
                                         </div>
                                     )}
+                                    <button
+                                        type="button"
+                                        onClick={() => setCroppingIndex(index)}
+                                        className="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[11px] font-semibold gap-1 z-20"
+                                    >
+                                        <CropIcon className="h-4 w-4" />
+                                        <span>Crop / Adjust</span>
+                                    </button>
                                 </div>
 
-                                {/* Alt Text Input */}
-                                <div className="flex-1 min-w-0">
+                                {/* Alt Text & Adjust Action Button */}
+                                <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold text-foreground">
+                                            Position #{index + 1} {index === 0 && <span className="text-pink-500 font-semibold">(Main Image)</span>}
+                                        </span>
+                                    </div>
                                     <Input
                                         type="text"
-                                        placeholder="Alt text (optional)"
+                                        placeholder="Alt text (e.g., Front view)"
                                         value={image.alt || ''}
                                         onChange={(e) => handleUpdateAlt(index, e.target.value)}
-                                        className="text-sm h-9"
+                                        className="text-xs h-7 bg-background"
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        Position: {index + 1}
-                                    </p>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCroppingIndex(index)}
+                                        className="h-7 text-xs gap-1.5 text-pink-600 dark:text-pink-400 border-pink-200 dark:border-pink-900/50 hover:bg-pink-50 dark:hover:bg-pink-950/30 w-fit font-semibold"
+                                    >
+                                        <Sliders className="h-3 w-3 shrink-0" />
+                                        Crop / Adjust Scale
+                                    </Button>
                                 </div>
 
                                 {/* Remove Button */}
                                 <button
                                     type="button"
                                     onClick={() => handleRemoveImage(index)}
-                                    className="flex-shrink-0 h-8 w-8 flex items-center justify-center rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                                    className="shrink-0 h-8 w-8 flex items-center justify-center rounded-full bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-900/50 transition-colors ml-1"
                                     title="Remove image"
                                 >
                                     <X className="h-4 w-4" />
@@ -255,8 +349,21 @@ export function MultiImageUpload({ images, onChange, maxImages = 8 }: MultiImage
             )}
 
             <p className="text-xs text-gray-500">
-                Tip: The first image will be used as the main product image. Drag to reorder.
+                Tip: The first image will be used as the main product image. Click <strong>&quot;Crop / Adjust Scale&quot;</strong> on any image to zoom, rotate, or re-frame!
             </p>
+
+            {/* Image Cropper Modal */}
+            {croppingIndex !== null && images[croppingIndex] && (
+                <ImageCropper
+                    image={images[croppingIndex].url}
+                    onCropComplete={handleCropComplete}
+                    onCancel={() => setCroppingIndex(null)}
+                    aspectRatio={1}
+                    circularCrop={false}
+                    title={`Adjust & Crop Image #${croppingIndex + 1}`}
+                />
+            )}
         </div>
     )
 }
+

@@ -79,6 +79,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         where: { productId: id }
       })
 
+      // Calculate total stock from variants if variants exist
+      const effectiveStock = variants && variants.length > 0
+        ? variants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0)
+        : Number(stock || 0)
+
       // Update product with new data
       return await tx.product.update({
         where: { id },
@@ -91,7 +96,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
           categoryId,
           subcategoryId: subcategoryId || null,
           status,
-          stock,
+          stock: effectiveStock,
           // Create new images
           images: images.length > 0
             ? {

@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Heart, ShoppingBag, ArrowLeft, Trash2 } from 'lucide-react'
+import { Heart, ShoppingBag, ArrowLeft, Trash2, Loader2 } from 'lucide-react'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -16,8 +16,9 @@ import { getValidImageUrl, handleImageError } from '@/lib/image-utils'
 export function WishlistView() {
     const { items, removeItem, clearWishlist, totalItems, refreshWishlistData } = useWishlist()
     const { addItem } = useCart()
-    const { user } = useAuth()
+    const { user, loading: authLoading } = useAuth()
     const router = useRouter()
+    const [imgErrors, setImgErrors] = React.useState<Record<string, boolean>>({})
 
     React.useEffect(() => {
         refreshWishlistData()
@@ -41,6 +42,17 @@ export function WishlistView() {
 
     const handleRemoveFromWishlist = (productId: string) => {
         removeItem(productId)
+    }
+
+    if (authLoading) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+                <div className="text-center">
+                    <Loader2 className="h-10 w-10 animate-spin text-pink-500 mx-auto mb-4" />
+                    <p className="text-sm font-medium text-muted-foreground">Loading your wishlist...</p>
+                </div>
+            </div>
+        )
     }
 
     if (!user) {
@@ -125,12 +137,12 @@ export function WishlistView() {
                                 {/* Product Image */}
                                 <div className="relative aspect-square overflow-hidden bg-muted">
                                     <Link href={`/products/${item.slug}`}>
-                                        <Image
-                                            src={getValidImageUrl(item.image, '/placeholder.png')}
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={imgErrors[item.id] ? '/placeholder.png' : getValidImageUrl(item.image, '/placeholder.png')}
                                             alt={item.name}
-                                            fill
-                                            className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                            onError={handleImageError}
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                            onError={() => setImgErrors(prev => ({ ...prev, [item.id]: true }))}
                                         />
                                     </Link>
 

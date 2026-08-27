@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "postinstall": "prisma generate"
+    "postinstall": "npx prisma generate"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -51,8 +51,8 @@
     "@stripe/stripe-js": "^9.13.0",
     "@supabase/realtime-js": "^2.15.6",
     "@supabase/supabase-js": "^2.58.0",
-    "@types/react": "18.2.22",
-    "@types/react-dom": "18.2.7",
+    "@types/react": "^18.2.22",
+    "@types/react-dom": "^18.2.7",
     "@vercel/analytics": "^1.6.1",
     "autoprefixer": "10.4.15",
     "bcryptjs": "^3.0.2",

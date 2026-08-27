@@ -1,46 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyAuthToken } from '@/lib/auth'
+import { reviewSchema } from '@/lib/validations'
+import { apiError } from '@/lib/api-response'
 
 export async function POST(request: NextRequest) {
     try {
-        const body = await request.json()
-        const { productId, userId: bodyUserId, rating, comment } = body
-
-        let targetUserId = bodyUserId
-
-        // Optional: verify token if authorization header is present
         const authHeader = request.headers.get('Authorization')
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const token = authHeader.split(' ')[1]
-            const authUser = await verifyAuthToken(token)
-            if (authUser) {
-                targetUserId = authUser.id
-            }
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return apiError('Unauthorized - Login required to post a review', 401)
         }
 
-        if (!productId || !targetUserId || !rating) {
-            return NextResponse.json(
-                { error: 'Product ID, User ID and Rating are required' },
-                { status: 400 }
-            )
+        const token = authHeader.split(' ')[1]
+        const authUser = await verifyAuthToken(token)
+
+        if (!authUser) {
+            return apiError('Unauthorized - Invalid or expired token', 401)
         }
 
-        // Find user by either internal DB id OR Supabase auth ID
-        const dbUser = await prisma.user.findFirst({
-            where: {
-                OR: [
-                    { id: targetUserId },
-                    { supabaseId: targetUserId }
-                ]
-            }
+        const body = await request.json()
+        const parseResult = reviewSchema.safeParse(body)
+
+        if (!parseResult.success) {
+            return apiError('Validation failed', 400, parseResult.error.format())
+        }
+
+        const { productId, rating, comment } = parseResult.data
+
+        // Find user record strictly bound to authenticated Supabase user
+        const dbUser = await prisma.user.findUnique({
+            where: { supabaseId: authUser.id }
         })
 
         if (!dbUser) {
-            return NextResponse.json(
-                { error: 'User profile not found. Please log in again.' },
-                { status: 404 }
-            )
+            return apiError('User profile not found. Please log in again.', 404)
         }
 
         // Verify purchase: check if any order exists for this product
@@ -48,18 +41,13 @@ export async function POST(request: NextRequest) {
             where: {
                 userId: dbUser.id,
                 items: {
-                    some: {
-                        productId: productId
-                    }
+                    some: { productId }
                 }
             }
         })
 
         if (!anyOrder) {
-            return NextResponse.json(
-                { error: 'You must have purchased this product to leave a review.' },
-                { status: 403 }
-            )
+            return apiError('You must have purchased this product to leave a review.', 403)
         }
 
         // Verify order is delivered
@@ -67,9 +55,7 @@ export async function POST(request: NextRequest) {
             where: {
                 userId: dbUser.id,
                 items: {
-                    some: {
-                        productId: productId
-                    }
+                    some: { productId }
                 },
                 status: {
                     in: ['delivered', 'Delivered', 'DELIVERED', 'completed', 'Completed', 'COMPLETED']
@@ -78,13 +64,10 @@ export async function POST(request: NextRequest) {
         })
 
         if (!deliveredPurchase) {
-            return NextResponse.json(
-                { error: 'You can only leave a review after your order status is set to delivered.' },
-                { status: 403 }
-            )
+            return apiError('You can only leave a review after your order status is set to delivered.', 403)
         }
 
-        // Check for existing review by this user for this product
+        // Upsert review for this user and product
         const existingReview = await prisma.review.findFirst({
             where: {
                 userId: dbUser.id,
@@ -119,14 +102,8 @@ export async function POST(request: NextRequest) {
             }
         })
 
-        return NextResponse.json(review)
-
+        return NextResponse.json(review, { status: 201 })
     } catch (error: any) {
-        console.error('Error submitting review:', error)
-        return NextResponse.json(
-            { error: error.message || 'Failed to submit review' },
-            { status: 500 }
-        )
+        return apiError(error.message || 'Failed to submit review', 500)
     }
 }
-

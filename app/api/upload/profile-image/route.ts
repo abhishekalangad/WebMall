@@ -258,6 +258,14 @@ export async function DELETE(request: NextRequest) {
             } else {
                 throw new Error('Could not parse storage path')
             }
+
+            // 🔒 SECURITY (IDOR Prevention): Verify user owns the storage object path
+            if (!filePath.startsWith(`profiles/${user.id}/`)) {
+                return NextResponse.json(
+                    { error: 'Forbidden - You can only delete your own profile image' },
+                    { status: 403 }
+                )
+            }
         } catch (e) {
             console.error('Error parsing URL for delete:', e)
             return NextResponse.json({ error: 'Invalid image URL format' }, { status: 400 })

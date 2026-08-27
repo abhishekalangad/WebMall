@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyAuthToken } from '@/lib/auth-server'
-import { checkRateLimit, RateLimitPresets } from '@/lib/rate-limit'
+import { checkRateLimitAsync, RateLimitPresets } from '@/lib/rate-limit'
 import { sanitizeString, sanitizeEmail, sanitizeTextArea } from '@/lib/sanitize'
 
 export async function POST(request: NextRequest) {
     try {
         // Apply rate limiting: 5 requests per 15 minutes
-        const rateLimitResult = await checkRateLimit(request, RateLimitPresets.contactForm)
+        const rateLimitResult = await checkRateLimitAsync(request, RateLimitPresets.contactForm)
 
         if (!rateLimitResult.success) {
             return NextResponse.json(

@@ -86,6 +86,11 @@ export async function DELETE(
             return NextResponse.json({ error: 'User not found' }, { status: 404 })
         }
 
+        // 🔒 SAFEGUARD: Prevent admin from deleting their own account
+        if (user.supabaseId === requester.id) {
+            return NextResponse.json({ error: 'Forbidden - You cannot delete your own active admin account' }, { status: 400 })
+        }
+
         // Delete from Supabase Auth
         const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(user.supabaseId)
         if (authError) {
@@ -175,6 +180,10 @@ export async function PATCH(
             const { role } = body
             if (!['admin', 'customer'].includes(role)) {
                 return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+            }
+
+            if (user.supabaseId === requester.id && role !== 'admin') {
+                return NextResponse.json({ error: 'Forbidden - You cannot demote your own admin account' }, { status: 400 })
             }
 
             // Update Prisma

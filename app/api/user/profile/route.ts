@@ -38,13 +38,6 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 })
         }
 
-        // Enforce admin access for site owner
-        const isOwner = ['adminwebmall@gmail.com', 'webmalll.lk@gmail.com', 'webmall.lk@gmail.com'].includes(user.email || '')
-
-        if (isOwner && profile.role !== 'admin') {
-            profile.role = 'admin'
-        }
-
         return NextResponse.json(profile)
     } catch (error: any) {
         console.error('Error fetching user profile:', error)
@@ -71,7 +64,7 @@ export async function PUT(request: NextRequest) {
 
         const body = await request.json()
 
-        // Sanitize all user inputs to prevent XSS attacks
+        // Sanitize user inputs
         const sanitizedData = sanitizeProfileData({
             name: body.name,
             phone: body.phone,
@@ -80,48 +73,37 @@ export async function PUT(request: NextRequest) {
             profileImage: body.profileImage
         })
 
-        // Check if user exists by Supabase ID
         let dbUser = await prisma.user.findUnique({
             where: { supabaseId: user.id }
         })
 
-        // Enforce admin access for site owner
-        const isOwner = ['webmalll.ik@gmail.com', 'webmall.ik@gmail.com', 'webmalll.lk@gmail.com', 'webmall.lk@gmail.com'].includes(user.email || '')
-        const forceRole = isOwner ? 'admin' : undefined
-
         if (dbUser) {
-            // Update existing user
+            // Update existing user profile
             dbUser = await prisma.user.update({
                 where: { supabaseId: user.id },
-                data: {
-                    ...(forceRole && { role: forceRole }),
-                    ...sanitizedData
-                }
+                data: sanitizedData
             })
         } else {
-            // Check if user exists by email (legacy account or sync issue)
+            // Check by email
             const emailUser = await prisma.user.findUnique({
                 where: { email: user.email }
             })
 
             if (emailUser) {
-                // Link account and update
                 dbUser = await prisma.user.update({
                     where: { email: user.email },
                     data: {
                         supabaseId: user.id,
-                        ...(forceRole && { role: forceRole }),
                         ...sanitizedData
                     }
                 })
             } else {
-                // Create new user with sanitized data
                 dbUser = await prisma.user.create({
                     data: {
                         supabaseId: user.id,
                         email: user.email,
                         name: sanitizedData.name || user.name || '',
-                        role: isOwner ? 'admin' : 'customer',
+                        role: 'customer',
                         ...(sanitizedData.phone && { phone: sanitizedData.phone }),
                         ...(sanitizedData.address && { address: sanitizedData.address }),
                         ...(sanitizedData.birthday && { birthday: sanitizedData.birthday }),
@@ -131,11 +113,9 @@ export async function PUT(request: NextRequest) {
             }
         }
 
-        const updatedProfile = dbUser; // for response
-
         return NextResponse.json({
             success: true,
-            user: updatedProfile,
+            user: dbUser,
             message: 'Profile updated successfully'
         })
     } catch (error: any) {

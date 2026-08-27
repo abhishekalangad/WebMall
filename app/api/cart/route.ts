@@ -289,7 +289,10 @@ export async function PUT(request: NextRequest) {
         if (action === 'remove') {
             if (itemId) {
                 await prisma.cartItem.deleteMany({
-                    where: { id: itemId }
+                    where: {
+                        id: itemId,
+                        cartId: { in: cartIds }
+                    }
                 })
             }
             // Always also purge matching productId in user carts for cleanliness

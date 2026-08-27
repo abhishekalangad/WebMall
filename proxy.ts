@@ -11,6 +11,10 @@ export function proxy(request: NextRequest) {
 
     // Only apply CSRF protection to API routes with state-changing methods
     if (pathname.startsWith('/api/') && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+        // Exempt Webhooks (e.g. Stripe webhooks deliver events directly with signature verification)
+        if (pathname.startsWith('/api/stripe/webhook')) {
+            return NextResponse.next()
+        }
         // Get request origin and referer
         const requestOrigin = request.headers.get('origin')
         const referer = request.headers.get('referer')

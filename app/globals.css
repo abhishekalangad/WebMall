@@ -91,13 +91,13 @@
     height: auto;
   }
 
-  /* Remove 300ms tap delay on touch devices */
+  /* Touch action optimization for mobile */
   a, button, input, select, textarea, [role="button"] {
     touch-action: manipulation;
   }
 
-  /* Minimum touch target size for accessibility (44x44px recommended) */
-  button, a, [role="button"] {
+  /* Touch target utility for standalone buttons & controls */
+  .touch-target {
     min-height: 44px;
     min-width: 44px;
   }

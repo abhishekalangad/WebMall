@@ -24,6 +24,39 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 })
   }
 
+  // 🔒 IDEMPOTENCY CHECK: Check if Stripe event was already processed
+  const existingWebhook = await prisma.webhookEvent.findUnique({
+    where: {
+      provider_eventId: {
+        provider: 'stripe',
+        eventId: event.id
+      }
+    }
+  })
+
+  if (existingWebhook && existingWebhook.status === 'processed') {
+    return NextResponse.json({ received: true, idempotent: true })
+  }
+
+  // Record initial receipt of webhook event
+  await prisma.webhookEvent.upsert({
+    where: {
+      provider_eventId: {
+        provider: 'stripe',
+        eventId: event.id
+      }
+    },
+    create: {
+      provider: 'stripe',
+      eventId: event.id,
+      eventType: event.type,
+      status: 'processing'
+    },
+    update: {
+      status: 'processing'
+    }
+  })
+
   // Handle the event
   try {
     switch (event.type) {
@@ -32,6 +65,30 @@ export async function POST(request: NextRequest) {
         const orderId = paymentIntent.metadata?.orderId
 
         if (orderId) {
+          const order = await prisma.order.findUnique({ where: { id: orderId } })
+
+          if (!order) {
+            throw new Error(`Order ${orderId} not found for payment intent ${paymentIntent.id}`)
+          }
+
+          // 🔒 RECONCILIATION: Verify Stripe amount & currency match database order exactly
+          const expectedAmountCents = Math.round(parseFloat(order.totalAmount.toString()) * 100)
+          const receivedAmountCents = paymentIntent.amount
+          const expectedCurrency = (order.currency || 'LKR').toLowerCase()
+          const receivedCurrency = (paymentIntent.currency || '').toLowerCase()
+
+          if (receivedAmountCents !== expectedAmountCents || receivedCurrency !== expectedCurrency) {
+            const mismatchError = `Payment reconciliation failed for order ${orderId}: Expected ${expectedAmountCents} ${expectedCurrency}, got ${receivedAmountCents} ${receivedCurrency}`
+            console.error(mismatchError)
+
+            await prisma.webhookEvent.update({
+              where: { provider_eventId: { provider: 'stripe', eventId: event.id } },
+              data: { status: 'failed', errorMessage: mismatchError, processedAt: new Date() }
+            })
+
+            return NextResponse.json({ error: mismatchError }, { status: 400 })
+          }
+
           // Idempotently update order status
           await prisma.order.updateMany({
             where: {
@@ -61,9 +118,38 @@ export async function POST(request: NextRequest) {
         console.log(`Unhandled Stripe event type: ${event.type}`)
     }
 
+    // Mark webhook event as successfully processed
+    await prisma.webhookEvent.update({
+      where: {
+        provider_eventId: {
+          provider: 'stripe',
+          eventId: event.id
+        }
+      },
+      data: {
+        status: 'processed',
+        processedAt: new Date()
+      }
+    })
+
     return NextResponse.json({ received: true })
   } catch (error: any) {
     console.error('Error processing Stripe webhook:', error)
+
+    await prisma.webhookEvent.update({
+      where: {
+        provider_eventId: {
+          provider: 'stripe',
+          eventId: event.id
+        }
+      },
+      data: {
+        status: 'failed',
+        errorMessage: error.message || 'Webhook processing error',
+        processedAt: new Date()
+      }
+    })
+
     return NextResponse.json({ error: 'Webhook handler error' }, { status: 500 })
   }
 }

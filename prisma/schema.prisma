@@ -201,6 +201,7 @@ model Order {
   paymentMethod   String      @default("cod") @map("payment_method")
   shippingAddress Json        @map("shipping_address")
   notes           String?     @map("notes")
+  idempotencyKey  String?     @unique @map("idempotency_key")
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @updatedAt @map("updated_at")
   
@@ -363,6 +364,21 @@ model InventoryItem {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@map("inventory_items")
+  @@schema("public")
+}
+
+model WebhookEvent {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id") @db.Uuid
+  provider     String    @map("provider")
+  eventId      String    @map("event_id")
+  eventType    String    @map("event_type")
+  status       String    @map("status")
+  errorMessage String?   @map("error_message")
+  receivedAt   DateTime  @default(now()) @map("received_at")
+  processedAt  DateTime? @map("processed_at")
+
+  @@unique([provider, eventId])
+  @@map("webhook_events")
   @@schema("public")
 }
 

@@ -112,3 +112,30 @@ describe('Storage IDOR & Privilege Guards', () => {
     expect(isSelfAction).toBe(true)
   })
 })
+
+describe('Reconciliation & Formula Protection', () => {
+  it('should sanitize spreadsheet formula injection prefixes', () => {
+    const sanitize = (val: string) => (['=', '+', '-', '@'].includes(val.charAt(0)) ? `'${val}` : val)
+
+    expect(sanitize('=SUM(A1:A10)')).toBe("'=SUM(A1:A10)")
+    expect(sanitize('+cmd|/c calc.exe')).toBe("'+cmd|/c calc.exe")
+    expect(sanitize('-100')).toBe("'-100")
+    expect(sanitize('@SUM')).toBe("'@SUM")
+    expect(sanitize('Normal Product')).toBe('Normal Product')
+  })
+
+  it('should verify payment intent amount and currency matching', () => {
+    const orderTotal = 3500.50
+    const expectedCents = Math.round(orderTotal * 100)
+    const expectedCurrency = 'lkr'
+
+    const validWebhookPayload = { amount: 350050, currency: 'LKR' }
+    const tamperedAmountPayload = { amount: 100, currency: 'LKR' }
+
+    const isMatch = (payload: any) =>
+      payload.amount === expectedCents && payload.currency.toLowerCase() === expectedCurrency
+
+    expect(isMatch(validWebhookPayload)).toBe(true)
+    expect(isMatch(tamperedAmountPayload)).toBe(false)
+  })
+})

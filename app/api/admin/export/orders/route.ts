@@ -1,12 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { verifyAuthToken } from '@/lib/auth-server'
 import ExcelJS from 'exceljs'
+
+function sanitizeFormulaCell(val: any): any {
+    if (typeof val !== 'string') return val
+    if (['=', '+', '-', '@'].includes(val.charAt(0))) {
+        return `'${val}`
+    }
+    return val
+}
 
 export async function GET(request: NextRequest) {
     try {
-        // Authenticated check (simplified for now but assume admin middleware/check)
-        // const session = await getSession();
-        // if (!session || session.user.role !== 'admin') ...
+        const authHeader = request.headers.get('Authorization')
+        if (!authHeader?.startsWith('Bearer ')) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        const token = authHeader.split(' ')[1]
+        const user = await verifyAuthToken(token)
+
+        if (!user || user.role !== 'admin') {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
 
         const orders = await prisma.order.findMany({
             include: {
@@ -39,7 +56,7 @@ export async function GET(request: NextRequest) {
         ]
 
         orders.forEach(order => {
-            const shipping = order.shippingAddress as any // Assuming standard structure or casting
+            const shipping = order.shippingAddress as any
 
             // Format items string
             const itemsString = order.items.map(item =>
@@ -50,18 +67,18 @@ export async function GET(request: NextRequest) {
             const totalQty = order.items.reduce((sum, item) => sum + item.quantity, 0)
 
             worksheet.addRow({
-                orderNumber: order.orderNumber,
-                status: order.status,
+                orderNumber: sanitizeFormulaCell(order.orderNumber),
+                status: sanitizeFormulaCell(order.status),
                 createdAt: order.createdAt.toLocaleString(),
-                customerName: shipping?.name || order.user?.name || 'N/A',
-                email: shipping?.email || order.user?.email || 'N/A',
-                phone: shipping?.phone || order.user?.phone || 'N/A',
-                address: shipping ? `${shipping.address}, ${shipping.city}, ${shipping.postalCode}` : 'N/A',
+                customerName: sanitizeFormulaCell(shipping?.name || order.user?.name || 'N/A'),
+                email: sanitizeFormulaCell(shipping?.email || order.user?.email || 'N/A'),
+                phone: sanitizeFormulaCell(shipping?.phone || order.user?.phone || 'N/A'),
+                address: sanitizeFormulaCell(shipping ? `${shipping.address}, ${shipping.city}, ${shipping.postalCode}` : 'N/A'),
                 totalAmount: order.totalAmount,
                 totalQty: totalQty,
-                paymentMethod: order.paymentMethod,
-                items: itemsString,
-                notes: order.notes
+                paymentMethod: sanitizeFormulaCell(order.paymentMethod),
+                items: sanitizeFormulaCell(itemsString),
+                notes: sanitizeFormulaCell(order.notes)
             })
         })
 
@@ -77,10 +94,10 @@ export async function GET(request: NextRequest) {
             }
         })
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Export error:', error)
         return NextResponse.json(
-            { error: 'Failed to generate report' },
+            { error: error.message || 'Failed to generate report' },
             { status: 500 }
         )
     }

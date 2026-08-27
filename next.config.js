@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // output: 'export',  <-- comment this out for SSR
   images: {
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [360, 480, 640, 750, 828, 1080, 1200, 1920, 2048, 3840],
@@ -12,11 +11,26 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
       },
     ],
-    // Allow both local and external domains
-    domains: [],
   },
   async headers() {
     return [
@@ -24,16 +38,16 @@ const nextConfig = {
         source: '/:path*',
         headers: [
           {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains',
+          },
+          {
             key: 'X-Content-Type-Options',
             value: 'nosniff',
           },
           {
             key: 'X-Frame-Options',
             value: 'DENY',
-          },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
           },
           {
             key: 'Referrer-Policy',

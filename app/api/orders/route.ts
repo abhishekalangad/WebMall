@@ -131,6 +131,22 @@ export async function POST(request: NextRequest) {
 
     const { items, shippingAddress, notes, paymentMethod, couponCode } = parseResult.data
 
+    // 🔒 IDEMPOTENCY: Check Idempotency-Key header to prevent duplicate checkout requests
+    const idempotencyKey = request.headers.get('Idempotency-Key') || request.headers.get('x-idempotency-key')
+    if (idempotencyKey) {
+      const existingOrder = await prisma.order.findUnique({
+        where: { idempotencyKey },
+        include: { items: true }
+      })
+      if (existingOrder) {
+        return NextResponse.json({
+          order: existingOrder,
+          message: 'Order already placed',
+          idempotent: true
+        })
+      }
+    }
+
     // Fetch site settings for shipping calculation
     const settings = await prisma.siteSettings.findUnique({ where: { id: 'default' } })
     const freeShippingThreshold = settings?.freeShippingThreshold || 5000
@@ -313,6 +329,7 @@ export async function POST(request: NextRequest) {
               paymentMethod,
               shippingAddress,
               notes: notes ?? null,
+              idempotencyKey: idempotencyKey || undefined,
               items: {
                 create: itemsWithPrices.map(item => ({
                   productId: item.productId,

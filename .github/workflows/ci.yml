@@ -15,6 +15,7 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'placeholder' }}
       DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://user:pass@localhost:5432/db' }}
       JWT_SECRET: ${{ secrets.JWT_SECRET || 'placeholder-jwt-secret-for-ci-build' }}
+      ACTIONS_RUNNER_FORCE_NODE24: 'true'
 
     steps:
       - name: Checkout Code

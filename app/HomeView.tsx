@@ -304,6 +304,8 @@ export function HomeView({ featuredProducts, initialCategories }: HomeViewProps)
                 <InstagramShowcase
                     instagramUrl1={settings.instagramUrl || ''}
                     instagramUrl2={settings.instagramUrl2 || ''}
+                    whatsappNumber={(settings as any).whatsappNumber || settings.contactPhone || ''}
+                    whatsappMessage={(settings as any).whatsappMessage || 'Hi'}
                 />
             )}
 

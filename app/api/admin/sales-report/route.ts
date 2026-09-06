@@ -24,39 +24,46 @@ export async function GET(request: NextRequest) {
         // to prevent data failure if token is sent differently.
 
         const { searchParams } = new URL(request.url)
-        const range = searchParams.get('range') || 'Last 30 Days'
+        const range = searchParams.get('range') || 'monthly'
+        const yearParam = searchParams.get('year')
+        const monthParam = searchParams.get('month')
+        const quarterParam = searchParams.get('quarter')
+        const startDateParam = searchParams.get('startDate')
+        const endDateParam = searchParams.get('endDate')
 
         // Determine date range
-        const now = new Date()
-        const startDate = new Date()
-        
-        if (range === 'Today') {
-            startDate.setHours(0, 0, 0, 0)
-        } else if (range === 'Last 7 Days') {
-            startDate.setDate(now.getDate() - 7)
-            startDate.setHours(0, 0, 0, 0)
-        } else if (range === 'Last 30 Days') {
-            startDate.setDate(now.getDate() - 30)
-            startDate.setHours(0, 0, 0, 0)
-        } else if (range === 'Year to Date') {
-            startDate.setMonth(0, 1) // Jan 1st
-            startDate.setHours(0, 0, 0, 0)
-        } else if (/^\d{4}$/.test(range)) { // e.g. "2026"
-            const year = parseInt(range)
-            startDate.setFullYear(year, 0, 1)
-            startDate.setHours(0, 0, 0, 0)
-            now.setFullYear(year, 11, 31)
-            now.setHours(23, 59, 59, 999)
-        } else if (/^[a-zA-Z]+ \d{4}$/.test(range)) { // e.g. "March 2026"
-            const [monthStr, yearStr] = range.split(' ')
-            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-            const monthIdx = monthNames.indexOf(monthStr)
-            if (monthIdx !== -1) {
-                startDate.setFullYear(parseInt(yearStr), monthIdx, 1)
-                startDate.setHours(0, 0, 0, 0)
-                now.setFullYear(parseInt(yearStr), monthIdx + 1, 0) // last day of month
-                now.setHours(23, 59, 59, 999)
-            }
+        const nowBase = new Date()
+        let startDate: Date
+        let now: Date
+
+        if (range === 'today') {
+            startDate = new Date(nowBase); startDate.setHours(0, 0, 0, 0)
+            now = new Date(nowBase); now.setHours(23, 59, 59, 999)
+        } else if (range === 'weekly') {
+            startDate = new Date(nowBase); startDate.setDate(nowBase.getDate() - 7); startDate.setHours(0, 0, 0, 0)
+            now = new Date(nowBase); now.setHours(23, 59, 59, 999)
+        } else if (range === 'monthly') {
+            const y = yearParam ? parseInt(yearParam) : nowBase.getFullYear()
+            const m = monthParam ? parseInt(monthParam) - 1 : nowBase.getMonth()
+            startDate = new Date(y, m, 1, 0, 0, 0, 0)
+            now = new Date(y, m + 1, 0, 23, 59, 59, 999)
+        } else if (range === 'quarterly') {
+            const y = yearParam ? parseInt(yearParam) : nowBase.getFullYear()
+            const q = quarterParam ? parseInt(quarterParam) : Math.floor(nowBase.getMonth() / 3) + 1
+            const sm = (q - 1) * 3
+            startDate = new Date(y, sm, 1, 0, 0, 0, 0)
+            now = new Date(y, sm + 3, 0, 23, 59, 59, 999)
+        } else if (range === 'yearly') {
+            const y = yearParam ? parseInt(yearParam) : nowBase.getFullYear()
+            startDate = new Date(y, 0, 1, 0, 0, 0, 0)
+            now = new Date(y, 11, 31, 23, 59, 59, 999)
+        } else if (range === 'custom') {
+            startDate = startDateParam ? new Date(`${startDateParam}T00:00:00`) : new Date(nowBase.setDate(nowBase.getDate() - 30))
+            now = endDateParam ? new Date(`${endDateParam}T23:59:59`) : new Date()
+        } else {
+            // Legacy fallback
+            startDate = new Date(nowBase); startDate.setDate(nowBase.getDate() - 30); startDate.setHours(0, 0, 0, 0)
+            now = new Date(nowBase); now.setHours(23, 59, 59, 999)
         }
 
         const orders = await prisma.order.findMany({
@@ -95,19 +102,23 @@ export async function GET(request: NextRequest) {
         let prevStartDate = new Date(startDate.getTime())
         let prevEndDate = new Date(now.getTime())
         
-        if (/^[a-zA-Z]+ \d{4}$/.test(range)) { // month specific
+        if (range === 'monthly') {
             prevStartDate.setMonth(prevStartDate.getMonth() - 1)
             prevEndDate = new Date(prevStartDate)
             prevEndDate.setMonth(prevEndDate.getMonth() + 1, 0)
             prevEndDate.setHours(23, 59, 59, 999)
-        } else if (/^\d{4}$/.test(range)) { // year specific
+        } else if (range === 'yearly') {
             prevStartDate.setFullYear(prevStartDate.getFullYear() - 1)
             prevEndDate.setFullYear(prevEndDate.getFullYear() - 1)
+        } else if (range === 'quarterly') {
+            prevStartDate.setMonth(prevStartDate.getMonth() - 3)
+            prevEndDate = new Date(startDate.getTime() - 1)
         } else {
             const diffMs = now.getTime() - startDate.getTime()
             prevStartDate = new Date(startDate.getTime() - diffMs)
             prevEndDate = new Date(startDate.getTime() - 1)
         }
+
 
         const prevOrdersRaw = await prisma.order.findMany({
             where: { createdAt: { gte: prevStartDate, lte: prevEndDate } }
@@ -131,9 +142,8 @@ export async function GET(request: NextRequest) {
         // 4. Sales Trends (Daily charting)
         const dailySalesMap = new Map<string, number>()
         let daysToGenerate = 0;
-        if (range === 'Today') daysToGenerate = 1
-        else if (range === 'Last 7 Days') daysToGenerate = 7
-        else if (range === 'Last 30 Days') daysToGenerate = 30
+        if (range === 'today') daysToGenerate = 1
+        else if (range === 'weekly') daysToGenerate = 7
         else daysToGenerate = Math.max(1, Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 3600 * 24)))
 
         for (let i = daysToGenerate - 1; i >= 0; i--) {

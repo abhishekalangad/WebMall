@@ -277,10 +277,11 @@ export function ProductDetailView({ product: initialProduct }: ProductDetailView
     const { settings } = useSiteConfig()
 
     // Calculate effective price and min price for "Starting from" display
-    const effectivePrice = selectedVariant?.priceOverride || initialProduct.price || 0
-    const prices = [initialProduct.price, ...(initialProduct.variants?.map((v: any) => v.priceOverride).filter(Boolean) || [])]
+    const productOfferPrice = initialProduct.offerPrice ? Number(initialProduct.offerPrice) : null
+    const effectivePrice = selectedVariant?.priceOverride ?? productOfferPrice ?? initialProduct.price ?? 0
+    const prices = [initialProduct.price, productOfferPrice, ...(initialProduct.variants?.map((v: any) => v.priceOverride).filter(Boolean) || [])].filter(Boolean)
     const minPrice = Math.min(...prices)
-    const hasPriceRange = prices.some(p => p !== initialProduct.price)
+    const hasPriceRange = Boolean(initialProduct.variants && initialProduct.variants.length > 0 && prices.some(p => p !== initialProduct.price))
 
     const maxStock = selectedVariant ? selectedVariant.stock : (initialProduct.stock || 0)
 

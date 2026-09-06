@@ -144,8 +144,7 @@ export default function CookiesPage() {
                         </p>
                         <div className="bg-gray-50 rounded-xl p-4 mt-4">
                             <p className="text-gray-700">
-                                <strong>Email:</strong> <a href="mailto:webmalll.ik@gmail.com" className="text-gray-900 hover:underline">webmalll.ik@gmail.com</a><br />
-                                <strong>Phone:</strong> <a href="tel:+94778973708" className="text-gray-900 hover:underline">+94 778973708</a>
+                                Please visit our <a href="/contact" className="text-pink-600 hover:underline font-semibold">Contact Us</a> page to reach our support team.
                             </p>
                         </div>
                     </section>

@@ -160,13 +160,13 @@ export default function FAQPage() {
                             <Mail className="h-5 w-5" />
                             Email Us
                         </Link>
-                        <a
-                            href="tel:+94778973708"
+                        <Link
+                            href="/contact"
                             className="inline-flex items-center justify-center gap-2 bg-background text-foreground px-8 py-3 rounded-xl font-bold hover:bg-muted transition-all border border-border"
                         >
                             <Phone className="h-5 w-5" />
-                            Call Us
-                        </a>
+                            Contact Us
+                        </Link>
                     </div>
                 </div>
             </div>

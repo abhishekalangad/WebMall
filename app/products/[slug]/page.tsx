@@ -97,6 +97,7 @@ export default async function ProductPage({ params }: Props) {
   // And construct the prop object
   const productWithRating = {
     ...product,
+    offerPrice: product.offerPrice ? Number(product.offerPrice) : null,
     variants: product.variants.map(v => ({
       ...v,
       priceOverride: v.priceOverride ? Number(v.priceOverride) : null

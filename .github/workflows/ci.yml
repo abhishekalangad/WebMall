@@ -10,11 +10,11 @@ jobs:
   lint-test-build:
     runs-on: ubuntu-latest
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder' }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'placeholder' }}
-      DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://user:pass@localhost:5432/db' }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET || 'placeholder-jwt-secret-for-ci-build' }}
+      NEXT_PUBLIC_SUPABASE_URL: 'https://placeholder.supabase.co'
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'placeholder'
+      SUPABASE_SERVICE_ROLE_KEY: 'placeholder'
+      DATABASE_URL: 'postgresql://user:pass@localhost:5432/db'
+      JWT_SECRET: 'placeholder-jwt-secret-for-ci-build'
       ACTIONS_RUNNER_FORCE_NODE24: 'true'
 
     steps:

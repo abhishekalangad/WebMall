@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Facebook, Instagram, Twitter, Mail, Phone, MapPin,
-  Send, ChevronRight, Sparkles,
+  Send, ChevronRight, Sparkles, MessageCircle,
   Shield, CheckCircle
 } from 'lucide-react'
 import { useSiteConfig } from '@/contexts/SiteConfigContext'
@@ -47,9 +47,15 @@ export function Footer() {
     { href: '/faq', label: 'Help Center' },
   ]
 
+  const rawWhatsapp = (settings as any)?.whatsappNumber || settings?.contactPhone || ''
+  const whatsappMsg = (settings as any)?.whatsappMessage || 'Hi'
+  const whatsappUrl = rawWhatsapp ? `https://wa.me/${rawWhatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(whatsappMsg)}` : ''
+
   const socialLinks = [
     { url: settings?.facebookUrl, icon: Facebook, label: 'Facebook', color: 'hover:text-blue-400' },
     { url: settings?.instagramUrl, icon: Instagram, label: 'Instagram', color: 'hover:text-pink-400' },
+    { url: settings?.instagramUrl2, icon: Instagram, label: 'Secondary Instagram', color: 'hover:text-pink-300' },
+    { url: whatsappUrl, icon: MessageCircle, label: 'WhatsApp', color: 'hover:text-green-400' },
     { url: settings?.twitterUrl, icon: Twitter, label: 'Twitter', color: 'hover:text-sky-400' },
   ].filter(link => link.url)
 

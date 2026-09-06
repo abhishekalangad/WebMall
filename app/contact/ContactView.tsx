@@ -21,6 +21,20 @@ export default function ContactView() {
         message: ''
     })
 
+    const [siteSettings, setSiteSettings] = useState<any>(null)
+
+    // Fetch site config on mount
+    useEffect(() => {
+        fetch('/api/site/config')
+            .then(res => res.json())
+            .then(data => {
+                if (data?.settings) {
+                    setSiteSettings(data.settings)
+                }
+            })
+            .catch(err => console.error('Failed to fetch site config', err))
+    }, [])
+
     // Pre-fill form if user is logged in
     useEffect(() => {
         if (user) {
@@ -218,49 +232,80 @@ export default function ContactView() {
                     {/* Contact Info */}
                     <div className="space-y-6">
                         {/* Email */}
-                        <div className="bg-card rounded-2xl shadow-lg p-6 border border-border hover:shadow-xl transition-all">
-                            <div className="flex items-start gap-4">
-                                <div className="p-3 bg-muted rounded-xl">
-                                    <Mail className="h-6 w-6 text-foreground" />
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className="font-bold text-foreground mb-1">Email Us</h3>
-                                    <a href="mailto:webmalll.ik@gmail.com" className="text-muted-foreground hover:text-foreground transition-colors">
-                                        webmalll.ik@gmail.com
-                                    </a>
+                        {siteSettings?.contactEmail && (
+                            <div className="bg-card rounded-2xl shadow-lg p-6 border border-border hover:shadow-xl transition-all">
+                                <div className="flex items-start gap-4">
+                                    <div className="p-3 bg-muted rounded-xl">
+                                        <Mail className="h-6 w-6 text-foreground" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="font-bold text-foreground mb-1">Email Us</h3>
+                                        <a href={`mailto:${siteSettings.contactEmail}`} className="text-muted-foreground hover:text-foreground transition-colors">
+                                            {siteSettings.contactEmail}
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Phone */}
-                        <div className="bg-card rounded-2xl shadow-lg p-6 border border-border hover:shadow-xl transition-all">
-                            <div className="flex items-start gap-4">
-                                <div className="p-3 bg-muted rounded-xl">
-                                    <Phone className="h-6 w-6 text-foreground" />
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className="font-bold text-foreground mb-1">Call Us</h3>
-                                    <a href="tel:+94778973708" className="text-muted-foreground hover:text-foreground transition-colors">
-                                        +94 778973708
-                                    </a>
+                        {siteSettings?.contactPhone && (
+                            <div className="bg-card rounded-2xl shadow-lg p-6 border border-border hover:shadow-xl transition-all">
+                                <div className="flex items-start gap-4">
+                                    <div className="p-3 bg-muted rounded-xl">
+                                        <Phone className="h-6 w-6 text-foreground" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="font-bold text-foreground mb-1">Call Us</h3>
+                                        <a href={`tel:${siteSettings.contactPhone}`} className="text-muted-foreground hover:text-foreground transition-colors">
+                                            {siteSettings.contactPhone}
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
+
+                        {/* WhatsApp */}
+                        {(siteSettings?.whatsappNumber || siteSettings?.contactPhone) && (
+                            <div className="bg-card rounded-2xl shadow-lg p-6 border border-border hover:shadow-xl transition-all">
+                                <div className="flex items-start gap-4">
+                                    <div className="p-3 bg-green-100 dark:bg-green-950/40 rounded-xl">
+                                        <svg viewBox="0 0 24 24" className="h-6 w-6 fill-green-600">
+                                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                                            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.117 1.535 5.845L.057 23.571a.5.5 0 0 0 .612.612l5.726-1.478A11.934 11.934 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.93 0-3.738-.518-5.29-1.42l-.378-.222-3.918 1.011 1.011-3.918-.222-.378A9.956 9.956 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+                                        </svg>
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="font-bold text-foreground mb-1">WhatsApp Us</h3>
+                                        <a
+                                            href={`https://wa.me/${(siteSettings?.whatsappNumber || siteSettings?.contactPhone || '').replace(/\D/g, '')}?text=${encodeURIComponent(siteSettings?.whatsappMessage || 'Hi')}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-green-600 hover:text-green-700 font-semibold transition-colors flex items-center gap-1"
+                                        >
+                                            Chat on WhatsApp →
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Location */}
-                        <div className="bg-card rounded-2xl shadow-lg p-6 border border-border hover:shadow-xl transition-all">
-                            <div className="flex items-start gap-4">
-                                <div className="p-3 bg-muted rounded-xl">
-                                    <MapPin className="h-6 w-6 text-foreground" />
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className="font-bold text-foreground mb-1">Visit Us</h3>
-                                    <p className="text-muted-foreground">
-                                        Colombo, Sri Lanka
-                                    </p>
+                        {siteSettings?.contactAddress && (
+                            <div className="bg-card rounded-2xl shadow-lg p-6 border border-border hover:shadow-xl transition-all">
+                                <div className="flex items-start gap-4">
+                                    <div className="p-3 bg-muted rounded-xl">
+                                        <MapPin className="h-6 w-6 text-foreground" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="font-bold text-foreground mb-1">Visit Us</h3>
+                                        <p className="text-muted-foreground">
+                                            {siteSettings.contactAddress}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Hours */}
                         <div className="bg-card rounded-2xl shadow-lg p-6 border border-border hover:shadow-xl transition-all">

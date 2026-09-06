@@ -63,6 +63,8 @@ export default function AdminProductsPage() {
     name: '',
     description: '',
     price: '',
+    offerPrice: '',
+    discountPercentage: '',
     originalPrice: '',
     categoryId: '',
     subcategoryId: '',
@@ -282,6 +284,7 @@ export default function AdminProductsPage() {
         name: formData.name,
         description: formData.description,
         price: parseFloat(formData.price),
+        offerPrice: formData.offerPrice ? parseFloat(formData.offerPrice) : null,
         categoryId: formData.categoryId,
         subcategoryId: formData.subcategoryId || null,
         stock: parseInt(formData.stockCount),
@@ -340,11 +343,20 @@ export default function AdminProductsPage() {
       ? product.variants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0)
       : product.stock
 
+    const basePriceNum = Number(product.price) || 0
+    const offerPriceNum = product.offerPrice ? Number(product.offerPrice) : null
+    let discPct = ''
+    if (offerPriceNum && basePriceNum > 0 && offerPriceNum < basePriceNum) {
+      discPct = Math.round(((basePriceNum - offerPriceNum) / basePriceNum) * 100).toString()
+    }
+
     setEditingProduct(product)
     setFormData({
       name: product.name,
       description: product.description,
       price: product.price.toString(),
+      offerPrice: offerPriceNum ? offerPriceNum.toString() : '',
+      discountPercentage: discPct,
       originalPrice: '',
       categoryId: product.categoryId,
       subcategoryId: product.subcategoryId || '',
@@ -388,6 +400,8 @@ export default function AdminProductsPage() {
       name: '',
       description: '',
       price: '',
+      offerPrice: '',
+      discountPercentage: '',
       originalPrice: '',
       categoryId: categories[0]?.id || '',
       subcategoryId: '',
@@ -1010,68 +1024,140 @@ export default function AdminProductsPage() {
                       <h3 className="text-lg font-semibold text-foreground">Pricing & Inventory</h3>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
-                        <Label htmlFor="price" className="text-sm font-medium">Price (LKR) *</Label>
+                        <Label htmlFor="price" className="text-sm font-medium">Base Price (LKR) *</Label>
                         <Input
                           id="price"
                           type="number"
                           min="0"
                           step="0.01"
                           value={formData.price}
-                          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            const baseNum = parseFloat(val) || 0
+                            let offer = formData.offerPrice
+                            let disc = formData.discountPercentage
+
+                            if (offer && baseNum > 0) {
+                              const offerNum = parseFloat(offer) || 0
+                              if (offerNum < baseNum) {
+                                disc = Math.round(((baseNum - offerNum) / baseNum) * 100).toString()
+                              } else {
+                                disc = '0'
+                              }
+                            } else if (disc && baseNum > 0) {
+                              const discNum = parseFloat(disc) || 0
+                              if (discNum > 0) {
+                                offer = Math.round(baseNum * (1 - discNum / 100)).toString()
+                              }
+                            }
+                            setFormData({ ...formData, price: val, offerPrice: offer, discountPercentage: disc })
+                          }}
                           className="mt-1.5 h-10"
                           placeholder="0.00"
                           required
                         />
-                        <p className="text-xs text-muted-foreground mt-1">Base price for this product</p>
+                        <p className="text-xs text-muted-foreground mt-1">Regular original price</p>
                       </div>
 
                       <div>
-                        <Label htmlFor="stock" className="text-sm font-medium">Stock Count *</Label>
+                        <Label htmlFor="offerPrice" className="text-sm font-medium">Offer Price (LKR)</Label>
                         <Input
-                          id="stock"
+                          id="offerPrice"
                           type="number"
                           min="0"
-                          value={formData.stockCount}
-                          onChange={(e) => setFormData({ ...formData, stockCount: e.target.value })}
-                          className="mt-1.5 h-10"
-                          placeholder="0"
-                          required
+                          step="0.01"
+                          value={formData.offerPrice}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            const offerNum = val ? parseFloat(val) : 0
+                            const baseNum = parseFloat(formData.price) || 0
+                            let disc = ''
+
+                            if (offerNum > 0 && baseNum > 0 && offerNum < baseNum) {
+                              disc = Math.round(((baseNum - offerNum) / baseNum) * 100).toString()
+                            }
+
+                            setFormData({ ...formData, offerPrice: val, discountPercentage: disc })
+                          }}
+                          className="mt-1.5 h-10 border-emerald-300 focus:ring-emerald-500"
+                          placeholder="e.g. 1500"
                         />
-                        {formData.variants && formData.variants.length > 0 && (
-                          <div className="mt-1.5 flex items-center gap-1.5 text-xs text-pink-700 dark:text-pink-300 font-medium bg-pink-50 dark:bg-pink-950/40 border border-pink-200 dark:border-pink-900/50 px-2.5 py-1.5 rounded-lg">
-                            <svg className="w-3.5 h-3.5 text-pink-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                            <span>Auto-calculated sum of {formData.variants.length} variant{formData.variants.length > 1 ? 's' : ''} ({formData.stockCount} total units)</span>
-                          </div>
-                        )}
-                        {formData.stockCount && parseInt(formData.stockCount) === 0 && (
-                          <div className="mt-2 flex items-center gap-2 text-xs text-red-600 font-medium bg-red-50 px-2 py-1.5 rounded">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                            </svg>
-                            Out of Stock
-                          </div>
-                        )}
-                        {formData.stockCount && parseInt(formData.stockCount) > 0 && parseInt(formData.stockCount) < 10 && (
-                          <div className="mt-2 flex items-center gap-2 text-xs text-amber-600 bg-amber-50 px-2 py-1.5 rounded">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                            </svg>
-                            Low Stock ({formData.stockCount} units)
-                          </div>
-                        )}
-                        {formData.stockCount && parseInt(formData.stockCount) >= 10 && (
-                          <div className="mt-2 flex items-center gap-2 text-xs text-green-600 bg-green-50 px-2 py-1.5 rounded">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                            In Stock ({formData.stockCount} units)
-                          </div>
-                        )}
+                        <p className="text-xs text-emerald-600 font-medium mt-1">Selling offer price</p>
                       </div>
+
+                      <div>
+                        <Label htmlFor="discountPercentage" className="text-sm font-medium">Discount (%)</Label>
+                        <Input
+                          id="discountPercentage"
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={formData.discountPercentage}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            const discNum = val ? parseFloat(val) : 0
+                            const baseNum = parseFloat(formData.price) || 0
+                            let offer = ''
+
+                            if (discNum > 0 && baseNum > 0) {
+                              offer = Math.round(baseNum * (1 - discNum / 100)).toString()
+                            }
+
+                            setFormData({ ...formData, discountPercentage: val, offerPrice: offer })
+                          }}
+                          className="mt-1.5 h-10 border-blue-300 focus:ring-blue-500"
+                          placeholder="e.g. 20"
+                        />
+                        <p className="text-xs text-blue-600 font-medium mt-1">Auto-calculated discount %</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="stock" className="text-sm font-medium">Stock Count *</Label>
+                      <Input
+                        id="stock"
+                        type="number"
+                        min="0"
+                        value={formData.stockCount}
+                        onChange={(e) => setFormData({ ...formData, stockCount: e.target.value })}
+                        className="mt-1.5 h-10"
+                        placeholder="0"
+                        required
+                      />
+                      {formData.variants && formData.variants.length > 0 && (
+                        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-pink-700 dark:text-pink-300 font-medium bg-pink-50 dark:bg-pink-950/40 border border-pink-200 dark:border-pink-900/50 px-2.5 py-1.5 rounded-lg">
+                          <svg className="w-3.5 h-3.5 text-pink-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                          <span>Auto-calculated sum of {formData.variants.length} variant{formData.variants.length > 1 ? 's' : ''} ({formData.stockCount} total units)</span>
+                        </div>
+                      )}
+                      {formData.stockCount && parseInt(formData.stockCount) === 0 && (
+                        <div className="mt-2 flex items-center gap-2 text-xs text-red-600 font-medium bg-red-50 px-2 py-1.5 rounded">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                          </svg>
+                          Out of Stock
+                        </div>
+                      )}
+                      {formData.stockCount && parseInt(formData.stockCount) > 0 && parseInt(formData.stockCount) < 10 && (
+                        <div className="mt-2 flex items-center gap-2 text-xs text-amber-600 bg-amber-50 px-2 py-1.5 rounded">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                          Low Stock ({formData.stockCount} units)
+                        </div>
+                      )}
+                      {formData.stockCount && parseInt(formData.stockCount) >= 10 && (
+                        <div className="mt-2 flex items-center gap-2 text-xs text-green-600 bg-green-50 px-2 py-1.5 rounded">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          In Stock ({formData.stockCount} units)
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center space-x-2 py-2">

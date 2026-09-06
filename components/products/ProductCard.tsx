@@ -60,12 +60,30 @@ export function ProductCard({
 
   const maxStock = cartItem?.maxStock ?? effectiveStock
 
-  const prices = [product.price, ...(product.variants?.map((v: any) => v.priceOverride).filter(Boolean) || [])].map(p => Number(p))
-  const minPrice = Math.min(...prices)
-  const maxPrice = Math.max(...prices)
-  const hasPriceRange = minPrice !== maxPrice
-  const hasDiscount = maxPrice > minPrice
-  const discountPercent = hasDiscount ? Math.round(((maxPrice - minPrice) / maxPrice) * 100) : 0
+  const hasVariants = Boolean(product.variants && product.variants.length > 0)
+  
+  let minPrice = Number(product.price)
+  let maxPrice = Number(product.price)
+  let hasDiscount = false
+  let discountPercent = 0
+
+  if (hasVariants) {
+    const prices = [product.price, ...(product.variants?.map((v: any) => v.priceOverride).filter(Boolean) || [])].map(p => Number(p))
+    minPrice = Math.min(...prices)
+    maxPrice = Math.max(...prices)
+    hasDiscount = maxPrice > minPrice
+    discountPercent = hasDiscount ? Math.round(((maxPrice - minPrice) / maxPrice) * 100) : 0
+  } else {
+    const offerPrice = (product as any).offerPrice ? Number((product as any).offerPrice) : null
+    if (offerPrice && offerPrice < Number(product.price)) {
+      minPrice = offerPrice
+      maxPrice = Number(product.price)
+      hasDiscount = true
+      discountPercent = Math.round(((maxPrice - minPrice) / maxPrice) * 100)
+    }
+  }
+
+  const hasPriceRange = hasVariants && minPrice !== maxPrice
 
   // Find the variant with the min price to show its specification
   const minPriceVariant = product.variants?.find((v: any) => Number(v.priceOverride) === minPrice)

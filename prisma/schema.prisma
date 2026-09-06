@@ -6,7 +6,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["public"]
+  schemas  = ["public", "auth"]
 }
 
 // --- Application Models (CamelCase for Client, Mapped to Snake_Case DB) ---
@@ -76,6 +76,7 @@ model Product {
   slug          String           @unique @map("slug")
   description   String           @map("description")
   price         Decimal          @map("price") @db.Decimal(10, 2)
+  offerPrice    Decimal?         @map("offer_price") @db.Decimal(10, 2)
   currency      String           @default("LKR") @map("currency")
   categoryId    String?          @map("category_id") @db.Uuid
   subcategoryId String?          @map("subcategory_id") @db.Uuid
@@ -274,12 +275,14 @@ model SiteSettings {
   description     String?  @default("Your premier destination for Sri Lankan fashion accessories.") @map("description")
   logoUrl         String?  @map("logo_url")
   contactEmail    String?  @default("webmalll.ik@gmail.com") @map("contact_email")
-  contactPhone    String?  @default("+94 778973708") @map("contact_phone")
+  contactPhone    String?  @default("+94 713113708") @map("contact_phone")
   contactAddress  String?  @default("Colombo, Sri Lanka") @map("contact_address")
   facebookUrl     String?  @map("facebook_url")
   instagramUrl    String?  @map("instagram_url")
   instagramUrl2   String?  @map("instagram_url_2")
   twitterUrl      String?  @map("twitter_url")
+  whatsappNumber  String?  @map("whatsapp_number")
+  whatsappMessage String?  @default("Hi") @map("whatsapp_message")
   shippingBaseRate Float   @default(500) @map("shipping_base_rate")
   freeShippingThreshold Float @default(10000) @map("free_shipping_threshold")
   headerNavigation Json?  @map("header_navigation")

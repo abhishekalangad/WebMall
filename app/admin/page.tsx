@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { motion, AnimatePresence } from 'framer-motion'
+import { ExportReportModal } from '@/components/admin/ExportReportModal'
 import {
   Package,
   Layers,
@@ -32,6 +33,7 @@ export default function AdminDashboardPage() {
   const router = useRouter()
   const [ready, setReady] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
   const [dashboardData, setDashboardData] = useState<any>(null)
   const [stats, setStats] = useState([
     { title: 'Total Sales', value: 'LKR 0', change: '+0%', trend: 'up', icon: DollarSign, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50/50 dark:bg-emerald-950/20', iconBg: 'bg-emerald-100 dark:bg-emerald-900/40' },
@@ -332,11 +334,11 @@ export default function AdminDashboardPage() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => window.location.href = '/api/admin/export/orders'}
+                onClick={() => setIsExportModalOpen(true)}
                 className="flex items-center px-4 py-2.5 bg-card border border-border hover:border-gray-400 text-foreground/80 font-medium rounded-xl transition-all shadow-sm hover:shadow"
               >
                 <BarChart3 className="w-4 h-4 mr-2" />
-                Export Report
+                Business Report
               </motion.button>
               <Link href="/admin/products">
                 <motion.button
@@ -502,6 +504,11 @@ export default function AdminDashboardPage() {
           })}
         </motion.div>
       </div>
+
+      <ExportReportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+      />
     </div>
   )
 }

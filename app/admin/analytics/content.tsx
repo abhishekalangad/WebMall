@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import Link from 'next/link'
+import { ExportReportModal } from '@/components/admin/ExportReportModal'
 
 export default function AnalyticsClient() {
     return (
@@ -34,6 +35,7 @@ function AnalyticsContent() {
     const [customMonth, setCustomMonth] = useState('March')
     const [customYear, setCustomYear] = useState('2026')
     const [isLoading, setIsLoading] = useState(true)
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false)
 
     const [metrics, setMetrics] = useState({
         grossRevenue: 0,
@@ -186,6 +188,14 @@ function AnalyticsContent() {
                                     {yearList.map(y => <option key={y} value={y}>{y}</option>)}
                                 </select>
                             )}
+
+                            <Button
+                                onClick={() => setIsExportModalOpen(true)}
+                                className="bg-foreground text-background font-semibold rounded-lg px-4 py-1.5 text-sm transition-all shadow-sm hover:shadow ml-2"
+                            >
+                                <BarChart3 className="w-4 h-4 mr-2" />
+                                Business Report
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -382,6 +392,11 @@ function AnalyticsContent() {
                     </Card>
                 </div>
             </div>
+
+            <ExportReportModal
+                isOpen={isExportModalOpen}
+                onClose={() => setIsExportModalOpen(false)}
+            />
         </div>
     )
 }

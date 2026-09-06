@@ -10,8 +10,9 @@ import { Card } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Package2, Eye, Loader2, X, Download, FileSpreadsheet, FileText, KanbanSquare, List } from 'lucide-react'
+import { Package2, Eye, Loader2, X, Download, FileSpreadsheet, FileText, KanbanSquare, List, BarChart3 } from 'lucide-react'
 import { toast } from 'sonner'
+import { ExportReportModal } from '@/components/admin/ExportReportModal'
 
 interface OrderItem {
   id: string
@@ -670,6 +671,7 @@ export default function AdminOrdersPage() {
   const [exportYear, setExportYear]   = useState(() => String(new Date().getFullYear()))
   const [customFrom, setCustomFrom]   = useState('')
   const [customTo, setCustomTo]       = useState('')
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
 
   const yearList  = Array.from({ length: 5 }, (_, i) => String(new Date().getFullYear() - i))
 
@@ -1163,6 +1165,14 @@ export default function AdminOrdersPage() {
               ? <Loader2 className="h-4 w-4 animate-spin" />
               : <FileText className="h-4 w-4" />}
             <span className="hidden sm:inline">PDF</span>
+          </Button>
+          <Button
+            onClick={() => setIsExportModalOpen(true)}
+            className="bg-foreground text-background font-semibold gap-1.5 shrink-0"
+            title="Open Advanced Export Report Dialog"
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden sm:inline">Business Analytics</span>
           </Button>
         </div>
       </div>
@@ -1735,6 +1745,11 @@ export default function AdminOrdersPage() {
           </div>
         </div>
       )}
+
+      <ExportReportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+      />
     </div>
   )
 }

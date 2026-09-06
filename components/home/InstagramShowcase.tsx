@@ -74,10 +74,12 @@ export function InstagramShowcase({ instagramUrl1, instagramUrl2, whatsappNumber
         : 'grid-cols-1 md:grid-cols-3 max-w-5xl mx-auto'
 
     return (
-        <section className="py-20 bg-gradient-to-b from-gray-50/80 via-white to-slate-50 overflow-hidden relative border-y border-gray-100/80 isolate">
-            {/* Ambient Lighting Background */}
-            <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-pink-200/20 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
-            <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-emerald-200/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+        <section
+            className="py-20 overflow-hidden relative border-y border-gray-100/80"
+            style={{
+                background: 'radial-gradient(ellipse 80% 60% at 20% 50%, rgba(251,207,232,0.15) 0%, transparent 60%), radial-gradient(ellipse 80% 60% at 80% 50%, rgba(167,243,208,0.15) 0%, transparent 60%), linear-gradient(to bottom, rgba(249,250,251,0.8), #fff, rgb(248,250,252))'
+            }}
+        >
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 {/* Header */}

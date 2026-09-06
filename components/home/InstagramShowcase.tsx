@@ -74,7 +74,7 @@ export function InstagramShowcase({ instagramUrl1, instagramUrl2, whatsappNumber
         : 'grid-cols-1 md:grid-cols-3 max-w-5xl mx-auto'
 
     return (
-        <section className="py-20 bg-gradient-to-b from-gray-50/80 via-white to-slate-50 overflow-hidden relative border-y border-gray-100/80">
+        <section className="py-20 bg-gradient-to-b from-gray-50/80 via-white to-slate-50 overflow-hidden relative border-y border-gray-100/80 isolate">
             {/* Ambient Lighting Background */}
             <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-pink-200/20 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
             <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-emerald-200/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
@@ -106,8 +106,8 @@ export function InstagramShowcase({ instagramUrl1, instagramUrl2, whatsappNumber
                 {/* Cards Grid */}
                 <div className={`grid gap-8 md:gap-10 ${colsClass}`}>
                     {cards.map((card) => (
-                        <div key={card.type} className="group relative transform hover:-translate-y-1.5 transition-all duration-300">
-                            <div className={`absolute -inset-0.5 bg-gradient-to-r ${card.gradient} rounded-2xl blur-md opacity-25 group-hover:opacity-75 transition-opacity duration-300`}></div>
+                        <div key={card.type} className="group relative transform hover:-translate-y-1.5 transition-all duration-300 translate-z-0 backface-hidden" style={{ isolation: 'isolate', transform: 'translateZ(0)' }}>
+                            <div className={`absolute -inset-0.5 bg-gradient-to-r ${card.gradient} rounded-2xl blur-sm opacity-0 group-hover:opacity-60 transition-opacity duration-300`}></div>
                             <div className="relative bg-white rounded-2xl p-8 shadow-md group-hover:shadow-2xl flex flex-col items-center text-center h-full border border-gray-100 group-hover:border-gray-200 transition-all">
                                 <div className={`w-20 h-20 bg-gradient-to-tr ${card.iconBg} rounded-2xl flex items-center justify-center mb-6 transition-all duration-300 shadow-sm group-hover:scale-110`}>
                                     {card.type === 'whatsapp' ? (

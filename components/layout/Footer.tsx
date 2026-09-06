@@ -80,9 +80,9 @@ export function Footer() {
   }
 
   return (
-    <footer className="bg-gray-900 text-white relative overflow-hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <footer className="bg-gray-900 text-white relative overflow-hidden isolate" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
       {/* Animated Background */}
-      <div className="absolute inset-0 opacity-5 pointer-events-none">
+      <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ contain: 'layout style paint' }}>
         <motion.div
           animate={{
             scale: [1, 1.2, 1],
@@ -90,6 +90,7 @@ export function Footer() {
           }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
           className="absolute top-0 left-0 w-96 h-96 bg-gray-700 rounded-full blur-3xl"
+          style={{ willChange: 'transform', transform: 'translateZ(0)' }}
         />
         <motion.div
           animate={{
@@ -98,6 +99,7 @@ export function Footer() {
           }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
           className="absolute bottom-0 right-0 w-96 h-96 bg-gray-600 rounded-full blur-3xl"
+          style={{ willChange: 'transform', transform: 'translateZ(0)' }}
         />
       </div>
 

@@ -262,7 +262,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-background pb-12 relative">
       {/* Animated Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-40 dark:opacity-10">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-40 dark:opacity-10 isolate" style={{ contain: 'layout style paint' }}>
         <motion.div
           animate={{
             scale: [1, 1.2, 1],
@@ -274,6 +274,7 @@ export default function AdminDashboardPage() {
             ease: "linear"
           }}
           className="absolute -top-1/4 -right-1/4 w-1/2 h-1/2 bg-gradient-to-br from-purple-500/30 to-pink-500/30 dark:from-purple-900/40 dark:to-pink-900/40 rounded-full blur-3xl"
+          style={{ willChange: 'transform', transform: 'translateZ(0)' }}
         />
         <motion.div
           animate={{
@@ -286,6 +287,7 @@ export default function AdminDashboardPage() {
             ease: "linear"
           }}
           className="absolute -bottom-1/4 -left-1/4 w-1/2 h-1/2 bg-gradient-to-tr from-blue-500/30 to-emerald-500/30 dark:from-blue-900/40 dark:to-emerald-900/40 rounded-full blur-3xl"
+          style={{ willChange: 'transform', transform: 'translateZ(0)' }}
         />
       </div>
 
